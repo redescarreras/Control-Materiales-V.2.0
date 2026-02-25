@@ -9,6 +9,7 @@ const firebaseConfig = {
     appId: "1:994809951058:web:31d0cd19f4dcf49b84408b"
   };
   
+// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -17,6 +18,7 @@ let albaranes = []; let albaranSeleccionado = null;
 let cables = []; let subconductos = []; let devoluciones = [];
 let reporteActual = '';
 
+// Lista global de Opciones de Cable para llenar los <select> automáticamente
 const CABLE_OPTIONS_HTML = `
     <option value="">Seleccionar...</option>
     <option value="Cable de f.o. de exterior PKP holgado de 8 fo.">Cable de f.o. de exterior PKP holgado de 8 fo.</option>
@@ -85,6 +87,7 @@ function migrarDatosLocalesALaNube() {
     if (albLocal) {
         db.ref('albaranes').once('value', (snapshot) => {
             if (!snapshot.exists()) {
+                console.log("Subiendo backup local a la nube...");
                 db.ref('albaranes').set(JSON.parse(albLocal));
                 db.ref('cables').set(JSON.parse(localStorage.getItem('cables') || '[]'));
                 db.ref('subconductos').set(JSON.parse(localStorage.getItem('subconductos') || '[]'));
@@ -195,12 +198,12 @@ function finalizarCreacionAlbaran(formData, archivoInfo) {
         fecha: formData.get('fecha'),
         cuentaCargo: formData.get('cuentaCargo'), 
         tipoInstalacion: formData.get('tipoInstalacion'),
-        observaciones: formData.get('observaciones') || '',
+        observaciones: formData.get('observaciones') || '', // GUARDAMOS OBSERVACIÓN AQUÍ
         estado: 'pendiente', 
         materialFaltante: null, 
         archivo: archivoInfo
     });
-    guardarTodosLosDatos(); cerrarTodosLosModales(); 
+    guardarTodosLosDatos(); cerrarTodosLosModales();
     mostrarToast('✅ Albarán creado en la Nube');
 }
 
@@ -255,13 +258,13 @@ function agregarMaterial(tipo, formData, accion) {
     const material = {
         id: `${tipo==='cable'?'CAB':'SUB'}-${Date.now().toString().slice(-6)}`,
         tipoMaterial: tipo, 
-        idObra: formData.get('idObra') || 'No especificada',
+        idObra: formData.get('idObra') || 'No especificada', // RECOGE EL ID DE OBRA DE ENTRADAS
         tipoCable: formData.get('tipoCable') || formData.get('tipoSubconducto'),
         metros: metrosInput, accion: accion, fecha: formData.get('fecha')
     };
 
     if (tipo === 'cable') cables.push(material); else subconductos.push(material);
-    guardarTodosLosDatos(); 
+    guardarTodosLosDatos();
     mostrarToast(`✅ ${tipo==='cable'?'Cable':'Subconducto'} guardado en la Nube`);
 }
 
@@ -354,7 +357,7 @@ function mostrarMateriales(tipo) {
                             <span style="font-size:16px; font-weight:800; color:var(--text-primary);">${m.metros} m</span>
                         </div>
                         <div class="info-row" style="color:var(--text-secondary); font-size:12px; border-top: 1px solid var(--bg-system); padding-top: 10px;">
-                            <span>🏢 Obra/Origen: ${m.idObra}</span>
+                            <span>🏢 Obra: ${m.idObra}</span>
                             <span>📅 ${new Date(m.fecha).toLocaleDateString()}</span>
                         </div>
                         <button class="btn btn-secondary w-100" style="margin-top:12px; padding:8px; font-size: 13px; background: var(--bg-system);" onclick="eliminarMaterial('${tipo}','${m.id}')">🗑️ Eliminar Registro</button>
@@ -529,10 +532,10 @@ function eliminarDevolucion(id) {
     if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
 }
 
-// ===== EXCEL PREVIEW =====
+// ===== EXCEL PREVIEW CON FILTRO =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
-    if(!a || !a.archivo || !a.archivo.base64) return mostrarToast('❌ El archivo se eliminó para ahorrar memoria.');
+    if(!a || !a.archivo || !a.archivo.base64) return mostrarToast('❌ Sin archivo adjunto');
     
     let contenido = '';
     const name = a.archivo.nombre.toLowerCase();
@@ -685,4 +688,261 @@ function abrirImportar() {
             reader.onload = function(ev) {
                 try {
                     let content = ev.target.result.trim();
-                    if (content.charCodeAt(0) === 0xFEFF
+                    if (content.charCodeAt(0) === 0xFEFF) { content = content.slice(1); }
+                    
+                    const d = JSON.parse(content);
+                    if (typeof d !== 'object' || d === null) throw new Error('No es JSON');
+                    
+                    if (confirm('⚠️ ¿Sobrescribir datos locales y en la nube con este archivo?')) {
+                        albaranes = Array.isArray(d.albaranes) ? d.albaranes : [];
+                        cables = Array.isArray(d.cables) ? d.cables : [];
+                        subconductos = Array.isArray(d.subconductos) ? d.subconductos : [];
+                        devoluciones = Array.isArray(d.devoluciones) ? d.devoluciones : [];
+                        
+                        guardarTodosLosDatos(); 
+                        actualizarContadores(); 
+                        cambiarTab('pendientes');
+                        mostrarToast('✅ Datos importados y subidos');
+                    }
+                } catch(err) { 
+                    mostrarToast('❌ Archivo corrupto o límite superado'); 
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+}
+
+// ===== REPORTES PDF =====
+function abrirModalReportes(tipo) {
+    reporteActual = tipo;
+    document.getElementById('modalReportes').classList.add('active');
+}
+
+function iniciarGeneracionReporte() {
+    cerrarTodosLosModales();
+    mostrarToast('⏳ Generando PDF, por favor espere...');
+    
+    setTimeout(() => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFont('helvetica');
+        doc.setFontSize(20); doc.setTextColor(255, 85, 0); doc.text('Redes Carreras S.L.', 20, 30);
+        doc.setFontSize(16); doc.setTextColor(0, 0, 0); doc.text(`Control de Materiales: ${reporteActual.toUpperCase()}`, 20, 45);
+        doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 55);
+        
+        let yPos = 70;
+        let datos = [];
+        
+        if(reporteActual === 'pendientes') datos = albaranes.filter(a=>a.estado==='pendiente');
+        else if(reporteActual === 'recibidos') datos = albaranes.filter(a=>a.estado==='recibido' && !a.materialFaltante);
+        else if(reporteActual === 'faltantes') datos = albaranes.filter(a=>a.materialFaltante);
+        else if(reporteActual === 'completo') datos = albaranes;
+        else if(reporteActual === 'cables') {
+            const stock = calcularStockPorTipo('cable');
+            datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
+        }
+        else if(reporteActual === 'subconductos') {
+            const stock = calcularStockPorTipo('subconducto');
+            datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
+        }
+        else if(reporteActual === 'devoluciones') datos = devoluciones;
+
+        if(datos.length === 0) {
+            doc.setFontSize(12); doc.setTextColor(0,0,0); doc.text('No hay registros para este reporte.', 20, yPos);
+        } else {
+            doc.setFillColor(255, 85, 0); doc.rect(20, yPos - 8, 170, 8, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(10);
+            
+            if (reporteActual === 'cables' || reporteActual === 'subconductos') {
+                doc.text('Tipo de Material', 22, yPos - 2); 
+                doc.text('Recib.', 122, yPos - 2); 
+                doc.text('Instal.', 142, yPos - 2); 
+                doc.text('Disponible', 162, yPos - 2);
+            } else if (reporteActual === 'devoluciones') {
+                doc.text('ID Dev', 22, yPos - 2); doc.text('Obra', 60, yPos - 2); doc.text('Bobinas', 110, yPos - 2); doc.text('Fecha', 150, yPos - 2);
+            } else {
+                doc.text('Obra', 22, yPos - 2); 
+                doc.text('Fecha', 75, yPos - 2); 
+                doc.text('Estado', 115, yPos - 2); 
+                doc.text('Cuenta', 155, yPos - 2);
+            }
+
+            yPos += 8; 
+
+            datos.forEach((d, i) => {
+                doc.setFontSize(9);
+                let textLines = [];
+                let rowHeight = 8;
+                
+                if (reporteActual === 'cables' || reporteActual === 'subconductos') {
+                    textLines = doc.splitTextToSize(String(d.tipo), 95); 
+                    rowHeight = Math.max(8, textLines.length * 5 + 2);
+                } else if (reporteActual === 'devoluciones') {
+                    textLines = [String(d.id)];
+                } else {
+                    textLines = doc.splitTextToSize(String(d.idObra), 45);
+                    rowHeight = Math.max(8, textLines.length * 5 + 2);
+                }
+                
+                if(yPos + rowHeight > 280) { doc.addPage(); yPos = 20; }
+                if (i % 2 === 0) { doc.setFillColor(245, 241, 230); doc.rect(20, yPos - 6, 170, rowHeight, 'F'); }
+                
+                if (reporteActual === 'cables' || reporteActual === 'subconductos') {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(textLines, 22, yPos); 
+                    doc.text(`${d.recibido.toFixed(1)}m`, 122, yPos);
+                    doc.text(`${d.instalado.toFixed(1)}m`, 142, yPos); 
+                    
+                    if (d.disponible < 0) {
+                        doc.setTextColor(220, 38, 38); 
+                        doc.text(`${d.disponible.toFixed(1)}m (Falta)`, 162, yPos);
+                    } else {
+                        doc.setTextColor(5, 150, 105); 
+                        doc.text(`${d.disponible.toFixed(1)}m (A favor)`, 162, yPos);
+                    }
+                    doc.setTextColor(0, 0, 0);
+                } else if (reporteActual === 'devoluciones') {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(textLines, 22, yPos); 
+                    doc.text(String(d.idObra).substring(0, 20), 60, yPos);
+                    doc.text(`${d.bobinas.length} bobina(s)`, 110, yPos); 
+                    doc.text(new Date(d.fechaEntrega).toLocaleDateString(), 150, yPos);
+                } else {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(textLines, 22, yPos);
+                    doc.text(new Date(d.fecha).toLocaleDateString(), 75, yPos);
+                    doc.text(String(d.materialFaltante ? 'FALTANTE' : d.estado).toUpperCase(), 115, yPos); 
+                    doc.text(String(d.cuentaCargo || '').substring(0, 20), 155, yPos);
+                }
+                yPos += rowHeight;
+            });
+        }
+        
+        doc.save(`Reporte_${reporteActual}_${new Date().toISOString().split('T')[0]}.pdf`);
+        mostrarToast('✅ PDF Generado con éxito');
+    }, 100);
+}
+
+// ===== EVENT LISTENERS Y CERRADO DE MODALES =====
+function configurarEventListeners() {
+    document.getElementById('btnBuscar').addEventListener('click', abrirBuscador);
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarTab(btn.dataset.tab)));
+    
+    document.getElementById('btnNuevoAlbaran').addEventListener('click', () => document.getElementById('modalNuevoAlbaran').classList.add('active'));
+    document.getElementById('formNuevoAlbaran').addEventListener('submit', crearAlbaran);
+    
+    document.getElementById('btnEntradaCable').addEventListener('click', () => { document.getElementById('modalEntradaCable').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('btnNuevoCableInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoCable').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('formEntradaCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'entrada'); cerrarTodosLosModales(); });
+    document.getElementById('formNuevoCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'instalacion'); cerrarTodosLosModales(); });
+
+    document.getElementById('btnEntradaSubconducto').addEventListener('click', () => { document.getElementById('modalEntradaSubconducto').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('btnNuevoSubconductoInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoSubconducto').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('formEntradaSubconducto').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('subconducto', new FormData(e.target), 'entrada'); cerrarTodosLosModales(); });
+    document.getElementById('formNuevoSubconducto').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('subconducto', new FormData(e.target), 'instalacion'); cerrarTodosLosModales(); });
+
+    document.getElementById('btnNuevaDevolucion').addEventListener('click', () => { document.getElementById('modalNuevaDevolucion').classList.add('active'); inicializarBobinas(); establecerFechaActual(); });
+    document.getElementById('formNuevaDevolucion').addEventListener('submit', crearDevolucion);
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) { if (e.target === modal) cerrarTodosLosModales(); });
+    });
+}
+
+function cerrarTodosLosModales() { 
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); 
+    document.querySelectorAll('form').forEach(f => f.reset());
+}
+window.cerrarModal = cerrarTodosLosModales;
+window.cerrarModalCable = cerrarTodosLosModales;
+window.cerrarModalEntradaCable = cerrarTodosLosModales;
+window.cerrarModalSubconducto = cerrarTodosLosModales;
+window.cerrarModalEntradaSubconducto = cerrarTodosLosModales;
+window.cerrarModalDevolucion = cerrarTodosLosModales;
+window.cerrarModalRecepcion = cerrarTodosLosModales;
+window.cerrarModalBuscador = cerrarTodosLosModales;
+window.cerrarModalReportes = cerrarTodosLosModales;
+window.cerrarModalVerArchivo = () => { const m = document.getElementById('modalVerArchivo'); if(m) m.remove(); };
+
+function abrirModalRecepcion(id) {
+    albaranSeleccionado = albaranes.find(a => a.id === id);
+    document.getElementById('modalRecepcion').classList.add('active');
+    document.querySelector('input[name="estadoRecepcion"][value="completo"]').checked = true;
+    document.getElementById('materialFaltante').value = '';
+    toggleDetalleFaltante();
+}
+
+function toggleDetalleFaltante() {
+    const val = document.querySelector('input[name="estadoRecepcion"]:checked').value;
+    document.getElementById('detalleFaltante').style.display = val === 'incompleto' ? 'block' : 'none';
+    document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+    document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
+}
+
+function confirmarRecepcion() {
+    if(!albaranSeleccionado) return;
+    const estado = document.querySelector('input[name="estadoRecepcion"]:checked').value;
+    const faltante = document.getElementById('materialFaltante').value;
+    if(estado === 'incompleto' && !faltante.trim()) return mostrarToast('❌ Por favor especifica el material faltante');
+
+    albaranSeleccionado.estado = 'recibido';
+    albaranSeleccionado.materialFaltante = estado === 'incompleto' ? faltante : null;
+    guardarTodosLosDatos(); mostrarToast('✅ Recepción completada');
+}
+
+function marcarFaltanteRecibido(id) {
+    if(confirm('¿Confirmas que el material faltante ya ha sido recibido?')) {
+        const a = albaranes.find(x => x.id === id);
+        if(a) { a.materialFaltante = null; guardarTodosLosDatos(); }
+    }
+}
+
+function eliminarAlbaran(id) {
+    if(confirm('¿Eliminar albarán permanentemente?')) { 
+        albaranes = albaranes.filter(a=>a.id!==id); 
+        guardarTodosLosDatos(); 
+    }
+}
+
+function eliminarMaterial(tipo, id) {
+    if(confirm('¿Eliminar registro permanentemente?')) {
+        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); else subconductos = subconductos.filter(s=>s.id!==id);
+        guardarTodosLosDatos(); 
+    }
+}
+
+function establecerFechaActual() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = hoy; });
+}
+
+function mostrarToast(mensaje) {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = mensaje;
+    container.appendChild(t);
+    setTimeout(() => { if (t.parentNode) t.remove(); }, 4000);
+}
+
+// Exponer funciones necesarias al entorno global para el HTML
+window.exportarDatos = exportarDatos;
+window.abrirImportar = abrirImportar;
+window.crearAlbaran = crearAlbaran;
+window.abrirModalRecepcion = abrirModalRecepcion;
+window.toggleDetalleFaltante = toggleDetalleFaltante;
+window.confirmarRecepcion = confirmarRecepcion;
+window.marcarFaltanteRecibido = marcarFaltanteRecibido;
+window.eliminarAlbaran = eliminarAlbaran;
+window.verArchivoAlbaran = verArchivoAlbaran;
+window.descargarArchivo = descargarArchivo;
+window.eliminarMaterial = eliminarMaterial;
+window.eliminarBobina = eliminarBobina;
+window.toggleCamposMaterial = toggleCamposMaterial;
+window.agregarBobina = agregarBobina;
+window.crearDevolucion = crearDevolucion;
+window.eliminarDevolucion = eliminarDevolucion;
+window.buscarEnTiempoReal = buscarEnTiempoReal;
+window.iniciarGeneracionReporte = iniciarGeneracionReporte;
+window.abrirModalReportes = abrirModalReportes;
