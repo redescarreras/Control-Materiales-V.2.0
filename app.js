@@ -64,8 +64,6 @@ const CABLE_OPTIONS_HTML = `
     <option value="Cable de f.o. de exterior riser de 32 fo.">Cable de f.o. de exterior riser de 32 fo.</option>
 `;
 
-// ===== Helper para arrays de Firebase =====
-// Firebase a veces devuelve objetos en lugar de arrays si hay huecos. Esto lo previene.
 function parsearDatosNube(data) {
     if (!data) return [];
     if (Array.isArray(data)) return data.filter(item => item !== null);
@@ -74,8 +72,8 @@ function parsearDatosNube(data) {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    migrarDatosLocalesALaNube(); // Solo se ejecuta si hay datos viejos atrapados localmente
-    conectarConNube(); // Sincronización en tiempo real
+    migrarDatosLocalesALaNube();
+    conectarConNube(); 
     
     configurarEventListeners();
     establecerFechaActual();
@@ -84,7 +82,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tipoCableEntrada').innerHTML = CABLE_OPTIONS_HTML;
 });
 
-// Rescata tus datos del localStorage y los sube a Firebase la primera vez
 function migrarDatosLocalesALaNube() {
     const albLocal = localStorage.getItem('albaranes');
     if (albLocal) {
@@ -101,24 +98,11 @@ function migrarDatosLocalesALaNube() {
     }
 }
 
-// Escucha cambios en Firebase en Tiempo Real
 function conectarConNube() {
-    db.ref('albaranes').on('value', (snapshot) => {
-        albaranes = parsearDatosNube(snapshot.val());
-        actualizarUI();
-    });
-    db.ref('cables').on('value', (snapshot) => {
-        cables = parsearDatosNube(snapshot.val());
-        actualizarUI();
-    });
-    db.ref('subconductos').on('value', (snapshot) => {
-        subconductos = parsearDatosNube(snapshot.val());
-        actualizarUI();
-    });
-    db.ref('devoluciones').on('value', (snapshot) => {
-        devoluciones = parsearDatosNube(snapshot.val());
-        actualizarUI();
-    });
+    db.ref('albaranes').on('value', (snapshot) => { albaranes = parsearDatosNube(snapshot.val()); actualizarUI(); });
+    db.ref('cables').on('value', (snapshot) => { cables = parsearDatosNube(snapshot.val()); actualizarUI(); });
+    db.ref('subconductos').on('value', (snapshot) => { subconductos = parsearDatosNube(snapshot.val()); actualizarUI(); });
+    db.ref('devoluciones').on('value', (snapshot) => { devoluciones = parsearDatosNube(snapshot.val()); actualizarUI(); });
 }
 
 function actualizarUI() {
@@ -137,18 +121,15 @@ function guardarTodosLosDatos() {
         db.ref('subconductos').set(subconductos);
         db.ref('devoluciones').set(devoluciones);
     } catch (e) {
-        console.error("Error guardando en la Nube", e);
         mostrarToast('❌ Error sincronizando con Firebase');
     }
 }
 
-// ===== NAVEGACIÓN Y CONTADORES =====
 function cambiarTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(`tab-${tab}`)?.classList.add('active');
-
     actualizarUI();
 }
 
@@ -169,7 +150,6 @@ function actualizarContadores() {
 
 function irAElemento(tab, id) {
     cerrarTodosLosModales();
-    
     if (tab === 'albaran') {
         const alb = albaranes.find(a => a.id === id);
         if (alb) {
@@ -178,26 +158,15 @@ function irAElemento(tab, id) {
             else tab = 'recibidos';
         }
     }
-    
     cambiarTab(tab);
-    
     setTimeout(() => {
         const card = document.getElementById(`card-${id}`);
         if (card) {
             const gridContenedor = card.closest('.albaranes-grid');
-            if (gridContenedor && gridContenedor.style.display === 'none') {
-                gridContenedor.style.display = 'grid';
-            }
+            if (gridContenedor && gridContenedor.style.display === 'none') gridContenedor.style.display = 'grid';
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            card.style.transition = "all 0.5s ease";
-            card.style.boxShadow = "0 0 0 4px var(--primary-500)";
-            card.style.transform = "scale(1.02)";
-            
-            setTimeout(() => {
-                card.style.boxShadow = "var(--shadow-md)";
-                card.style.transform = "none";
-            }, 2000);
+            card.style.transition = "all 0.5s ease"; card.style.boxShadow = "0 0 0 4px var(--primary-500)"; card.style.transform = "scale(1.02)";
+            setTimeout(() => { card.style.boxShadow = "var(--shadow-md)"; card.style.transform = "none"; }, 2000);
         }
     }, 150);
 }
@@ -225,11 +194,16 @@ function crearAlbaran(e) {
 function finalizarCreacionAlbaran(formData, archivoInfo) {
     albaranes.push({
         id: `ALB-${Date.now().toString().slice(-6)}`,
-        idObra: formData.get('idObra'), fecha: formData.get('fecha'),
-        cuentaCargo: formData.get('cuentaCargo'), tipoInstalacion: formData.get('tipoInstalacion'),
-        estado: 'pendiente', materialFaltante: null, archivo: archivoInfo
+        idObra: formData.get('idObra'), 
+        fecha: formData.get('fecha'),
+        cuentaCargo: formData.get('cuentaCargo'), 
+        tipoInstalacion: formData.get('tipoInstalacion'),
+        observaciones: formData.get('observaciones') || '', // GUARDAMOS OBSERVACIÓN AQUÍ
+        estado: 'pendiente', 
+        materialFaltante: null, 
+        archivo: archivoInfo
     });
-    guardarTodosLosDatos(); cerrarTodosLosModales(); 
+    guardarTodosLosDatos(); cerrarTodosLosModales();
     mostrarToast('✅ Albarán creado en la Nube');
 }
 
@@ -269,6 +243,7 @@ function mostrarAlbaranes() {
                 <div class="info-row"><span class="info-label">Obra:</span><span class="info-value">${a.idObra}</span></div>
                 <div class="info-row"><span class="info-label">Fecha:</span><span class="info-value">${new Date(a.fecha).toLocaleDateString()}</span></div>
                 ${a.materialFaltante ? `<div class="info-row" style="color:var(--system-red); font-size:12px; margin-top:10px;"><b>Falta:</b> ${a.materialFaltante}</div>` : ''}
+                ${a.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary); background: var(--bg-system); padding: 6px; border-radius: 6px;"><em>📝 Obs: ${a.observaciones}</em></div>` : ''}
             </div>
             ${actions}
         </div>`;
@@ -282,13 +257,14 @@ function agregarMaterial(tipo, formData, accion) {
 
     const material = {
         id: `${tipo==='cable'?'CAB':'SUB'}-${Date.now().toString().slice(-6)}`,
-        tipoMaterial: tipo, idObra: formData.get('idObra'),
+        tipoMaterial: tipo, 
+        idObra: formData.get('idObra') || 'No especificada', // RECOGE EL ID DE OBRA DE ENTRADAS
         tipoCable: formData.get('tipoCable') || formData.get('tipoSubconducto'),
         metros: metrosInput, accion: accion, fecha: formData.get('fecha')
     };
 
     if (tipo === 'cable') cables.push(material); else subconductos.push(material);
-    guardarTodosLosDatos(); 
+    guardarTodosLosDatos();
     mostrarToast(`✅ ${tipo==='cable'?'Cable':'Subconducto'} guardado en la Nube`);
 }
 
@@ -556,7 +532,7 @@ function eliminarDevolucion(id) {
     if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
 }
 
-// ===== EXCEL PREVIEW =====
+// ===== EXCEL PREVIEW CON FILTRO =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
     if(!a || !a.archivo || !a.archivo.base64) return mostrarToast('❌ Sin archivo adjunto');
@@ -689,7 +665,7 @@ function buscarEnTiempoReal() {
     container.innerHTML = html;
 }
 
-// ===== EXPORTAR / IMPORTAR =====
+// ===== EXPORTAR / IMPORTAR DATOS =====
 function exportarDatos() {
     try {
         const datos = { timestamp: new Date().toISOString(), albaranes, cables, subconductos, devoluciones };
@@ -951,6 +927,8 @@ function mostrarToast(mensaje) {
 }
 
 // Exponer funciones necesarias al entorno global para el HTML
+window.exportarDatos = exportarDatos;
+window.abrirImportar = abrirImportar;
 window.crearAlbaran = crearAlbaran;
 window.abrirModalRecepcion = abrirModalRecepcion;
 window.toggleDetalleFaltante = toggleDetalleFaltante;
@@ -968,5 +946,3 @@ window.eliminarDevolucion = eliminarDevolucion;
 window.buscarEnTiempoReal = buscarEnTiempoReal;
 window.iniciarGeneracionReporte = iniciarGeneracionReporte;
 window.abrirModalReportes = abrirModalReportes;
-window.exportarDatos = exportarDatos;
-window.abrirImportar = abrirImportar;

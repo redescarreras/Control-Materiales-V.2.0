@@ -277,6 +277,402 @@
         <div class="modal-content">
             <div class="modal-header"><h2>Registrar Entrada de Cable</h2><button class="modal-close" onclick="cerrarModalEntradaCable()">&times;</button></div>
             <form id="formEntradaCable" class="modal-body">
+                <div class="form-group"><label>ID de Obra / Origen *</label><input type="text" name="idObra" required placeholder="Ej: Almacén o Albarán N°"></div>
+                <div class="form-group">
+                    <label>Tipo de Cable *</label>
+                    <select id="tipoCableEntrada" name="tipoCable" required></select>
+                </div>
+                <div class="form-group"><label>Metros *</label><input type="number" name="metros" required min="0.1" step="0.1"></div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="fechaCableEntrada" name="fecha"></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalEntradaCable()">Cancelar</button><button type="submit" class="btn btn-success">Registrar Entrada</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalNuevoSubconducto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Registrar Subconducto Instalado</h2><button class="modal-close" onclick="cerrarModalSubconducto()">&times;</button></div>
+            <form id="formNuevoSubconducto" class="modal-body">
+                <div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div>
+                <div class="form-group">
+                    <label>Tipo de Subconducto *</label>
+                    <select name="tipoSubconducto" required>
+                        <option value="">Seleccionar...</option><option value="Subconducto 32mm">Subconducto 32mm</option><option value="Subconducto 40mm">Subconducto 40mm</option><option value="Subconducto 63mm">Subconducto 63mm</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Metros *</label><input type="number" name="metros" required min="0.1" step="0.1"></div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="fechaSubconducto" name="fecha"></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalSubconducto()">Cancelar</button><button type="submit" class="btn btn-warning">Registrar Instalado</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalEntradaSubconducto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Registrar Entrada de Subconducto</h2><button class="modal-close" onclick="cerrarModalEntradaSubconducto()">&times;</button></div>
+            <form id="formEntradaSubconducto" class="modal-body">
+                <div class="form-group"><label>ID de Obra / Origen *</label><input type="text" name="idObra" required placeholder="Ej: Almacén o Albarán N°"></div>
+                <div class="form-group">
+                    <label>Tipo de Subconducto *</label>
+                    <select name="tipoSubconducto" required>
+                        <option value="">Seleccionar...</option><option value="Subconducto 32mm">Subconducto 32mm</option><option value="Subconducto 40mm">Subconducto 40mm</option><option value="Subconducto 63mm">Subconducto 63mm</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Metros *</label><input type="number" name="metros" required min="0.1" step="0.1"></div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="fechaSubconductoEntrada" name="fecha"></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalEntradaSubconducto()">Cancelar</button><button type="submit" class="btn btn-success">Registrar Entrada</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalNuevaDevolucion" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header"><h2>Registrar Devolución</h2><button class="modal-close" onclick="cerrarModalDevolucion()">&times;</button></div>
+            <form id="formNuevaDevolucion" class="modal-body">
+                <div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div>
+                <div class="form-group"><label>Fecha de Entrega *</label><input type="date" id="fechaDevolucion" name="fecha" required></div>
+                <div class="form-group">
+                    <label>Tipo de Instalación *</label>
+                    <select name="tipoInstalacion" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="FTTH">FTTH</option>
+                        <option value="FTTN">FTTN</option>
+                        <option value="TESA">TESA</option>
+                        <option value="Lyntia">Lyntia</option>
+                    </select>
+                </div>
+
+                <div class="bobinas-container" id="bobinasContainer">
+                    </div>
+
+                <div class="form-group">
+                    <button type="button" class="btn btn-secondary" onclick="agregarBobina()">+ Añadir otra bobina</button>
+                </div>
+
+                <div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="3"></textarea></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalDevolucion()">Cancelar</button><button type="submit" class="btn btn-primary">Registrar Devolución</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js"></script>
+    
+    <script>
+        let eventoInstalacion = null;
+        const btnInstalar = document.getElementById('btnInstalarApp');
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js').then(function(reg) {
+                    console.log('Service Worker Registrado!');
+                }).catch(function(err) {
+                    console.log('Fallo el Service Worker:', err);
+                });
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); 
+            eventoInstalacion = e; 
+            btnInstalar.style.display = 'inline-flex'; 
+        });
+
+        btnInstalar.addEventListener('click', async () => {
+            if (eventoInstalacion) {
+                eventoInstalacion.prompt(); 
+                const { outcome } = await eventoInstalacion.userChoice;
+                if (outcome === 'accepted') {
+                    btnInstalar.style.display = 'none'; 
+                }
+                eventoInstalacion = null;
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            btnInstalar.style.display = 'none';
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>Control de Materiales - Redes Carreras</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Materiales">
+    <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="logo-redes_Transparente-216x216.png" alt="Redes Carreras S.L." class="logo">
+                <div class="company-info">
+                    <h1 style="display:flex; align-items:center; gap:8px;">Materiales <span id="estado-nube" style="font-size:12px; color:var(--system-green); background:rgba(52,199,89,0.1); padding:2px 8px; border-radius:10px;">☁️ Conectado</span></h1>
+                    <p class="subtitle">Redes Carreras S.L.</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btnBuscar" class="btn btn-icon btn-glass" title="Buscar">🔍</button>
+                <button id="btnExportar" class="btn btn-icon btn-glass" title="Exportar Backup Local" onclick="exportarDatos()">📤</button>
+                <button id="btnImportar" class="btn btn-icon btn-glass" title="Importar Backup" onclick="abrirImportar()">📥</button>
+                
+                <button id="btnInstalarApp" class="btn btn-secondary" style="display: none; background-color: var(--text-primary); color: white;">
+                    📲 Instalar App
+                </button>
+
+                <button id="btnNuevoAlbaran" class="btn btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Nuevo Albarán
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="tabs-wrapper">
+                <div class="tabs-container">
+                    <button class="tab-btn active" data-tab="pendientes">📋 Pendientes <span id="count-pendientes" class="count-badge">0</span></button>
+                    <button class="tab-btn" data-tab="recibidos">✅ Recibidos <span id="count-recibidos" class="count-badge">0</span></button>
+                    <button class="tab-btn" data-tab="faltantes">⚠️ Faltante <span id="count-faltantes" class="count-badge">0</span></button>
+                    <button class="tab-btn" data-tab="cables">🔌 Cable <span id="count-cables" class="count-badge">0</span></button>
+                    <button class="tab-btn" data-tab="subconductos">🛡️ Subconducto <span id="count-subconductos" class="count-badge">0</span></button>
+                    <button class="tab-btn" data-tab="devoluciones">↩️ Devoluciones <span id="count-devoluciones" class="count-badge">0</span></button>
+                    <button class="tab-btn" data-tab="reportes">📊 Reportes</button>
+                </div>
+            </div>
+
+            <div id="tab-content">
+                <div id="tab-pendientes" class="tab-content active">
+                    <div class="tab-header"><h2>Pendientes de Recibir</h2><p class="tab-description">Albaranes esperando confirmación de entrega.</p></div>
+                    <div id="lista-pendientes" class="albaranes-grid"></div>
+                </div>
+
+                <div id="tab-recibidos" class="tab-content">
+                    <div class="tab-header"><h2>Albaranes Recibidos</h2><p class="tab-description">Historial de entregas completadas con éxito.</p></div>
+                    <div id="lista-recibidos" class="albaranes-grid"></div>
+                </div>
+
+                <div id="tab-faltantes" class="tab-content">
+                    <div class="tab-header"><h2>Material Faltante</h2><p class="tab-description">Albaranes registrados con incidencias de material.</p></div>
+                    <div id="lista-faltantes" class="albaranes-grid"></div>
+                </div>
+
+                <div id="tab-cables" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Control de Cable</h2>
+                        <div class="tab-actions">
+                            <button id="btnEntradaCable" class="btn btn-success">+ Entrada (Recibido)</button>
+                            <button id="btnNuevoCableInstalacion" class="btn btn-warning">+ Instalado (Salida)</button>
+                        </div>
+                    </div>
+                    <div class="stock-grid">
+                        <div class="stock-card"><div class="stock-icon">📥</div><div class="stock-info"><span class="stock-label">Recibidos</span><span class="stock-number" id="cable-recibido">0</span></div></div>
+                        <div class="stock-card"><div class="stock-icon">🔧</div><div class="stock-info"><span class="stock-label">Instalados</span><span class="stock-number" id="cable-instalado">0</span></div></div>
+                        <div class="stock-card stock-card-highlight"><div class="stock-icon">✅</div><div class="stock-info"><span class="stock-label">Disponibles</span><span class="stock-number" id="cable-disponible">0</span></div></div>
+                    </div>
+                    <div id="lista-cables" class="albaranes-grid"></div>
+                </div>
+
+                <div id="tab-subconductos" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Control de Subconducto</h2>
+                        <div class="tab-actions">
+                            <button id="btnEntradaSubconducto" class="btn btn-success">+ Entrada (Recibido)</button>
+                            <button id="btnNuevoSubconductoInstalacion" class="btn btn-warning">+ Instalado (Salida)</button>
+                        </div>
+                    </div>
+                    <div class="stock-grid">
+                        <div class="stock-card"><div class="stock-icon">📥</div><div class="stock-info"><span class="stock-label">Recibidos</span><span class="stock-number" id="subconducto-recibido">0</span></div></div>
+                        <div class="stock-card"><div class="stock-icon">🔧</div><div class="stock-info"><span class="stock-label">Instalados</span><span class="stock-number" id="subconducto-instalado">0</span></div></div>
+                        <div class="stock-card stock-card-highlight"><div class="stock-icon">✅</div><div class="stock-info"><span class="stock-label">Disponibles</span><span class="stock-number" id="subconducto-disponible">0</span></div></div>
+                    </div>
+                    <div id="lista-subconductos" class="albaranes-grid"></div>
+                </div>
+
+                <div id="tab-devoluciones" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Control de Devoluciones</h2>
+                        <div class="tab-actions">
+                            <button id="btnNuevaDevolucion" class="btn btn-primary">+ Nueva Devolución</button>
+                        </div>
+                    </div>
+                    <div id="lista-devoluciones" class="albaranes-grid"></div>
+                </div>
+
+                <div id="tab-reportes" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Reportes y Exportación</h2>
+                        <p class="tab-description">Genera documentos PDF listos para compartir.</p>
+                    </div>
+                    <div class="reportes-grid">
+                        <div class="reporte-card"><div class="reporte-icon">📋</div><h3>Pendientes</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('pendientes')">Generar PDF</button></div>
+                        <div class="reporte-card"><div class="reporte-icon">✅</div><h3>Recibidos</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('recibidos')">Generar PDF</button></div>
+                        <div class="reporte-card"><div class="reporte-icon">⚠️</div><h3>Faltantes</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('faltantes')">Generar PDF</button></div>
+                        <div class="reporte-card"><div class="reporte-icon">📊</div><h3>Completo</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('completo')">Generar PDF</button></div>
+                        <div class="reporte-card"><div class="reporte-icon">🔌</div><h3>Cables</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('cables')">Generar PDF</button></div>
+                        <div class="reporte-card"><div class="reporte-icon">🛡️</div><h3>Subconductos</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('subconductos')">Generar PDF</button></div>
+                        <div class="reporte-card"><div class="reporte-icon">↩️</div><h3>Devoluciones</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('devoluciones')">Generar PDF</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalNuevoAlbaran" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nuevo Albarán</h2>
+                <button class="modal-close" onclick="cerrarModal()">&times;</button>
+            </div>
+            <form id="formNuevoAlbaran" class="modal-body">
+                <div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div>
+                <div class="form-group"><label>Fecha *</label><input type="date" id="fecha" name="fecha" required></div>
+                <div class="form-group"><label>Cuenta de Cargo *</label><input type="text" name="cuentaCargo" required></div>
+                <div class="form-group">
+                    <label>Tipo de Instalación *</label>
+                    <select name="tipoInstalacion" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="FTTH">FTTH</option>
+                        <option value="FTTN">FTTN</option>
+                        <option value="TESA">TESA</option>
+                        <option value="Lyntia">Lyntia</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Jefe de Obra</label><input type="text" name="jefeObra"></div>
+                <div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2"></textarea></div>
+                <div class="form-group">
+                    <label>Archivo del Albarán (Excel/PDF)</label>
+                    <input type="file" id="archivoAlbaran" name="archivoAlbaran" accept=".pdf,.xlsx,.xls">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Albarán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalRecepcion" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirmar Recepción</h2>
+                <button class="modal-close" onclick="cerrarModalRecepcion()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="recepcion-options">
+                    <label class="radio-option selected" id="lbl-completo">
+                        <input type="radio" name="estadoRecepcion" value="completo" checked onchange="toggleDetalleFaltante()">
+                        <div class="radio-content">
+                            <div style="font-size: 28px; margin-bottom: 8px;">✅</div>
+                            <strong>Entregado Correcto</strong>
+                            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Material coincide con el albarán</p>
+                        </div>
+                    </label>
+                    <label class="radio-option" id="lbl-incompleto">
+                        <input type="radio" name="estadoRecepcion" value="incompleto" onchange="toggleDetalleFaltante()">
+                        <div class="radio-content">
+                            <div style="font-size: 28px; margin-bottom: 8px;">⚠️</div>
+                            <strong>Faltó Material</strong>
+                            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Registrar material faltante</p>
+                        </div>
+                    </label>
+                </div>
+                <div id="detalleFaltante" class="form-group" style="display: none; margin-top: 20px; animation: fadeIn 0.3s ease;">
+                    <label>Detalle del Material Faltante</label>
+                    <textarea id="materialFaltante" rows="3" placeholder="Ej: Faltan 2 bobinas de 16fo..."></textarea>
+                </div>
+                <div class="form-actions" style="margin-top: 24px;">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalRecepcion()">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="confirmarRecepcion()">Confirmar Estado</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalBuscador" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔍 Buscar Obra</h2>
+                <button class="modal-close" onclick="cerrarModalBuscador()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" id="buscarObra" placeholder="Ingresa el ID de obra a buscar..." oninput="buscarEnTiempoReal()" autocomplete="off">
+                </div>
+                <div id="resultados-busqueda" style="max-height: 50vh; overflow-y: auto;">
+                    <div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalReportes" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Opciones de Reporte</h2>
+                <button class="modal-close" onclick="cerrarModalReportes()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Rango de fechas:</label>
+                    <select id="filtroFechaReporte" onchange="document.getElementById('rangoFechasReporte').style.display = this.value === 'rango' ? 'block' : 'none'">
+                        <option value="todo">Todo el historial</option>
+                        <option value="rango">Fechas específicas</option>
+                    </select>
+                </div>
+                <div id="rangoFechasReporte" style="display: none;">
+                    <div class="form-group"><label>Desde:</label><input type="date" id="fechaDesdeReporte"></div>
+                    <div class="form-group"><label>Hasta:</label><input type="date" id="fechaHastaReporte"></div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="cerrarModalReportes()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="iniciarGeneracionReporte()">Descargar PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="opcionesCable">
+        </datalist>
+
+    <div id="modalNuevoCable" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Registrar Cable Instalado</h2><button class="modal-close" onclick="cerrarModalCable()">&times;</button></div>
+            <form id="formNuevoCable" class="modal-body">
+                <div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div>
+                <div class="form-group">
+                    <label>Tipo de Cable *</label>
+                    <select id="tipoCableInstalacion" name="tipoCable" required></select>
+                </div>
+                <div class="form-group"><label>Metros *</label><input type="number" name="metros" required min="0.1" step="0.1"></div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="fechaCable" name="fecha"></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalCable()">Cancelar</button><button type="submit" class="btn btn-warning">Registrar Instalado</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalEntradaCable" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Registrar Entrada de Cable</h2><button class="modal-close" onclick="cerrarModalEntradaCable()">&times;</button></div>
+            <form id="formEntradaCable" class="modal-body">
                 <div class="form-group">
                     <label>Tipo de Cable *</label>
                     <select id="tipoCableEntrada" name="tipoCable" required></select>
