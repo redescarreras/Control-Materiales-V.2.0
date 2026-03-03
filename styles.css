@@ -100,9 +100,9 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .albaran-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; border-top: 1px solid var(--bg-system); padding-top: 16px; }
 .albaran-actions .btn { flex: 1 1 calc(50% - 4px); padding: 10px; font-size: 13px; border-radius: 10px; }
 
-/* ===== COLORES PARA MATERIALES (ENTRADA VS INSTALADO) ===== */
+/* ===== COLORES PARA MATERIALES (CORREGIDO: Instalado ahora es ROJO) ===== */
 .card-entrada { border-left: 6px solid var(--system-green) !important; background: linear-gradient(90deg, rgba(52,199,89,0.05) 0%, var(--bg-card) 10%); }
-.card-instalacion { border-left: 6px solid var(--system-orange) !important; background: linear-gradient(90deg, rgba(255,149,0,0.05) 0%, var(--bg-card) 10%); }
+.card-instalacion { border-left: 6px solid var(--system-red) !important; background: linear-gradient(90deg, rgba(255,59,48,0.05) 0%, var(--bg-card) 10%); }
 
 /* ===== REPORTES GRID ===== */
 .reportes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
@@ -168,17 +168,24 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 
 .campos-bobina { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 .campos-bobina .form-group { margin-bottom: 0; }
-
-@media (max-width: 768px) {
-  .header-content { flex-direction: column; gap: 12px; }
-  .header-actions { width: 100%; justify-content: center; }
-  .albaran-actions .btn { flex: 1 1 100%; }
-  .recepcion-options { grid-template-columns: 1fr; }
-}
-
-/* Checkbox personalizado para Bobinas */
 .checkbox-label { display: flex !important; align-items: center; cursor: pointer; font-weight: 500 !important; margin-bottom: 0 !important; }
 .checkbox-label input[type="checkbox"] { display: none; }
 .checkbox-custom { width: 22px; height: 22px; border: 2px solid var(--text-tertiary); border-radius: 6px; margin-right: 10px; position: relative; background: var(--bg-card); transition: all 0.2s; }
 .checkbox-label input[type="checkbox"]:checked + .checkbox-custom { background: var(--primary-500); border-color: var(--primary-500); }
 .checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 14px; font-weight: bold; }
+
+/* ===== MEDIA QUERIES ===== */
+@media (max-width: 768px) {
+  .header-content { flex-direction: row; padding: 10px 16px; justify-content: space-between; }
+  .logo-container .subtitle { display: none; } 
+  .company-info h1 { font-size: 16px; }
+  .logo { width: 36px; height: 36px; }
+  
+  .hide-mobile { display: none; }
+  .header-actions { width: auto; gap: 4px; }
+  .btn { padding: 8px 12px; }
+  .btn-icon { width: 36px; height: 36px; padding: 6px; font-size: 16px; }
+  
+  .albaran-actions .btn { flex: 1 1 100%; }
+  .recepcion-options { grid-template-columns: 1fr; }
+}

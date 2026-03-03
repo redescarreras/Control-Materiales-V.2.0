@@ -18,7 +18,7 @@ let albaranes = []; let albaranSeleccionado = null;
 let cables = []; let subconductos = []; let devoluciones = [];
 let reporteActual = '';
 
-// Lista global de Opciones de Cable para llenar los <select> automáticamente
+// Lista global de Opciones de Cable
 const CABLE_OPTIONS_HTML = `
     <option value="">Seleccionar...</option>
     <option value="Cable de f.o. de exterior PKP holgado de 8 fo.">Cable de f.o. de exterior PKP holgado de 8 fo.</option>
@@ -72,7 +72,7 @@ function parsearDatosNube(data) {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    migrarDatosLocalesALaNube();
+    migrarDatosLocalesALaNube(); 
     conectarConNube(); 
     
     configurarEventListeners();
@@ -87,7 +87,6 @@ function migrarDatosLocalesALaNube() {
     if (albLocal) {
         db.ref('albaranes').once('value', (snapshot) => {
             if (!snapshot.exists()) {
-                console.log("Subiendo backup local a la nube...");
                 db.ref('albaranes').set(JSON.parse(albLocal));
                 db.ref('cables').set(JSON.parse(localStorage.getItem('cables') || '[]'));
                 db.ref('subconductos').set(JSON.parse(localStorage.getItem('subconductos') || '[]'));
@@ -121,6 +120,7 @@ function guardarTodosLosDatos() {
         db.ref('subconductos').set(subconductos);
         db.ref('devoluciones').set(devoluciones);
     } catch (e) {
+        console.error("Error guardando en la Nube", e);
         mostrarToast('❌ Error sincronizando con Firebase');
     }
 }
@@ -163,7 +163,9 @@ function irAElemento(tab, id) {
         const card = document.getElementById(`card-${id}`);
         if (card) {
             const gridContenedor = card.closest('.albaranes-grid');
-            if (gridContenedor && gridContenedor.style.display === 'none') gridContenedor.style.display = 'grid';
+            if (gridContenedor && gridContenedor.style.display === 'none') {
+                gridContenedor.style.display = 'grid';
+            }
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             card.style.transition = "all 0.5s ease"; card.style.boxShadow = "0 0 0 4px var(--primary-500)"; card.style.transform = "scale(1.02)";
             setTimeout(() => { card.style.boxShadow = "var(--shadow-md)"; card.style.transform = "none"; }, 2000);
@@ -194,16 +196,12 @@ function crearAlbaran(e) {
 function finalizarCreacionAlbaran(formData, archivoInfo) {
     albaranes.push({
         id: `ALB-${Date.now().toString().slice(-6)}`,
-        idObra: formData.get('idObra'), 
-        fecha: formData.get('fecha'),
-        cuentaCargo: formData.get('cuentaCargo'), 
-        tipoInstalacion: formData.get('tipoInstalacion'),
-        observaciones: formData.get('observaciones') || '', // GUARDAMOS OBSERVACIÓN AQUÍ
-        estado: 'pendiente', 
-        materialFaltante: null, 
-        archivo: archivoInfo
+        idObra: formData.get('idObra'), fecha: formData.get('fecha'),
+        cuentaCargo: formData.get('cuentaCargo'), tipoInstalacion: formData.get('tipoInstalacion'),
+        observaciones: formData.get('observaciones') || '',
+        estado: 'pendiente', materialFaltante: null, archivo: archivoInfo
     });
-    guardarTodosLosDatos(); cerrarTodosLosModales();
+    guardarTodosLosDatos(); cerrarTodosLosModales(); 
     mostrarToast('✅ Albarán creado en la Nube');
 }
 
@@ -255,23 +253,42 @@ function agregarMaterial(tipo, formData, accion) {
     const metrosInput = parseFloat(formData.get('metros'));
     if (isNaN(metrosInput) || metrosInput <= 0) return mostrarToast('❌ Los metros deben ser mayor a 0');
 
+    // GUARDAR OBSERVACIÓN DEL FORMULARIO DE MATERIAL
     const material = {
         id: `${tipo==='cable'?'CAB':'SUB'}-${Date.now().toString().slice(-6)}`,
         tipoMaterial: tipo, 
-        idObra: formData.get('idObra') || 'No especificada', // RECOGE EL ID DE OBRA DE ENTRADAS
+        idObra: formData.get('idObra') || 'No especificada', 
         tipoCable: formData.get('tipoCable') || formData.get('tipoSubconducto'),
-        metros: metrosInput, accion: accion, fecha: formData.get('fecha')
+        metros: metrosInput, 
+        accion: accion, 
+        fecha: formData.get('fecha'),
+        observaciones: formData.get('observaciones') || '', // <--- AÑADIDO
+        solicitado: false 
     };
 
     if (tipo === 'cable') cables.push(material); else subconductos.push(material);
-    guardarTodosLosDatos();
+    guardarTodosLosDatos(); 
     mostrarToast(`✅ ${tipo==='cable'?'Cable':'Subconducto'} guardado en la Nube`);
 }
+
+function marcarSubconductoSolicitado(id) {
+    const material = subconductos.find(s => s.id === id);
+    if (material) {
+        material.solicitado = true;
+        guardarTodosLosDatos();
+        mostrarMateriales('subconducto');
+        mostrarToast('✅ Subconducto marcado como solicitado');
+    }
+}
+window.marcarSubconductoSolicitado = marcarSubconductoSolicitado;
 
 function calcularStock(tipo) {
     const arr = tipo === 'cable' ? cables : subconductos;
     let rec = 0, inst = 0;
-    arr.forEach(m => { if(m.accion==='entrada') rec+=m.metros; else if(m.accion==='instalacion') inst+=m.metros; });
+    arr.forEach(m => { 
+        if(m.accion==='entrada') rec+=m.metros; 
+        else if(m.accion==='instalacion') inst+=m.metros; 
+    });
     return { recibido: rec, instalado: inst, disponible: rec - inst };
 }
 
@@ -344,23 +361,40 @@ function mostrarMateriales(tipo) {
             <div class="albaranes-grid" style="display:none; padding:16px;">
                 ${g.items.map(m => {
                     const isEntrada = m.accion === 'entrada';
+                    const isInstalacion = m.accion === 'instalacion';
+                    const isSolicitado = m.solicitado === true;
+
                     const cardClass = isEntrada ? 'card-entrada' : 'card-instalacion';
                     const icon = isEntrada ? '📥' : '🔧';
                     const label = isEntrada ? 'ENTRADA' : 'INSTALADO';
-                    const badgeColor = isEntrada ? 'var(--system-green)' : 'var(--system-orange)';
-                    const badgeBg = isEntrada ? 'rgba(52,199,89,0.1)' : 'rgba(255,149,0,0.1)';
+                    const badgeColor = isEntrada ? 'var(--system-green)' : 'var(--system-red)';
+                    const badgeBg = isEntrada ? 'rgba(52,199,89,0.1)' : 'rgba(255, 59, 48, 0.1)';
 
+                    let badgesHtml = `<b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b>`;
+                    if (tipo === 'subconducto' && isInstalacion && isSolicitado) {
+                        badgesHtml += `<b style="font-size:12px; color:var(--system-orange); background:rgba(255,149,0,0.1); padding: 4px 8px; border-radius: 6px; margin-left: 8px;">📦 SOLICITADO</b>`;
+                    }
+
+                    let actionBtns = '';
+                    if (tipo === 'subconducto' && isInstalacion && !isSolicitado) {
+                        actionBtns += `<button class="btn btn-warning w-100" style="margin-top:12px; padding:8px; font-size: 13px;" onclick="marcarSubconductoSolicitado('${m.id}')">📦 Marcar Solicitado</button>`;
+                    }
+                    const marginTopEliminar = (tipo === 'subconducto' && isInstalacion && !isSolicitado) ? '8px' : '12px';
+                    actionBtns += `<button class="btn btn-secondary w-100" style="margin-top:${marginTopEliminar}; padding:8px; font-size: 13px; background: var(--bg-system);" onclick="eliminarMaterial('${tipo}','${m.id}')">🗑️ Eliminar Registro</button>`;
+
+                    // MOSTRAR OBSERVACIÓN EN LA TARJETA
                     return `
                     <div class="albaran-card ${cardClass}" id="card-${m.id}" style="box-shadow:var(--shadow-sm); border:1px solid var(--bg-system); margin-bottom: 8px; padding: 16px;">
-                        <div class="info-row" style="margin-bottom: 8px; align-items:center;">
-                            <b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b> 
+                        <div class="info-row" style="margin-bottom: 8px; align-items:center; flex-wrap:wrap; gap:4px;">
+                            <div>${badgesHtml}</div> 
                             <span style="font-size:16px; font-weight:800; color:var(--text-primary);">${m.metros} m</span>
                         </div>
                         <div class="info-row" style="color:var(--text-secondary); font-size:12px; border-top: 1px solid var(--bg-system); padding-top: 10px;">
                             <span>🏢 Obra: ${m.idObra}</span>
                             <span>📅 ${new Date(m.fecha).toLocaleDateString()}</span>
                         </div>
-                        <button class="btn btn-secondary w-100" style="margin-top:12px; padding:8px; font-size: 13px; background: var(--bg-system);" onclick="eliminarMaterial('${tipo}','${m.id}')">🗑️ Eliminar Registro</button>
+                        ${m.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary); background: var(--bg-system); padding: 6px; border-radius: 6px;"><em>📝 Obs: ${m.observaciones}</em></div>` : ''}
+                        ${actionBtns}
                     </div>`;
                 }).join('')}
             </div>
@@ -471,7 +505,7 @@ function crearDevolucion(e) {
         observaciones: formData.get('observaciones') || ''
     });
 
-    guardarTodosLosDatos(); cerrarTodosLosModales();
+    guardarTodosLosDatos(); cerrarTodosLosModales(); 
     mostrarToast('✅ Devolución registrada en la Nube');
 }
 
@@ -535,7 +569,9 @@ function eliminarDevolucion(id) {
 // ===== EXCEL PREVIEW CON FILTRO =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
-    if(!a || !a.archivo || !a.archivo.base64) return mostrarToast('❌ Sin archivo adjunto');
+    if(!a || !a.archivo || !a.archivo.base64) {
+        return mostrarToast('❌ El archivo no está disponible (quizás se omitió por límite de memoria del navegador).');
+    }
     
     let contenido = '';
     const name = a.archivo.nombre.toLowerCase();
