@@ -105,7 +105,16 @@
                     </div>
                     <div class="stock-grid">
                         <div class="stock-card"><div class="stock-icon">📥</div><div class="stock-info"><span class="stock-label">Recibidos</span><span class="stock-number" id="subconducto-recibido">0</span></div></div>
-                        <div class="stock-card"><div class="stock-icon">🔧</div><div class="stock-info"><span class="stock-label">Instalados</span><span class="stock-number" id="subconducto-instalado">0</span></div></div>
+                        <div class="stock-card"><div class="stock-icon" style="color: var(--system-red); background: rgba(255, 59, 48, 0.1);">🔧</div><div class="stock-info"><span class="stock-label">Instalados</span><span class="stock-number" id="subconducto-instalado" style="color: var(--system-red);">0</span></div></div>
+                        
+                        <div class="stock-card" style="border: 1px solid var(--system-orange); background: #FFF9F2;">
+                            <div class="stock-icon" style="background: rgba(255, 149, 0, 0.1);">⏳</div>
+                            <div class="stock-info">
+                                <span class="stock-label" style="color: var(--system-orange);">Pend. Solicitar</span>
+                                <span class="stock-number" id="subconducto-pendiente-solicitar" style="color: var(--system-orange);">0</span>
+                            </div>
+                        </div>
+
                         <div class="stock-card stock-card-highlight"><div class="stock-icon">✅</div><div class="stock-info"><span class="stock-label">Disponibles</span><span class="stock-number" id="subconducto-disponible">0</span></div></div>
                     </div>
                     <div id="lista-subconductos" class="albaranes-grid"></div>

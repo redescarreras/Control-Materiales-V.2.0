@@ -253,7 +253,6 @@ function agregarMaterial(tipo, formData, accion) {
     const metrosInput = parseFloat(formData.get('metros'));
     if (isNaN(metrosInput) || metrosInput <= 0) return mostrarToast('❌ Los metros deben ser mayor a 0');
 
-    // GUARDAR OBSERVACIÓN DEL FORMULARIO DE MATERIAL
     const material = {
         id: `${tipo==='cable'?'CAB':'SUB'}-${Date.now().toString().slice(-6)}`,
         tipoMaterial: tipo, 
@@ -262,7 +261,7 @@ function agregarMaterial(tipo, formData, accion) {
         metros: metrosInput, 
         accion: accion, 
         fecha: formData.get('fecha'),
-        observaciones: formData.get('observaciones') || '', // <--- AÑADIDO
+        observaciones: formData.get('observaciones') || '', 
         solicitado: false 
     };
 
@@ -276,7 +275,6 @@ function marcarSubconductoSolicitado(id) {
     if (material) {
         material.solicitado = true;
         guardarTodosLosDatos();
-        mostrarMateriales('subconducto');
         mostrarToast('✅ Subconducto marcado como solicitado');
     }
 }
@@ -284,12 +282,15 @@ window.marcarSubconductoSolicitado = marcarSubconductoSolicitado;
 
 function calcularStock(tipo) {
     const arr = tipo === 'cable' ? cables : subconductos;
-    let rec = 0, inst = 0;
+    let rec = 0, inst = 0, pend = 0;
     arr.forEach(m => { 
         if(m.accion==='entrada') rec+=m.metros; 
-        else if(m.accion==='instalacion') inst+=m.metros; 
+        else if(m.accion==='instalacion') {
+            inst+=m.metros; 
+            if(!m.solicitado) pend += m.metros;
+        }
     });
-    return { recibido: rec, instalado: inst, disponible: rec - inst };
+    return { recibido: rec, instalado: inst, disponible: rec - inst, pendiente: pend };
 }
 
 function calcularStockPorTipo(tipoMaterial) {
@@ -299,15 +300,18 @@ function calcularStockPorTipo(tipoMaterial) {
     
     tipos.forEach(tipo => {
         const materialesDelTipo = materialArray.filter(m => (m.tipoCable || m.tipoSubconducto) === tipo);
-        let totalRecibido = 0; let totalInstalado = 0;
+        let totalRecibido = 0; let totalInstalado = 0; let totalPendiente = 0;
         
         materialesDelTipo.forEach(material => {
             if (material.accion === 'entrada') totalRecibido += material.metros;
-            else if (material.accion === 'instalacion') totalInstalado += material.metros;
+            else if (material.accion === 'instalacion') {
+                totalInstalado += material.metros;
+                if (!material.solicitado) totalPendiente += material.metros;
+            }
         });
         
         stockPorTipo[tipo] = {
-            recibido: totalRecibido, instalado: totalInstalado,
+            recibido: totalRecibido, instalado: totalInstalado, pendiente: totalPendiente,
             disponible: totalRecibido - totalInstalado
         };
     });
@@ -320,6 +324,7 @@ function actualizarStockDisplay(tipo) {
     if(document.getElementById(`${p}-recibido`)) document.getElementById(`${p}-recibido`).textContent = s.recibido.toFixed(1);
     if(document.getElementById(`${p}-instalado`)) document.getElementById(`${p}-instalado`).textContent = s.instalado.toFixed(1);
     if(document.getElementById(`${p}-disponible`)) document.getElementById(`${p}-disponible`).textContent = s.disponible.toFixed(1);
+    if(document.getElementById(`${p}-pendiente-solicitar`)) document.getElementById(`${p}-pendiente-solicitar`).textContent = s.pendiente.toFixed(1);
 }
 
 function mostrarMateriales(tipo) {
@@ -332,10 +337,13 @@ function mostrarMateriales(tipo) {
     const agrupado = {};
     arr.forEach(m => {
         const t = m.tipoCable || 'General';
-        if(!agrupado[t]) agrupado[t] = { items: [], r:0, i:0 };
+        if(!agrupado[t]) agrupado[t] = { items: [], r:0, i:0, p:0 };
         agrupado[t].items.push(m);
         if(m.accion === 'entrada') agrupado[t].r += m.metros;
-        else agrupado[t].i += m.metros; 
+        else {
+            agrupado[t].i += m.metros; 
+            if(!m.solicitado) agrupado[t].p += m.metros;
+        }
     });
 
     let html = '';
@@ -345,6 +353,8 @@ function mostrarMateriales(tipo) {
         let cAlerta = 'stock-positivo', tAlerta = 'A favor';
         if(disp < 0) { cAlerta = 'stock-negativo'; tAlerta = 'Falta'; }
         else if(disp < 500) { cAlerta = 'stock-alerta'; tAlerta = 'Bajo'; }
+        
+        let pendHtml = tipo === 'subconducto' ? `<span>⏳ <b>Pend. Solic.:</b> ${g.p.toFixed(1)}m</span>` : '';
 
         html += `
         <div class="tipo-section">
@@ -355,6 +365,7 @@ function mostrarMateriales(tipo) {
                 </div>
                 <div class="tipo-stock">
                     <span>📥 ${g.r.toFixed(1)}m</span> <span>🔧 ${g.i.toFixed(1)}m</span>
+                    ${pendHtml}
                     <span class="${cAlerta}">✅ Disp: ${disp.toFixed(1)}m (${tAlerta})</span>
                 </div>
             </div>
@@ -367,10 +378,12 @@ function mostrarMateriales(tipo) {
                     const cardClass = isEntrada ? 'card-entrada' : 'card-instalacion';
                     const icon = isEntrada ? '📥' : '🔧';
                     const label = isEntrada ? 'ENTRADA' : 'INSTALADO';
+                    
                     const badgeColor = isEntrada ? 'var(--system-green)' : 'var(--system-red)';
                     const badgeBg = isEntrada ? 'rgba(52,199,89,0.1)' : 'rgba(255, 59, 48, 0.1)';
 
                     let badgesHtml = `<b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b>`;
+                    
                     if (tipo === 'subconducto' && isInstalacion && isSolicitado) {
                         badgesHtml += `<b style="font-size:12px; color:var(--system-orange); background:rgba(255,149,0,0.1); padding: 4px 8px; border-radius: 6px; margin-left: 8px;">📦 SOLICITADO</b>`;
                     }
@@ -379,10 +392,10 @@ function mostrarMateriales(tipo) {
                     if (tipo === 'subconducto' && isInstalacion && !isSolicitado) {
                         actionBtns += `<button class="btn btn-warning w-100" style="margin-top:12px; padding:8px; font-size: 13px;" onclick="marcarSubconductoSolicitado('${m.id}')">📦 Marcar Solicitado</button>`;
                     }
+                    
                     const marginTopEliminar = (tipo === 'subconducto' && isInstalacion && !isSolicitado) ? '8px' : '12px';
                     actionBtns += `<button class="btn btn-secondary w-100" style="margin-top:${marginTopEliminar}; padding:8px; font-size: 13px; background: var(--bg-system);" onclick="eliminarMaterial('${tipo}','${m.id}')">🗑️ Eliminar Registro</button>`;
 
-                    // MOSTRAR OBSERVACIÓN EN LA TARJETA
                     return `
                     <div class="albaran-card ${cardClass}" id="card-${m.id}" style="box-shadow:var(--shadow-sm); border:1px solid var(--bg-system); margin-bottom: 8px; padding: 16px;">
                         <div class="info-row" style="margin-bottom: 8px; align-items:center; flex-wrap:wrap; gap:4px;">
@@ -390,7 +403,7 @@ function mostrarMateriales(tipo) {
                             <span style="font-size:16px; font-weight:800; color:var(--text-primary);">${m.metros} m</span>
                         </div>
                         <div class="info-row" style="color:var(--text-secondary); font-size:12px; border-top: 1px solid var(--bg-system); padding-top: 10px;">
-                            <span>🏢 Obra: ${m.idObra}</span>
+                            <span>🏢 Obra/Origen: ${m.idObra}</span>
                             <span>📅 ${new Date(m.fecha).toLocaleDateString()}</span>
                         </div>
                         ${m.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary); background: var(--bg-system); padding: 6px; border-radius: 6px;"><em>📝 Obs: ${m.observaciones}</em></div>` : ''}
@@ -548,7 +561,7 @@ function mostrarDevoluciones() {
                 <div class="info-row"><span class="info-label">Obra:</span><span class="info-value">${d.idObra}</span></div>
                 <div class="info-row"><span class="info-label">Fecha:</span><span class="info-value">${new Date(d.fechaEntrega).toLocaleDateString()}</span></div>
                 <div class="info-row"><span class="info-label">Bobinas:</span><span class="info-value">${total}</span></div>
-                ${d.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary);"><em>Nota: ${d.observaciones}</em></div>` : ''}
+                ${d.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary); background: var(--bg-system); padding: 6px; border-radius: 6px;"><em>📝 Obs: ${d.observaciones}</em></div>` : ''}
             </div>
             <div id="detalles-${d.id}" style="display:none; margin-top:16px; border-top:1px solid var(--bg-system); padding-top:16px;">
                 ${detallesHtml}
@@ -569,9 +582,7 @@ function eliminarDevolucion(id) {
 // ===== EXCEL PREVIEW CON FILTRO =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
-    if(!a || !a.archivo || !a.archivo.base64) {
-        return mostrarToast('❌ El archivo no está disponible (quizás se omitió por límite de memoria del navegador).');
-    }
+    if(!a || !a.archivo || !a.archivo.base64) return mostrarToast('❌ Sin archivo adjunto');
     
     let contenido = '';
     const name = a.archivo.nombre.toLowerCase();
