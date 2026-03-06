@@ -38,10 +38,10 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .logo { width: 44px; height: 44px; border-radius: 10px; }
 .company-info h1 { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
 .subtitle { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
-.header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;}
+.header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap;} 
 
 /* ===== BUTTONS ===== */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 20px; border: none; border-radius: var(--radius-pill); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.2s, opacity 0.2s, background 0.2s; text-decoration: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 20px; border: none; border-radius: var(--radius-pill); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.2s, opacity 0.2s, background 0.2s; text-decoration: none; white-space: nowrap; }
 .btn:active { transform: scale(0.96); opacity: 0.9; }
 .w-100 { width: 100%; }
 
@@ -51,7 +51,7 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .btn-secondary { background: #E5E5EA; color: var(--text-primary); }
 .btn-secondary:hover { background: #D1D1D6; }
 .btn-info { background: var(--system-blue); color: white; }
-.btn-icon { padding: 10px; border-radius: 50%; width: 44px; height: 44px; font-size: 18px; }
+.btn-icon { padding: 10px; border-radius: 50%; width: 44px; height: 44px; font-size: 18px; flex-shrink: 0;}
 .btn-glass { background: rgba(0,0,0,0.05); color: var(--text-primary); }
 
 /* ===== TABS ===== */
@@ -100,9 +100,10 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .albaran-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; border-top: 1px solid var(--bg-system); padding-top: 16px; }
 .albaran-actions .btn { flex: 1 1 calc(50% - 4px); padding: 10px; font-size: 13px; border-radius: 10px; }
 
-/* ===== COLORES PARA MATERIALES (CORREGIDO: Instalado ahora es ROJO) ===== */
+/* ===== COLORES PARA MATERIALES ===== */
 .card-entrada { border-left: 6px solid var(--system-green) !important; background: linear-gradient(90deg, rgba(52,199,89,0.05) 0%, var(--bg-card) 10%); }
 .card-instalacion { border-left: 6px solid var(--system-red) !important; background: linear-gradient(90deg, rgba(255,59,48,0.05) 0%, var(--bg-card) 10%); }
+.card-pendiente-recepcion { border-left: 6px solid var(--system-blue) !important; background: linear-gradient(90deg, rgba(0,122,255,0.05) 0%, var(--bg-card) 10%); }
 
 /* ===== REPORTES GRID ===== */
 .reportes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
@@ -158,7 +159,7 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .resultado-item { background: var(--bg-system); padding: 12px; border-radius: var(--radius-md); margin-bottom: 10px; cursor: pointer; transition: background 0.2s; }
 .resultado-item:hover { background: #E5E5EA; }
 
-/* ===== BOBINAS MÚLTIPLES FIX ===== */
+/* ===== BOBINAS MÚLTIPLES ===== */
 .bobinas-container { display: flex; flex-direction: column; gap: 24px; margin-bottom: 24px; }
 .bobina-item { border: 1px solid var(--text-tertiary); border-radius: var(--radius-md); padding: 20px; background: #FAFAFA; box-shadow: var(--shadow-sm); }
 .bobina-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #E5E5EA; }

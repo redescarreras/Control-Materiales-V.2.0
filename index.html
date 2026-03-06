@@ -41,7 +41,7 @@
                     📲 <span class="hide-mobile">Instalar</span>
                 </button>
 
-                <button id="btnNuevoAlbaran" class="btn btn-primary">
+                <button id="btnNuevoAlbaran" class="btn btn-primary" onclick="abrirModalNuevoAlbaran()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span class="hide-mobile">Nuevo Albarán</span>
                 </button>
@@ -83,11 +83,19 @@
                     <div class="tab-header">
                         <h2>Control de Cable</h2>
                         <div class="tab-actions">
-                            <button id="btnEntradaCable" class="btn btn-success">+ Entrada (Recibido)</button>
+                            <button id="btnEntradaCable" class="btn btn-success">+ Entrada (Manual)</button>
                             <button id="btnNuevoCableInstalacion" class="btn btn-warning">+ Instalado (Salida)</button>
                         </div>
                     </div>
                     <div class="stock-grid">
+                        <div class="stock-card" style="border: 1px solid var(--system-blue); background: #F0F8FF;">
+                            <div class="stock-icon" style="background: rgba(0, 122, 255, 0.1);">⏳</div>
+                            <div class="stock-info">
+                                <span class="stock-label" style="color: var(--system-blue);">Pend. Recibir</span>
+                                <span class="stock-number" id="cable-pendiente-recibir" style="color: var(--system-blue);">0</span>
+                            </div>
+                        </div>
+
                         <div class="stock-card"><div class="stock-icon">📥</div><div class="stock-info"><span class="stock-label">Recibidos</span><span class="stock-number" id="cable-recibido">0</span></div></div>
                         <div class="stock-card"><div class="stock-icon" style="color: var(--system-red); background: rgba(255, 59, 48, 0.1);">🔧</div><div class="stock-info"><span class="stock-label">Instalados</span><span class="stock-number" id="cable-instalado" style="color: var(--system-red);">0</span></div></div>
                         <div class="stock-card stock-card-highlight"><div class="stock-icon">✅</div><div class="stock-info"><span class="stock-label">Disponibles</span><span class="stock-number" id="cable-disponible">0</span></div></div>
@@ -150,7 +158,7 @@
     </main>
 
     <div id="modalNuevoAlbaran" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <h2>Nuevo Albarán</h2>
                 <button class="modal-close" onclick="cerrarModal()">&times;</button>
@@ -169,6 +177,14 @@
                         <option value="Lyntia">Lyntia</option>
                     </select>
                 </div>
+                
+                <div style="background: #FAFAFA; border: 1px solid var(--bg-system); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+                    <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--text-primary);">🔌 Cables Esperados en este Albarán</h3>
+                    <div id="albaranCablesContainer" class="bobinas-container" style="gap: 12px;">
+                        </div>
+                    <button type="button" class="btn btn-secondary w-100" onclick="agregarCableAlbaran()">+ Añadir Línea de Cable</button>
+                </div>
+
                 <div class="form-group"><label>Jefe de Obra</label><input type="text" name="jefeObra"></div>
                 <div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2"></textarea></div>
                 <div class="form-group">
@@ -190,6 +206,9 @@
                 <button class="modal-close" onclick="cerrarModalRecepcion()">&times;</button>
             </div>
             <div class="modal-body">
+                <p style="margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">
+                    Al marcar como entregado correcto, <b>los cables que estén esperando este albarán se añadirán automáticamente a tu stock disponible</b>.
+                </p>
                 <div class="recepcion-options">
                     <label class="radio-option selected" id="lbl-completo">
                         <input type="radio" name="estadoRecepcion" value="completo" checked onchange="toggleDetalleFaltante()">
