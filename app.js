@@ -175,7 +175,7 @@ function irAElemento(tab, id) {
 
 // ===== GESTIÓN DE ALBARANES Y CABLES ESPERADOS =====
 function abrirModalNuevoAlbaran() {
-    document.getElementById('albaranCablesContainer').innerHTML = ''; // Limpiamos campos dinámicos
+    document.getElementById('albaranCablesContainer').innerHTML = ''; 
     document.getElementById('modalNuevoAlbaran').classList.add('active');
 }
 window.abrirModalNuevoAlbaran = abrirModalNuevoAlbaran;
@@ -203,6 +203,123 @@ function agregarCableAlbaran() {
 }
 window.agregarCableAlbaran = agregarCableAlbaran;
 
+// --- EDICIÓN DE ALBARÁN ---
+function abrirModalEditarAlbaran(id) {
+    const albaran = albaranes.find(a => a.id === id);
+    if(!albaran) return;
+
+    document.getElementById('editIdAlbaran').value = albaran.id;
+    document.getElementById('editIdObra').value = albaran.idObra;
+    document.getElementById('editFecha').value = albaran.fecha;
+    document.getElementById('editCuentaCargo').value = albaran.cuentaCargo || '';
+    document.getElementById('editTipoInstalacion').value = albaran.tipoInstalacion || '';
+    document.getElementById('editJefeObra').value = albaran.jefeObra || '';
+    document.getElementById('editObservaciones').value = albaran.observaciones || '';
+
+    // Cargar cables que estén "en limbo" vinculados a este albarán
+    const container = document.getElementById('editAlbaranCablesContainer');
+    container.innerHTML = '';
+    const cablesVinculados = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
+    
+    cablesVinculados.forEach((c, i) => {
+        agregarCableAlbaranEdit(c.tipoCable, c.metros);
+    });
+
+    document.getElementById('modalEditarAlbaran').classList.add('active');
+}
+window.abrirModalEditarAlbaran = abrirModalEditarAlbaran;
+
+function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
+    const container = document.getElementById('editAlbaranCablesContainer');
+    const index = container.children.length + 1;
+    
+    // Inyectar el select con la opción preseleccionada si es necesario
+    let opcionesConSeleccion = CABLE_OPTIONS_HTML;
+    if (tipoCable) {
+        opcionesConSeleccion = opcionesConSeleccion.replace(`value="${tipoCable}"`, `value="${tipoCable}" selected`);
+    }
+
+    const html = `
+        <div class="bobina-item" data-cable-albaran="${index}" style="padding: 12px; margin-bottom: 8px;">
+            <div class="bobina-header" style="margin-bottom: 8px; padding-bottom: 8px;">
+                <div class="bobina-title" style="font-size: 14px; color: var(--system-blue);">Cable Esperado ${index}</div>
+                <button type="button" class="btn-eliminar-bobina" onclick="this.closest('.bobina-item').remove()">X</button>
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+                <label style="font-size: 12px;">Tipo Cable</label>
+                <select name="editAlbaranTipoCable_${index}" style="padding: 10px;">${opcionesConSeleccion}</select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 12px;">Metros Esperados</label>
+                <input type="number" step="0.1" name="editAlbaranMetrosCable_${index}" value="${metros}" style="padding: 10px;">
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+window.agregarCableAlbaranEdit = agregarCableAlbaranEdit;
+
+function guardarEdicionAlbaran(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const idAlbaran = formData.get('idAlbaran');
+    const albaran = albaranes.find(a => a.id === idAlbaran);
+    if (!albaran) return;
+
+    const archivoInput = document.getElementById('editArchivoAlbaran')?.files[0];
+    
+    if (archivoInput) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size, base64: ev.target.result };
+            finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo);
+        };
+        reader.readAsDataURL(archivoInput);
+    } else {
+        // Se mantiene el archivo original
+        finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo);
+    }
+}
+
+function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo) {
+    // Actualizar datos del albarán
+    albaran.idObra = formData.get('idObra');
+    albaran.fecha = formData.get('fecha');
+    albaran.cuentaCargo = formData.get('cuentaCargo');
+    albaran.tipoInstalacion = formData.get('tipoInstalacion');
+    albaran.jefeObra = formData.get('jefeObra');
+    albaran.observaciones = formData.get('observaciones') || '';
+    albaran.archivo = archivoInfo;
+
+    // Actualizar los cables vinculados: primero los borramos, luego insertamos los nuevos
+    cables = cables.filter(c => !(c.idAlbaranAsociado === idAlbaran && c.accion === 'pendiente_recepcion'));
+
+    const itemsCables = document.querySelectorAll('#editAlbaranCablesContainer .bobina-item');
+    itemsCables.forEach(item => {
+        const idx = item.dataset.cableAlbaran;
+        const tipo = formData.get(`editAlbaranTipoCable_${idx}`);
+        const metros = parseFloat(formData.get(`editAlbaranMetrosCable_${idx}`));
+        
+        if (tipo && metros > 0) {
+            cables.push({
+                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`,
+                tipoMaterial: 'cable',
+                idObra: formData.get('idObra'),
+                tipoCable: tipo,
+                metros: metros,
+                accion: 'pendiente_recepcion',
+                fecha: formData.get('fecha'),
+                observaciones: `Esperando con Albarán: ${idAlbaran}`,
+                idAlbaranAsociado: idAlbaran 
+            });
+        }
+    });
+
+    guardarTodosLosDatos(); cerrarTodosLosModales(); mostrarAlbaranes(); actualizarStockDisplay('cable');
+    mostrarToast('✅ Albarán editado correctamente');
+}
+
+// --- CREACIÓN NORMAL DE ALBARÁN ---
 function crearAlbaran(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -225,7 +342,6 @@ function crearAlbaran(e) {
 function finalizarCreacionAlbaran(formData, archivoInfo) {
     const albaranId = `ALB-${Date.now().toString().slice(-6)}`;
     
-    // Extraer cables esperados y meterlos en el "limbo" (pendiente_recepcion)
     const itemsCables = document.querySelectorAll('#albaranCablesContainer .bobina-item');
     itemsCables.forEach(item => {
         const idx = item.dataset.cableAlbaran;
@@ -239,10 +355,10 @@ function finalizarCreacionAlbaran(formData, archivoInfo) {
                 idObra: formData.get('idObra'),
                 tipoCable: tipo,
                 metros: metros,
-                accion: 'pendiente_recepcion', // ESTADO LIMBO
+                accion: 'pendiente_recepcion', 
                 fecha: formData.get('fecha'),
                 observaciones: `Esperando con Albarán: ${albaranId}`,
-                idAlbaranAsociado: albaranId // VINCOLO MÁGICO
+                idAlbaranAsociado: albaranId 
             });
         }
     });
@@ -279,17 +395,17 @@ function mostrarAlbaranes() {
         const estadoText = a.estado === 'pendiente' ? 'Pendiente' : (a.materialFaltante ? 'Faltante' : 'Recibido');
         
         let actions = `<div class="albaran-actions">`;
-        if (a.archivo) actions += `<button class="btn btn-info" onclick="verArchivoAlbaran('${a.id}')">📄 Ver Archivo</button>`;
+        if (a.archivo) actions += `<button class="btn btn-info" onclick="verArchivoAlbaran('${a.id}')">📄 Archivo</button>`;
         
         if (a.estado === 'pendiente') {
+            actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar</button>`;
             actions += `<button class="btn btn-success" onclick="abrirModalRecepcion('${a.id}')">✅ Marcar Recibido</button>`;
         } else if (a.materialFaltante) {
             actions += `<button class="btn btn-success" onclick="marcarFaltanteRecibido('${a.id}')">✅ Completar Faltante</button>`;
         }
         actions += `<button class="btn btn-secondary" onclick="eliminarAlbaran('${a.id}')">🗑️ Eliminar</button></div>`;
 
-        // Pequeño indicador de si este albarán trae cables en camino
-        const cablesAsociados = cables.filter(c => c.idAlbaranAsociado === a.id).length;
+        const cablesAsociados = cables.filter(c => c.idAlbaranAsociado === a.id && c.accion === 'pendiente_recepcion').length;
         const etiquetaCables = cablesAsociados > 0 ? `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">⏳ Trae ${cablesAsociados} cables</b>` : '';
 
         return `
@@ -318,13 +434,11 @@ function confirmarRecepcion() {
     albaranSeleccionado.estado = 'recibido';
     albaranSeleccionado.materialFaltante = estado === 'incompleto' ? faltante : null;
     
-    // MAGIA DE LA SINCRONIZACIÓN: 
-    // Convertir todos los cables "en limbo" de este albarán en stock real disponible
     let cablesIngresados = 0;
     cables.forEach(c => {
         if (c.idAlbaranAsociado === albaranSeleccionado.id && c.accion === 'pendiente_recepcion') {
-            c.accion = 'entrada'; // Pasa a sumar stock
-            c.fecha = new Date().toISOString().split('T')[0]; // Fecha en la que llegó físicamente
+            c.accion = 'entrada'; 
+            c.fecha = new Date().toISOString().split('T')[0]; 
             c.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`;
             cablesIngresados++;
         }
@@ -888,7 +1002,12 @@ function iniciarGeneracionReporte() {
         
         doc.setFont('helvetica');
         doc.setFontSize(20); doc.setTextColor(255, 85, 0); doc.text('Redes Carreras S.L.', 20, 30);
-        doc.setFontSize(16); doc.setTextColor(0, 0, 0); doc.text(`Control de Materiales: ${reporteActual.toUpperCase()}`, 20, 45);
+        doc.setFontSize(16); doc.setTextColor(0, 0, 0); 
+        
+        let tituloReporte = reporteActual.toUpperCase();
+        if(reporteActual === 'cables_pendientes') tituloReporte = "CABLES EN CAMINO (LIMBO)";
+        doc.text(`Control de Materiales: ${tituloReporte}`, 20, 45);
+        
         doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 55);
         
         let yPos = 70;
@@ -907,6 +1026,9 @@ function iniciarGeneracionReporte() {
             datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
         }
         else if(reporteActual === 'devoluciones') datos = devoluciones;
+        else if(reporteActual === 'cables_pendientes') {
+            datos = cables.filter(c => c.accion === 'pendiente_recepcion');
+        }
 
         if(datos.length === 0) {
             doc.setFontSize(12); doc.setTextColor(0,0,0); doc.text('No hay registros para este reporte.', 20, yPos);
@@ -921,6 +1043,11 @@ function iniciarGeneracionReporte() {
                 doc.text('Disponible', 162, yPos - 2);
             } else if (reporteActual === 'devoluciones') {
                 doc.text('ID Dev', 22, yPos - 2); doc.text('Obra', 60, yPos - 2); doc.text('Bobinas', 110, yPos - 2); doc.text('Fecha', 150, yPos - 2);
+            } else if (reporteActual === 'cables_pendientes') {
+                doc.text('Albarán', 22, yPos - 2);
+                doc.text('Obra', 55, yPos - 2);
+                doc.text('Tipo de Cable', 100, yPos - 2);
+                doc.text('Metros', 170, yPos - 2);
             } else {
                 doc.text('Obra', 22, yPos - 2); 
                 doc.text('Fecha', 75, yPos - 2); 
@@ -937,6 +1064,9 @@ function iniciarGeneracionReporte() {
                 
                 if (reporteActual === 'cables' || reporteActual === 'subconductos') {
                     textLines = doc.splitTextToSize(String(d.tipo), 95); 
+                    rowHeight = Math.max(8, textLines.length * 5 + 2);
+                } else if (reporteActual === 'cables_pendientes') {
+                    textLines = doc.splitTextToSize(String(d.tipoCable), 65);
                     rowHeight = Math.max(8, textLines.length * 5 + 2);
                 } else if (reporteActual === 'devoluciones') {
                     textLines = [String(d.id)];
@@ -961,6 +1091,14 @@ function iniciarGeneracionReporte() {
                         doc.setTextColor(5, 150, 105); 
                         doc.text(`${d.disponible.toFixed(1)}m (A favor)`, 162, yPos);
                     }
+                    doc.setTextColor(0, 0, 0);
+                } else if (reporteActual === 'cables_pendientes') {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(String(d.idAlbaranAsociado || 'N/A').substring(0, 15), 22, yPos);
+                    doc.text(String(d.idObra || 'N/A').substring(0, 15), 55, yPos);
+                    doc.text(textLines, 100, yPos);
+                    doc.setTextColor(0, 122, 255); // Azul
+                    doc.text(`${d.metros}m`, 170, yPos);
                     doc.setTextColor(0, 0, 0);
                 } else if (reporteActual === 'devoluciones') {
                     doc.setTextColor(0, 0, 0);
@@ -989,8 +1127,8 @@ function configurarEventListeners() {
     document.getElementById('btnBuscar').addEventListener('click', abrirBuscador);
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarTab(btn.dataset.tab)));
     
-    // El Nuevo Albarán ahora se abre mediante la función onclick en el HTML para limpiar los cables dinámicos.
     document.getElementById('formNuevoAlbaran').addEventListener('submit', crearAlbaran);
+    document.getElementById('formEditarAlbaran').addEventListener('submit', guardarEdicionAlbaran); // NUEVO
     
     document.getElementById('btnEntradaCable').addEventListener('click', () => { document.getElementById('modalEntradaCable').classList.add('active'); establecerFechaActual(); });
     document.getElementById('btnNuevoCableInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoCable').classList.add('active'); establecerFechaActual(); });
@@ -1043,7 +1181,6 @@ function toggleDetalleFaltante() {
 function eliminarAlbaran(id) {
     if(confirm('¿Eliminar albarán permanentemente?')) { 
         albaranes = albaranes.filter(a=>a.id!==id); 
-        // También borramos los cables que se quedaron "en el limbo" vinculados a este albarán
         cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
         guardarTodosLosDatos(); 
     }
