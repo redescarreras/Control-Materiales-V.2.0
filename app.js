@@ -134,10 +134,12 @@ function cambiarTab(tab) {
 }
 
 function actualizarContadores() {
-    const faltantesCount = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante !== null && a.materialFaltante !== "").length;
+    // CORRECCIÓN: Filtramos estrictamente que no sea undefined, null, ni espacios en blanco para evitar falsos positivos
+    const faltantesCount = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "").length;
+    
     const elements = {
         'count-pendientes': albaranes.filter(a => a.estado === 'pendiente').length,
-        'count-recibidos': albaranes.filter(a => a.estado === 'recibido' && !a.materialFaltante).length,
+        'count-recibidos': albaranes.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === "")).length,
         'count-faltantes': faltantesCount,
         'count-cables': cables.length,
         'count-subconductos': subconductos.length,
@@ -154,7 +156,7 @@ function irAElemento(tab, id) {
         const alb = albaranes.find(a => a.id === id);
         if (alb) {
             if (alb.estado === 'pendiente') tab = 'pendientes';
-            else if (alb.materialFaltante) tab = 'faltantes';
+            else if (alb.materialFaltante && String(alb.materialFaltante).trim() !== "") tab = 'faltantes';
             else tab = 'recibidos';
         }
     }
@@ -216,7 +218,6 @@ function abrirModalEditarAlbaran(id) {
     document.getElementById('editJefeObra').value = albaran.jefeObra || '';
     document.getElementById('editObservaciones').value = albaran.observaciones || '';
 
-    // Cargar cables que estén "en limbo" vinculados a este albarán
     const container = document.getElementById('editAlbaranCablesContainer');
     container.innerHTML = '';
     const cablesVinculados = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
@@ -233,7 +234,6 @@ function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
     const container = document.getElementById('editAlbaranCablesContainer');
     const index = container.children.length + 1;
     
-    // Inyectar el select con la opción preseleccionada si es necesario
     let opcionesConSeleccion = CABLE_OPTIONS_HTML;
     if (tipoCable) {
         opcionesConSeleccion = opcionesConSeleccion.replace(`value="${tipoCable}"`, `value="${tipoCable}" selected`);
@@ -276,13 +276,11 @@ function guardarEdicionAlbaran(e) {
         };
         reader.readAsDataURL(archivoInput);
     } else {
-        // Se mantiene el archivo original
         finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo);
     }
 }
 
 function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo) {
-    // Actualizar datos del albarán
     albaran.idObra = formData.get('idObra');
     albaran.fecha = formData.get('fecha');
     albaran.cuentaCargo = formData.get('cuentaCargo');
@@ -291,7 +289,6 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo) {
     albaran.observaciones = formData.get('observaciones') || '';
     albaran.archivo = archivoInfo;
 
-    // Actualizar los cables vinculados: primero los borramos, luego insertamos los nuevos
     cables = cables.filter(c => !(c.idAlbaranAsociado === idAlbaran && c.accion === 'pendiente_recepcion'));
 
     const itemsCables = document.querySelectorAll('#editAlbaranCablesContainer .bobina-item');
@@ -315,7 +312,7 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo) {
         }
     });
 
-    guardarTodosLosDatos(); cerrarTodosLosModales(); mostrarAlbaranes(); actualizarStockDisplay('cable');
+    guardarTodosLosDatos(); cerrarTodosLosModales(); 
     mostrarToast('✅ Albarán editado correctamente');
 }
 
@@ -382,8 +379,10 @@ function mostrarAlbaranes() {
     
     let abs = [];
     if(tabActiva === 'pendientes') abs = albaranes.filter(a => a.estado === 'pendiente');
-    if(tabActiva === 'recibidos') abs = albaranes.filter(a => a.estado === 'recibido' && !a.materialFaltante);
-    if(tabActiva === 'faltantes') abs = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante);
+    if(tabActiva === 'recibidos') abs = albaranes.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
+    
+    // CORRECCIÓN PARA QUE APAREZCAN EN LA LISTA LOS FALTANTES DE FORMA ESTRICTA
+    if(tabActiva === 'faltantes') abs = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
 
     if (abs.length === 0) {
         contenedor.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-secondary);">No hay albaranes aquí</div>`;
@@ -391,8 +390,9 @@ function mostrarAlbaranes() {
     }
 
     contenedor.innerHTML = abs.map(a => {
-        const estadoClass = a.estado === 'pendiente' ? 'status-pendiente' : (a.materialFaltante ? 'status-faltante' : 'status-recibido');
-        const estadoText = a.estado === 'pendiente' ? 'Pendiente' : (a.materialFaltante ? 'Faltante' : 'Recibido');
+        const esFaltante = a.materialFaltante && String(a.materialFaltante).trim() !== "";
+        const estadoClass = a.estado === 'pendiente' ? 'status-pendiente' : (esFaltante ? 'status-faltante' : 'status-recibido');
+        const estadoText = a.estado === 'pendiente' ? 'Pendiente' : (esFaltante ? 'Faltante' : 'Recibido');
         
         let actions = `<div class="albaran-actions">`;
         if (a.archivo) actions += `<button class="btn btn-info" onclick="verArchivoAlbaran('${a.id}')">📄 Archivo</button>`;
@@ -400,7 +400,8 @@ function mostrarAlbaranes() {
         if (a.estado === 'pendiente') {
             actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar</button>`;
             actions += `<button class="btn btn-success" onclick="abrirModalRecepcion('${a.id}')">✅ Marcar Recibido</button>`;
-        } else if (a.materialFaltante) {
+        } else if (esFaltante) {
+            // BOTÓN COMPLETAR FALTANTE RESTAURADO Y PROTEGIDO
             actions += `<button class="btn btn-success" onclick="marcarFaltanteRecibido('${a.id}')">✅ Completar Faltante</button>`;
         }
         actions += `<button class="btn btn-secondary" onclick="eliminarAlbaran('${a.id}')">🗑️ Eliminar</button></div>`;
@@ -417,7 +418,7 @@ function mostrarAlbaranes() {
             <div class="albaran-info">
                 <div class="info-row"><span class="info-label">Obra:</span><span class="info-value">${a.idObra}</span></div>
                 <div class="info-row"><span class="info-label">Fecha:</span><span class="info-value">${new Date(a.fecha).toLocaleDateString()}</span></div>
-                ${a.materialFaltante ? `<div class="info-row" style="color:var(--system-red); font-size:12px; margin-top:10px;"><b>Falta:</b> ${a.materialFaltante}</div>` : ''}
+                ${esFaltante ? `<div class="info-row" style="color:var(--system-red); font-size:12px; margin-top:10px;"><b>Falta:</b> ${a.materialFaltante}</div>` : ''}
                 ${a.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary); background: var(--bg-system); padding: 6px; border-radius: 6px;"><em>📝 Obs: ${a.observaciones}</em></div>` : ''}
             </div>
             ${actions}
@@ -448,6 +449,27 @@ function confirmarRecepcion() {
     mostrarToast('✅ Recepción completada');
     if (cablesIngresados > 0) {
         setTimeout(() => mostrarToast(`📦 ${cablesIngresados} cables han entrado al stock disponible`), 1000);
+    }
+}
+
+// CORRECCIÓN DE BOTÓN FALTANTE (AHORA REFRESCA INMEDIATAMENTE)
+function marcarFaltanteRecibido(id) {
+    if(confirm('¿Confirmas que el material faltante ya ha sido recibido y está completo?')) {
+        const a = albaranes.find(x => x.id === id);
+        if(a) { 
+            a.materialFaltante = null; 
+            guardarTodosLosDatos(); 
+            actualizarUI();
+            mostrarToast('✅ Albarán completado y quitado de faltantes');
+        }
+    }
+}
+
+function eliminarAlbaran(id) {
+    if(confirm('¿Eliminar albarán permanentemente?')) { 
+        albaranes = albaranes.filter(a=>a.id!==id); 
+        cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
+        guardarTodosLosDatos(); 
     }
 }
 
@@ -637,6 +659,13 @@ function mostrarMateriales(tipo) {
         </div>`;
     });
     cont.innerHTML = html;
+}
+
+function eliminarMaterial(tipo, id) {
+    if(confirm('¿Eliminar registro permanentemente?')) {
+        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); else subconductos = subconductos.filter(s=>s.id!==id);
+        guardarTodosLosDatos(); 
+    }
 }
 
 // ===== GESTION DE DEVOLUCIONES =====
@@ -1014,8 +1043,8 @@ function iniciarGeneracionReporte() {
         let datos = [];
         
         if(reporteActual === 'pendientes') datos = albaranes.filter(a=>a.estado==='pendiente');
-        else if(reporteActual === 'recibidos') datos = albaranes.filter(a=>a.estado==='recibido' && !a.materialFaltante);
-        else if(reporteActual === 'faltantes') datos = albaranes.filter(a=>a.materialFaltante);
+        else if(reporteActual === 'recibidos') datos = albaranes.filter(a=>a.estado==='recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
+        else if(reporteActual === 'faltantes') datos = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
         else if(reporteActual === 'completo') datos = albaranes;
         else if(reporteActual === 'cables') {
             const stock = calcularStockPorTipo('cable');
@@ -1128,7 +1157,7 @@ function configurarEventListeners() {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarTab(btn.dataset.tab)));
     
     document.getElementById('formNuevoAlbaran').addEventListener('submit', crearAlbaran);
-    document.getElementById('formEditarAlbaran').addEventListener('submit', guardarEdicionAlbaran); // NUEVO
+    document.getElementById('formEditarAlbaran').addEventListener('submit', guardarEdicionAlbaran);
     
     document.getElementById('btnEntradaCable').addEventListener('click', () => { document.getElementById('modalEntradaCable').classList.add('active'); establecerFechaActual(); });
     document.getElementById('btnNuevoCableInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoCable').classList.add('active'); establecerFechaActual(); });
@@ -1152,6 +1181,7 @@ function cerrarTodosLosModales() {
     document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); 
     document.querySelectorAll('form').forEach(f => f.reset());
 }
+
 window.cerrarModal = cerrarTodosLosModales;
 window.cerrarModalCable = cerrarTodosLosModales;
 window.cerrarModalEntradaCable = cerrarTodosLosModales;
@@ -1178,21 +1208,6 @@ function toggleDetalleFaltante() {
     document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
 }
 
-function eliminarAlbaran(id) {
-    if(confirm('¿Eliminar albarán permanentemente?')) { 
-        albaranes = albaranes.filter(a=>a.id!==id); 
-        cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
-        guardarTodosLosDatos(); 
-    }
-}
-
-function eliminarMaterial(tipo, id) {
-    if(confirm('¿Eliminar registro permanentemente?')) {
-        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); else subconductos = subconductos.filter(s=>s.id!==id);
-        guardarTodosLosDatos(); 
-    }
-}
-
 function establecerFechaActual() {
     const hoy = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = hoy; });
@@ -1205,7 +1220,7 @@ function mostrarToast(mensaje) {
     setTimeout(() => { if (t.parentNode) t.remove(); }, 4000);
 }
 
-// Exponer funciones necesarias al entorno global para el HTML
+// Exponer funciones globales necesarias
 window.exportarDatos = exportarDatos;
 window.abrirImportar = abrirImportar;
 window.confirmarRecepcion = confirmarRecepcion;
