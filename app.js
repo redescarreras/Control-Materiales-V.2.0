@@ -324,6 +324,12 @@ function crearAlbaran(e) {
     
     let archivoInfo = null;
     if (archivoInput) {
+        // LÍMITE DE TAMAÑO: 1.5 MB (1536000 bytes)
+        if (archivoInput.size > 1536000) {
+            mostrarToast('❌ El archivo es muy grande. Máximo 1.5 MB para no saturar la base de datos.');
+            return; // Detiene la creación
+        }
+
         archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
         const reader = new FileReader();
         reader.onload = function(ev) {
