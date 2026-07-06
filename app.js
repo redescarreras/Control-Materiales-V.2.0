@@ -121,7 +121,7 @@ function guardarTodosLosDatos() {
         db.ref('devoluciones').set(devoluciones);
     } catch (e) {
         console.error("Error guardando en la Nube", e);
-        mostrarToast('❌ Error sincronizando con Firebase');
+        mostrarToast('❌ Error sincronizando con Firebase. Inténtalo de nuevo.');
     }
 }
 
@@ -134,7 +134,6 @@ function cambiarTab(tab) {
 }
 
 function actualizarContadores() {
-    // CORRECCIÓN: Filtramos estrictamente que no sea undefined, null, ni espacios en blanco para evitar falsos positivos
     const faltantesCount = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "").length;
     
     const elements = {
@@ -269,6 +268,12 @@ function guardarEdicionAlbaran(e) {
     const archivoInput = document.getElementById('editArchivoAlbaran')?.files[0];
     
     if (archivoInput) {
+        // LÍMITE DE TAMAÑO: 1.5 MB para evitar el error de Firebase
+        if (archivoInput.size > 1536000) {
+            mostrarToast('❌ El archivo es muy grande. Máximo 1.5 MB para evitar fallos de guardado.');
+            return; 
+        }
+
         const reader = new FileReader();
         reader.onload = function(ev) {
             const archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size, base64: ev.target.result };
@@ -324,10 +329,10 @@ function crearAlbaran(e) {
     
     let archivoInfo = null;
     if (archivoInput) {
-        // LÍMITE DE TAMAÑO: 1.5 MB (1536000 bytes)
+        // LÍMITE DE TAMAÑO: 1.5 MB para evitar el error de Firebase
         if (archivoInput.size > 1536000) {
-            mostrarToast('❌ El archivo es muy grande. Máximo 1.5 MB para no saturar la base de datos.');
-            return; // Detiene la creación
+            mostrarToast('❌ El archivo es muy grande. Máximo 1.5 MB para evitar fallos de guardado.');
+            return; 
         }
 
         archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
@@ -386,8 +391,6 @@ function mostrarAlbaranes() {
     let abs = [];
     if(tabActiva === 'pendientes') abs = albaranes.filter(a => a.estado === 'pendiente');
     if(tabActiva === 'recibidos') abs = albaranes.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
-    
-    // CORRECCIÓN PARA QUE APAREZCAN EN LA LISTA LOS FALTANTES DE FORMA ESTRICTA
     if(tabActiva === 'faltantes') abs = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
 
     if (abs.length === 0) {
@@ -407,7 +410,6 @@ function mostrarAlbaranes() {
             actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar</button>`;
             actions += `<button class="btn btn-success" onclick="abrirModalRecepcion('${a.id}')">✅ Marcar Recibido</button>`;
         } else if (esFaltante) {
-            // BOTÓN COMPLETAR FALTANTE RESTAURADO Y PROTEGIDO
             actions += `<button class="btn btn-success" onclick="marcarFaltanteRecibido('${a.id}')">✅ Completar Faltante</button>`;
         }
         actions += `<button class="btn btn-secondary" onclick="eliminarAlbaran('${a.id}')">🗑️ Eliminar</button></div>`;
@@ -458,7 +460,6 @@ function confirmarRecepcion() {
     }
 }
 
-// CORRECCIÓN DE BOTÓN FALTANTE (AHORA REFRESCA INMEDIATAMENTE)
 function marcarFaltanteRecibido(id) {
     if(confirm('¿Confirmas que el material faltante ya ha sido recibido y está completo?')) {
         const a = albaranes.find(x => x.id === id);
@@ -841,7 +842,7 @@ function eliminarDevolucion(id) {
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
     if(!a || !a.archivo || !a.archivo.base64) {
-        return mostrarToast('❌ El archivo no está disponible (quizás se omitió por límite de memoria del navegador).');
+        return mostrarToast('❌ El archivo no está disponible (quizás se limpió por ser muy grande).');
     }
     
     let contenido = '';
@@ -1001,7 +1002,17 @@ function abrirImportar() {
                     if (typeof d !== 'object' || d === null) throw new Error('No es JSON');
                     
                     if (confirm('⚠️ ¿Sobrescribir datos locales y en la nube con este archivo?')) {
-                        albaranes = Array.isArray(d.albaranes) ? d.albaranes : [];
+                        
+                        // ===== MAGIA DE LIMPIEZA AUTOMÁTICA =====
+                        let importAlbaranes = Array.isArray(d.albaranes) ? d.albaranes : [];
+                        importAlbaranes.forEach(a => {
+                            if (a.archivo && a.archivo.base64 && a.archivo.base64.length > 100) {
+                                a.archivo.base64 = ""; // Destruye el texto kilométrico para que Firebase no se sature
+                            }
+                        });
+                        albaranes = importAlbaranes;
+                        // ========================================
+
                         cables = Array.isArray(d.cables) ? d.cables : [];
                         subconductos = Array.isArray(d.subconductos) ? d.subconductos : [];
                         devoluciones = Array.isArray(d.devoluciones) ? d.devoluciones : [];
@@ -1009,7 +1020,7 @@ function abrirImportar() {
                         guardarTodosLosDatos(); 
                         actualizarContadores(); 
                         cambiarTab('pendientes');
-                        mostrarToast('✅ Datos importados y subidos');
+                        mostrarToast('✅ Datos importados y guardados de forma segura');
                     }
                 } catch(err) { 
                     mostrarToast('❌ Archivo corrupto o límite superado'); 
@@ -1132,7 +1143,7 @@ function iniciarGeneracionReporte() {
                     doc.text(String(d.idAlbaranAsociado || 'N/A').substring(0, 15), 22, yPos);
                     doc.text(String(d.idObra || 'N/A').substring(0, 15), 55, yPos);
                     doc.text(textLines, 100, yPos);
-                    doc.setTextColor(0, 122, 255); // Azul
+                    doc.setTextColor(0, 122, 255); 
                     doc.text(`${d.metros}m`, 170, yPos);
                     doc.setTextColor(0, 0, 0);
                 } else if (reporteActual === 'devoluciones') {
@@ -1187,7 +1198,6 @@ function cerrarTodosLosModales() {
     document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); 
     document.querySelectorAll('form').forEach(f => f.reset());
 }
-
 window.cerrarModal = cerrarTodosLosModales;
 window.cerrarModalCable = cerrarTodosLosModales;
 window.cerrarModalEntradaCable = cerrarTodosLosModales;
@@ -1212,6 +1222,21 @@ function toggleDetalleFaltante() {
     document.getElementById('detalleFaltante').style.display = val === 'incompleto' ? 'block' : 'none';
     document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
     document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
+}
+
+function eliminarAlbaran(id) {
+    if(confirm('¿Eliminar albarán permanentemente?')) { 
+        albaranes = albaranes.filter(a=>a.id!==id); 
+        cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
+        guardarTodosLosDatos(); 
+    }
+}
+
+function eliminarMaterial(tipo, id) {
+    if(confirm('¿Eliminar registro permanentemente?')) {
+        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); else subconductos = subconductos.filter(s=>s.id!==id);
+        guardarTodosLosDatos(); 
+    }
 }
 
 function establecerFechaActual() {
