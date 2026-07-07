@@ -1244,10 +1244,28 @@ function iniciarGeneracionReporte() {
             datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
         }
         else if(reporteActual === 'devoluciones') datos = devoluciones;
+        
+        // --- NUEVA LÓGICA DE AGRUPACIÓN PARA PENDIENTES ---
         else if(reporteActual === 'cables_pendientes') {
-            datos = cables.filter(c => c.accion === 'pendiente_recepcion');
+            const pendientes = cables.filter(c => c.accion === 'pendiente_recepcion');
+            const agrupado = {};
+            pendientes.forEach(c => {
+                const t = c.tipoCable || 'Sin nombre';
+                if(!agrupado[t]) agrupado[t] = { articulo: t, cantidad: 0, unidad: 'm' };
+                agrupado[t].cantidad += c.metros;
+            });
+            datos = Object.values(agrupado).sort((a,b) => a.articulo.localeCompare(b.articulo));
         }
-        // NUEVA LÓGICA PARA REPORTE DE MATERIALES GENERALES
+        else if(reporteActual === 'materiales_pendientes') {
+            const pendientes = materialesGenerales.filter(m => m.accion === 'pendiente_recepcion');
+            const agrupado = {};
+            pendientes.forEach(m => {
+                const t = m.descripcion || 'Sin nombre';
+                if(!agrupado[t]) agrupado[t] = { articulo: t, cantidad: 0, unidad: 'u' };
+                agrupado[t].cantidad += m.cantidad;
+            });
+            datos = Object.values(agrupado).sort((a,b) => a.articulo.localeCompare(b.articulo));
+        }
         else if(reporteActual === 'materiales') {
             const agrupado = {};
             materialesGenerales.forEach(m => {
@@ -1260,11 +1278,7 @@ function iniciarGeneracionReporte() {
                 item.disponible = item.entrada - item.salida;
                 return item;
             });
-            // Ordenar alfabéticamente
             datos.sort((a, b) => a.tipo.localeCompare(b.tipo));
-        }
-        else if(reporteActual === 'materiales_pendientes') {
-            datos = materialesGenerales.filter(m => m.accion === 'pendiente_recepcion');
         }
 
         if(datos.length === 0) {
@@ -1279,13 +1293,12 @@ function iniciarGeneracionReporte() {
                 doc.text('Entrada', 122, yPos - 2); 
                 doc.text('Gastado', 142, yPos - 2); 
                 doc.text('Disponible', 162, yPos - 2);
+            } else if (reporteActual === 'cables_pendientes' || reporteActual === 'materiales_pendientes') {
+                // CABECERAS SIMPLIFICADAS PARA PENDIENTES
+                doc.text('Artículo / Cable', 22, yPos - 2);
+                doc.text('Cantidad Total', 150, yPos - 2);
             } else if (reporteActual === 'devoluciones') {
                 doc.text('ID Dev', 22, yPos - 2); doc.text('Obra', 60, yPos - 2); doc.text('Bobinas', 110, yPos - 2); doc.text('Fecha', 150, yPos - 2);
-            } else if (reporteActual === 'cables_pendientes' || reporteActual === 'materiales_pendientes') {
-                doc.text('Albarán', 22, yPos - 2);
-                doc.text('Obra', 55, yPos - 2);
-                doc.text('Artículo / Cable', 100, yPos - 2);
-                doc.text('Cantidad', 170, yPos - 2);
             } else {
                 doc.text('Obra', 22, yPos - 2); 
                 doc.text('Fecha', 75, yPos - 2); 
@@ -1304,11 +1317,8 @@ function iniciarGeneracionReporte() {
                 if (reporteActual === 'cables' || reporteActual === 'subconductos' || reporteActual === 'materiales') {
                     textLines = doc.splitTextToSize(String(d.tipo), 95); 
                     rowHeight = Math.max(8, textLines.length * 5 + 2);
-                } else if (reporteActual === 'cables_pendientes') {
-                    textLines = doc.splitTextToSize(String(d.tipoCable), 65);
-                    rowHeight = Math.max(8, textLines.length * 5 + 2);
-                } else if (reporteActual === 'materiales_pendientes') {
-                    textLines = doc.splitTextToSize(String(d.descripcion), 65);
+                } else if (reporteActual === 'cables_pendientes' || reporteActual === 'materiales_pendientes') {
+                    textLines = doc.splitTextToSize(String(d.articulo), 120);
                     rowHeight = Math.max(8, textLines.length * 5 + 2);
                 } else if (reporteActual === 'devoluciones') {
                     textLines = [String(d.id)];
@@ -1341,13 +1351,11 @@ function iniciarGeneracionReporte() {
                     doc.setTextColor(0, 0, 0);
                 } else if (reporteActual === 'cables_pendientes' || reporteActual === 'materiales_pendientes') {
                     doc.setTextColor(0, 0, 0);
-                    doc.text(String(d.idAlbaranAsociado || 'N/A').substring(0, 15), 22, yPos);
-                    doc.text(String(d.idObra || 'N/A').substring(0, 15), 55, yPos);
-                    doc.text(textLines, 100, yPos);
+                    doc.text(textLines, 22, yPos);
                     doc.setTextColor(0, 122, 255); 
                     
-                    let qty = d.metros !== undefined ? d.metros + 'm' : d.cantidad + 'u';
-                    doc.text(`${qty}`, 170, yPos);
+                    let qtyString = Number.isInteger(d.cantidad) ? d.cantidad.toString() : d.cantidad.toFixed(1);
+                    doc.text(`${qtyString}${d.unidad}`, 150, yPos);
                     doc.setTextColor(0, 0, 0);
                 } else if (reporteActual === 'devoluciones') {
                     doc.setTextColor(0, 0, 0);
