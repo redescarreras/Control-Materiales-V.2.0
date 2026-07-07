@@ -72,9 +72,7 @@ function parsearDatosNube(data) {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    migrarDatosLocalesALaNube(); 
     conectarConNube(); 
-    
     configurarEventListeners();
     establecerFechaActual();
     
@@ -82,21 +80,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tipoCableEntrada').innerHTML = CABLE_OPTIONS_HTML;
     document.getElementById('tipoCableMerma').innerHTML = CABLE_OPTIONS_HTML;
 });
-
-function migrarDatosLocalesALaNube() {
-    const albLocal = localStorage.getItem('albaranes');
-    if (albLocal) {
-        db.ref('albaranes').once('value', (snapshot) => {
-            if (!snapshot.exists()) {
-                db.ref('albaranes').set(JSON.parse(albLocal));
-                db.ref('cables').set(JSON.parse(localStorage.getItem('cables') || '[]'));
-                db.ref('subconductos').set(JSON.parse(localStorage.getItem('subconductos') || '[]'));
-                db.ref('devoluciones').set(JSON.parse(localStorage.getItem('devoluciones') || '[]'));
-                mostrarToast('☁️ Datos locales migrados a la Nube con éxito.');
-            }
-        });
-    }
-}
 
 function conectarConNube() {
     db.ref('albaranes').on('value', (snapshot) => { albaranes = parsearDatosNube(snapshot.val()); actualizarUI(); });
@@ -136,7 +119,6 @@ function cambiarTab(tab) {
 
 function actualizarContadores() {
     const faltantesCount = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "").length;
-    
     const elements = {
         'count-pendientes': albaranes.filter(a => a.estado === 'pendiente').length,
         'count-recibidos': albaranes.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === "")).length,
@@ -165,9 +147,7 @@ function irAElemento(tab, id) {
         const card = document.getElementById(`card-${id}`);
         if (card) {
             const gridContenedor = card.closest('.albaranes-grid');
-            if (gridContenedor && gridContenedor.style.display === 'none') {
-                gridContenedor.style.display = 'grid';
-            }
+            if (gridContenedor && gridContenedor.style.display === 'none') { gridContenedor.style.display = 'grid'; }
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             card.style.transition = "all 0.5s ease"; card.style.boxShadow = "0 0 0 4px var(--primary-500)"; card.style.transform = "scale(1.02)";
             setTimeout(() => { card.style.boxShadow = "var(--shadow-md)"; card.style.transform = "none"; }, 2000);
@@ -205,7 +185,6 @@ function agregarCableAlbaran() {
 }
 window.agregarCableAlbaran = agregarCableAlbaran;
 
-// --- EDICIÓN DE ALBARÁN ---
 function abrirModalEditarAlbaran(id) {
     const albaran = albaranes.find(a => a.id === id);
     if(!albaran) return;
@@ -222,9 +201,7 @@ function abrirModalEditarAlbaran(id) {
     container.innerHTML = '';
     const cablesVinculados = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
     
-    cablesVinculados.forEach((c, i) => {
-        agregarCableAlbaranEdit(c.tipoCable, c.metros);
-    });
+    cablesVinculados.forEach((c, i) => { agregarCableAlbaranEdit(c.tipoCable, c.metros); });
 
     document.getElementById('modalEditarAlbaran').classList.add('active');
 }
@@ -233,11 +210,8 @@ window.abrirModalEditarAlbaran = abrirModalEditarAlbaran;
 function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
     const container = document.getElementById('editAlbaranCablesContainer');
     const index = container.children.length + 1;
-    
     let opcionesConSeleccion = CABLE_OPTIONS_HTML;
-    if (tipoCable) {
-        opcionesConSeleccion = opcionesConSeleccion.replace(`value="${tipoCable}"`, `value="${tipoCable}" selected`);
-    }
+    if (tipoCable) opcionesConSeleccion = opcionesConSeleccion.replace(`value="${tipoCable}"`, `value="${tipoCable}" selected`);
 
     const html = `
         <div class="bobina-item" data-cable-albaran="${index}" style="padding: 12px; margin-bottom: 8px;">
@@ -259,90 +233,87 @@ function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
 }
 window.agregarCableAlbaranEdit = agregarCableAlbaranEdit;
 
-function guardarEdicionAlbaran(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const idAlbaran = formData.get('idAlbaran');
-    const albaran = albaranes.find(a => a.id === idAlbaran);
-    if (!albaran) return;
+// ===== MAGIA NUEVA: EXTRACCIÓN INTELIGENTE LOCAL =====
+// En lugar de guardar el archivo pesado, extraemos el HTML de la tabla y desechamos el resto.
 
-    const archivoInput = document.getElementById('editArchivoAlbaran')?.files[0];
-    
-    if (archivoInput) {
-        if (archivoInput.size > 1536000) {
-            mostrarToast('❌ El archivo es muy grande. Máximo 1.5 MB para evitar fallos de guardado.');
-            return; 
+function generarTablaHtmlDesdeBase64(b64) {
+    try {
+        const wb = XLSX.read(b64.split(',')[1], { type: 'base64' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        if (jsonData.length === 0) return '<p>El Excel está vacío.</p>';
+
+        let headerRowIdx = -1; let qtyColIdx = -1;
+        for (let i = 0; i < Math.min(20, jsonData.length); i++) {
+            for (let j = 0; j < jsonData[i].length; j++) {
+                const cell = String(jsonData[i][j]).toLowerCase().trim();
+                if (cell.includes('uds') || cell.includes('mts') || cell.includes('cant') || cell === 'cantidad') {
+                    headerRowIdx = i; qtyColIdx = j; break;
+                }
+            }
+            if (headerRowIdx !== -1) break;
         }
 
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            const archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size, base64: ev.target.result };
-            finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo);
-        };
-        reader.readAsDataURL(archivoInput);
-    } else {
-        finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo);
+        let filteredData = [];
+        if (headerRowIdx !== -1 && qtyColIdx !== -1) {
+            filteredData = jsonData.slice(0, headerRowIdx + 1);
+            const dataRows = jsonData.slice(headerRowIdx + 1).filter(row => {
+                const val = parseFloat(row[qtyColIdx]);
+                return !isNaN(val) && val > 0;
+            });
+            filteredData = filteredData.concat(dataRows);
+        } else {
+            filteredData = jsonData.filter(row => row.some(cell => String(cell).trim() !== ''));
+        }
+
+        let html = '<table class="table-preview">';
+        filteredData.forEach((row, i) => {
+            html += '<tr>';
+            row.forEach(cell => {
+                const val = cell !== '' ? cell : '&nbsp;';
+                if (i <= headerRowIdx && headerRowIdx !== -1) html += `<th>${val}</th>`;
+                else html += `<td>${val}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</table>';
+        return html;
+    } catch(e) {
+        return '<p style="color:var(--system-red);">❌ Error procesando el Excel.</p>';
     }
 }
 
-function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo) {
-    albaran.idObra = formData.get('idObra');
-    albaran.fecha = formData.get('fecha');
-    albaran.cuentaCargo = formData.get('cuentaCargo');
-    albaran.tipoInstalacion = formData.get('tipoInstalacion');
-    albaran.jefeObra = formData.get('jefeObra');
-    albaran.observaciones = formData.get('observaciones') || '';
-    albaran.archivo = archivoInfo;
-
-    cables = cables.filter(c => !(c.idAlbaranAsociado === idAlbaran && c.accion === 'pendiente_recepcion'));
-
-    const itemsCables = document.querySelectorAll('#editAlbaranCablesContainer .bobina-item');
-    itemsCables.forEach(item => {
-        const idx = item.dataset.cableAlbaran;
-        const tipo = formData.get(`editAlbaranTipoCable_${idx}`);
-        const metros = parseFloat(formData.get(`editAlbaranMetrosCable_${idx}`));
-        
-        if (tipo && metros > 0) {
-            cables.push({
-                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`,
-                tipoMaterial: 'cable',
-                idObra: formData.get('idObra'),
-                tipoCable: tipo,
-                metros: metros,
-                accion: 'pendiente_recepcion',
-                fecha: formData.get('fecha'),
-                observaciones: `Esperando con Albarán: ${idAlbaran}`,
-                idAlbaranAsociado: idAlbaran 
-            });
-        }
-    });
-
-    guardarTodosLosDatos(); cerrarTodosLosModales(); 
-    mostrarToast('✅ Albarán editado correctamente');
-}
-
-// --- CREACIÓN NORMAL DE ALBARÁN ---
 function crearAlbaran(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const archivoInput = document.getElementById('archivoAlbaran')?.files[0];
     
-    let archivoInfo = null;
     if (archivoInput) {
-        if (archivoInput.size > 1536000) {
-            mostrarToast('❌ El archivo es muy grande. Máximo 1.5 MB para evitar fallos de guardado.');
-            return; 
-        }
-
-        archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
+        const isExcel = archivoInput.name.toLowerCase().match(/\.(xlsx|xls)$/i);
         const reader = new FileReader();
+
         reader.onload = function(ev) {
-            archivoInfo.base64 = ev.target.result;
-            finalizarCreacionAlbaran(formData, archivoInfo);
+            const b64 = ev.target.result;
+            let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
+
+            if (isExcel) {
+                // Extraemos la tabla y guardamos solo el HTML (Peso casi nulo)
+                archivoInfo.tablaHtml = generarTablaHtmlDesdeBase64(b64);
+                finalizarCreacionAlbaran(formData, archivoInfo);
+            } else {
+                // Para PDFs, si es muy grande bloqueamos para que no colapse la BD
+                if (archivoInput.size > 1536000) {
+                    mostrarToast('❌ El PDF es muy pesado (Max 1.5MB). Los Excel no tienen límite.');
+                    return;
+                }
+                archivoInfo.base64 = b64;
+                finalizarCreacionAlbaran(formData, archivoInfo);
+            }
         };
         reader.readAsDataURL(archivoInput);
     } else {
-        finalizarCreacionAlbaran(formData, archivoInfo);
+        finalizarCreacionAlbaran(formData, null);
     }
 }
 
@@ -358,29 +329,87 @@ function finalizarCreacionAlbaran(formData, archivoInfo) {
         if (tipo && metros > 0) {
             cables.push({
                 id: `CAB-${Date.now().toString().slice(-6)}-${idx}`,
-                tipoMaterial: 'cable',
-                idObra: formData.get('idObra'),
-                tipoCable: tipo,
-                metros: metros,
-                accion: 'pendiente_recepcion', 
-                fecha: formData.get('fecha'),
-                observaciones: `Esperando con Albarán: ${albaranId}`,
-                idAlbaranAsociado: albaranId 
+                tipoMaterial: 'cable', idObra: formData.get('idObra'), tipoCable: tipo, metros: metros,
+                accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
+                observaciones: `Esperando con Albarán: ${albaranId}`, idAlbaranAsociado: albaranId 
             });
         }
     });
 
     albaranes.push({
-        id: albaranId,
-        idObra: formData.get('idObra'), fecha: formData.get('fecha'),
+        id: albaranId, idObra: formData.get('idObra'), fecha: formData.get('fecha'),
         cuentaCargo: formData.get('cuentaCargo'), tipoInstalacion: formData.get('tipoInstalacion'),
         observaciones: formData.get('observaciones') || '',
         estado: 'pendiente', materialFaltante: null, archivo: archivoInfo
     });
     
     guardarTodosLosDatos(); cerrarTodosLosModales(); 
-    mostrarToast('✅ Albarán y cables esperados creados');
+    mostrarToast('✅ Albarán creado con éxito');
 }
+
+function guardarEdicionAlbaran(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const idAlbaran = formData.get('idAlbaran');
+    const albaran = albaranes.find(a => a.id === idAlbaran);
+    if (!albaran) return;
+
+    const archivoInput = document.getElementById('editArchivoAlbaran')?.files[0];
+    
+    if (archivoInput) {
+        const isExcel = archivoInput.name.toLowerCase().match(/\.(xlsx|xls)$/i);
+        const reader = new FileReader();
+
+        reader.onload = function(ev) {
+            const b64 = ev.target.result;
+            let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
+
+            if (isExcel) {
+                // Extraemos la tabla HTML y evitamos colapsar la Base de datos
+                archivoInfo.tablaHtml = generarTablaHtmlDesdeBase64(b64);
+                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo);
+            } else {
+                if (archivoInput.size > 1536000) {
+                    mostrarToast('❌ El PDF es muy pesado (Max 1.5MB). Los Excel no tienen límite.');
+                    return;
+                }
+                archivoInfo.base64 = b64;
+                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo);
+            }
+        };
+        reader.readAsDataURL(archivoInput);
+    } else {
+        // Se mantiene el archivo viejo
+        finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo);
+    }
+}
+
+function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo) {
+    albaran.idObra = formData.get('idObra'); albaran.fecha = formData.get('fecha');
+    albaran.cuentaCargo = formData.get('cuentaCargo'); albaran.tipoInstalacion = formData.get('tipoInstalacion');
+    albaran.jefeObra = formData.get('jefeObra'); albaran.observaciones = formData.get('observaciones') || '';
+    albaran.archivo = archivoInfo;
+
+    cables = cables.filter(c => !(c.idAlbaranAsociado === idAlbaran && c.accion === 'pendiente_recepcion'));
+
+    const itemsCables = document.querySelectorAll('#editAlbaranCablesContainer .bobina-item');
+    itemsCables.forEach(item => {
+        const idx = item.dataset.cableAlbaran;
+        const tipo = formData.get(`editAlbaranTipoCable_${idx}`);
+        const metros = parseFloat(formData.get(`editAlbaranMetrosCable_${idx}`));
+        if (tipo && metros > 0) {
+            cables.push({
+                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`, tipoMaterial: 'cable', idObra: formData.get('idObra'),
+                tipoCable: tipo, metros: metros, accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
+                observaciones: `Esperando con Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran 
+            });
+        }
+    });
+
+    guardarTodosLosDatos(); cerrarTodosLosModales(); 
+    mostrarToast('✅ Albarán editado correctamente');
+}
+
 
 function mostrarAlbaranes() {
     const tabActiva = document.querySelector('.tab-btn.active')?.dataset?.tab;
@@ -397,7 +426,6 @@ function mostrarAlbaranes() {
         return;
     }
 
-    // Ordenar Albaranes (más recientes primero)
     abs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     contenedor.innerHTML = abs.map(a => {
@@ -406,7 +434,10 @@ function mostrarAlbaranes() {
         const estadoText = a.estado === 'pendiente' ? 'Pendiente' : (esFaltante ? 'Faltante' : 'Recibido');
         
         let actions = `<div class="albaran-actions">`;
-        if (a.archivo) actions += `<button class="btn btn-info" onclick="verArchivoAlbaran('${a.id}')">📄 Archivo</button>`;
+        // Boton Archivo actualizado
+        if (a.archivo && (a.archivo.tablaHtml || a.archivo.base64)) {
+            actions += `<button class="btn btn-info" onclick="verArchivoAlbaran('${a.id}')">📄 Ver Material</button>`;
+        }
         
         if (a.estado === 'pendiente') {
             actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar</button>`;
@@ -600,7 +631,6 @@ function actualizarStockDisplay(tipo) {
     }
 }
 
-// ESTA FUNCIÓN HACE LA MAGIA DEL ORDEN Y LA SEPARACIÓN VISUAL
 function mostrarMateriales(tipo) {
     const arr = tipo === 'cable' ? cables : subconductos;
     const cont = document.getElementById(`lista-${tipo}s`);
@@ -638,10 +668,8 @@ function mostrarMateriales(tipo) {
         let pendHtml = tipo === 'subconducto' ? `<span>⏳ <b>Pend. Solic.:</b> ${g.p.toFixed(1)}m</span>` : `<span>⏳ <b>Pend. Recibir:</b> ${g.pr.toFixed(1)}m</span>`;
         let mermaHtml = g.m > 0 ? `<span style="color:#8E8E93;">🗑️ <b>Mermas:</b> ${g.m.toFixed(1)}m</span>` : '';
 
-        // ORDENAMOS TODOS LOS REGISTROS DE ESTE CABLE/SUBCONDUCTO: Más recientes primero
         g.items.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-        // Función interna para crear las tarjetas HTML
         const renderCards = (itemsArray) => itemsArray.map(m => {
             const isEntrada = m.accion === 'entrada';
             const isPendienteRec = m.accion === 'pendiente_recepcion';
@@ -686,7 +714,6 @@ function mostrarMateriales(tipo) {
         let gridsHtml = '';
 
         if (tipo === 'subconducto') {
-            // SEPARAMOS LAS TARJETAS EN DOS GRUPOS
             const pendientes = g.items.filter(m => m.accion === 'instalacion' && !m.solicitado && m.accion !== 'solicitado');
             const historial = g.items.filter(m => !(m.accion === 'instalacion' && !m.solicitado && m.accion !== 'solicitado'));
 
@@ -700,7 +727,6 @@ function mostrarMateriales(tipo) {
                 gridsHtml += `<div class="albaranes-grid" style="padding:0 16px 16px 16px;">${renderCards(historial).join('')}</div>`;
             }
         } else {
-            // CABLES NORMALES
             gridsHtml = `<div class="albaranes-grid" style="padding:16px;">${renderCards(g.items).join('')}</div>`;
         }
 
@@ -844,7 +870,6 @@ function mostrarDevoluciones() {
     if(devoluciones.length === 0) { cont.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);">No hay devoluciones</div>'; return; }
     
     let html = '';
-    // Ordenar Devoluciones por fecha (Nuevas primero)
     devoluciones.sort((a, b) => new Date(b.fechaEntrega) - new Date(a.fechaEntrega));
 
     devoluciones.forEach(d => {
@@ -899,21 +924,22 @@ function eliminarDevolucion(id) {
     if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
 }
 
-// ===== EXCEL PREVIEW CON FILTRO =====
+// ===== MAGIA NUEVA: VER TABLA HTML CREADA EN LOCAL =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
-    if(!a || !a.archivo || !a.archivo.base64) {
-        return mostrarToast('❌ El archivo no está disponible (quizás se limpió por ser muy grande).');
+    if(!a || !a.archivo) {
+        return mostrarToast('❌ El archivo no está disponible (quizás se limpió en un backup anterior). Los nuevos funcionarán perfectamente.');
     }
     
     let contenido = '';
-    const name = a.archivo.nombre.toLowerCase();
     
-    if(name.endsWith('.pdf')) {
+    // Mostramos la tabla HTML súper ligera extraída previamente del Excel
+    if (a.archivo.tablaHtml) {
+        contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
+    } 
+    // Fallback por si era un PDF antiguo (o uno nuevo que pesaba poco)
+    else if (a.archivo.base64) {
         contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
-    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-        setTimeout(() => renderExcelFiltrado(a.archivo.base64, 'excel-container'), 50);
-        contenido = `<div id="excel-container" class="excel-preview">⏳ Analizando y filtrando Excel...</div>`;
     } else {
         contenido = `<p>Formato no previsualizable.</p>`;
     }
@@ -927,68 +953,10 @@ function verArchivoAlbaran(id) {
             </div>
             <div class="modal-body">
                 ${contenido}
-                <div class="form-actions" style="margin-top: 24px;">
-                    <button class="btn btn-primary" onclick="descargarArchivo('${id}')">Descargar Original</button>
                 </div>
-            </div>
         </div>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-function renderExcelFiltrado(b64, cid) {
-    try {
-        const wb = XLSX.read(b64.split(',')[1], { type: 'base64' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
-        if (jsonData.length === 0) return document.getElementById(cid).innerHTML = '<p>El Excel está vacío.</p>';
-
-        let headerRowIdx = -1; let qtyColIdx = -1;
-        for (let i = 0; i < Math.min(20, jsonData.length); i++) {
-            for (let j = 0; j < jsonData[i].length; j++) {
-                const cell = String(jsonData[i][j]).toLowerCase().trim();
-                if (cell.includes('uds') || cell.includes('mts') || cell.includes('cant') || cell === 'cantidad') {
-                    headerRowIdx = i; qtyColIdx = j; break;
-                }
-            }
-            if (headerRowIdx !== -1) break;
-        }
-
-        let filteredData = [];
-        if (headerRowIdx !== -1 && qtyColIdx !== -1) {
-            filteredData = jsonData.slice(0, headerRowIdx + 1);
-            const dataRows = jsonData.slice(headerRowIdx + 1).filter(row => {
-                const val = parseFloat(row[qtyColIdx]);
-                return !isNaN(val) && val > 0;
-            });
-            filteredData = filteredData.concat(dataRows);
-        } else {
-            filteredData = jsonData.filter(row => row.some(cell => String(cell).trim() !== ''));
-        }
-
-        let html = '<table class="table-preview">';
-        filteredData.forEach((row, i) => {
-            html += '<tr>';
-            row.forEach(cell => {
-                const val = cell !== '' ? cell : '&nbsp;';
-                if (i <= headerRowIdx && headerRowIdx !== -1) html += `<th>${val}</th>`;
-                else html += `<td>${val}</td>`;
-            });
-            html += '</tr>';
-        });
-        html += '</table>';
-        
-        document.getElementById(cid).innerHTML = html;
-    } catch(e) { 
-        document.getElementById(cid).innerHTML = '<p style="color:var(--system-red);">❌ Error procesando el Excel.</p>'; 
-    }
-}
-
-function descargarArchivo(id) {
-    const a = albaranes.find(x => x.id === id);
-    if(!a || !a.archivo || !a.archivo.base64) return;
-    const aTag = document.createElement('a'); aTag.href = a.archivo.base64; aTag.download = a.archivo.nombre; aTag.click();
 }
 
 // ===== BUSCADOR EN TIEMPO REAL =====
@@ -1287,14 +1255,6 @@ function toggleDetalleFaltante() {
     document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
 }
 
-function eliminarAlbaran(id) {
-    if(confirm('¿Eliminar albarán permanentemente?')) { 
-        albaranes = albaranes.filter(a=>a.id!==id); 
-        cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
-        guardarTodosLosDatos(); 
-    }
-}
-
 function establecerFechaActual() {
     const hoy = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = hoy; });
@@ -1307,14 +1267,12 @@ function mostrarToast(mensaje) {
     setTimeout(() => { if (t.parentNode) t.remove(); }, 4000);
 }
 
-// Exponer funciones globales necesarias
 window.exportarDatos = exportarDatos;
 window.abrirImportar = abrirImportar;
 window.confirmarRecepcion = confirmarRecepcion;
 window.marcarFaltanteRecibido = marcarFaltanteRecibido;
 window.eliminarAlbaran = eliminarAlbaran;
 window.verArchivoAlbaran = verArchivoAlbaran;
-window.descargarArchivo = descargarArchivo;
 window.eliminarMaterial = eliminarMaterial;
 window.eliminarBobina = eliminarBobina;
 window.toggleCamposMaterial = toggleCamposMaterial;
