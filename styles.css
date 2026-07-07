@@ -104,6 +104,8 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .card-entrada { border-left: 6px solid var(--system-green) !important; background: linear-gradient(90deg, rgba(52,199,89,0.05) 0%, var(--bg-card) 10%); }
 .card-instalacion { border-left: 6px solid var(--system-red) !important; background: linear-gradient(90deg, rgba(255,59,48,0.05) 0%, var(--bg-card) 10%); }
 .card-pendiente-recepcion { border-left: 6px solid var(--system-blue) !important; background: linear-gradient(90deg, rgba(0,122,255,0.05) 0%, var(--bg-card) 10%); }
+/* NUEVO COLOR PARA MERMAS */
+.card-merma { border-left: 6px solid #8E8E93 !important; background: linear-gradient(90deg, rgba(142,142,147,0.05) 0%, var(--bg-card) 10%); }
 
 /* ===== REPORTES GRID ===== */
 .reportes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
@@ -159,7 +161,7 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .resultado-item { background: var(--bg-system); padding: 12px; border-radius: var(--radius-md); margin-bottom: 10px; cursor: pointer; transition: background 0.2s; }
 .resultado-item:hover { background: #E5E5EA; }
 
-/* ===== BOBINAS MÚLTIPLES ===== */
+/* ===== BOBINAS MÚLTIPLES FIX ===== */
 .bobinas-container { display: flex; flex-direction: column; gap: 24px; margin-bottom: 24px; }
 .bobina-item { border: 1px solid var(--text-tertiary); border-radius: var(--radius-md); padding: 20px; background: #FAFAFA; box-shadow: var(--shadow-sm); }
 .bobina-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #E5E5EA; }

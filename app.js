@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('tipoCableInstalacion').innerHTML = CABLE_OPTIONS_HTML;
     document.getElementById('tipoCableEntrada').innerHTML = CABLE_OPTIONS_HTML;
+    document.getElementById('tipoCableMerma').innerHTML = CABLE_OPTIONS_HTML; // Rellenar Opciones de Merma
 });
 
 function migrarDatosLocalesALaNube() {
@@ -268,7 +269,6 @@ function guardarEdicionAlbaran(e) {
     const archivoInput = document.getElementById('editArchivoAlbaran')?.files[0];
     
     if (archivoInput) {
-        // LÍMITE DE TAMAÑO: 1.5 MB para evitar el error de Firebase
         if (archivoInput.size > 1536000) {
             mostrarToast('❌ El archivo es muy grande. Máximo 1.5 MB para evitar fallos de guardado.');
             return; 
@@ -329,7 +329,6 @@ function crearAlbaran(e) {
     
     let archivoInfo = null;
     if (archivoInput) {
-        // LÍMITE DE TAMAÑO: 1.5 MB para evitar el error de Firebase
         if (archivoInput.size > 1536000) {
             mostrarToast('❌ El archivo es muy grande. Máximo 1.5 MB para evitar fallos de guardado.');
             return; 
@@ -485,10 +484,15 @@ function agregarMaterial(tipo, formData, accion) {
     const metrosInput = parseFloat(formData.get('metros'));
     if (isNaN(metrosInput) || metrosInput <= 0) return mostrarToast('❌ Los metros deben ser mayor a 0');
 
+    let obra = formData.get('idObra');
+    if (!obra || obra.trim() === '') {
+        obra = accion === 'merma' ? 'Baja / Almacén' : 'No especificada';
+    }
+
     const material = {
         id: `${tipo==='cable'?'CAB':'SUB'}-${Date.now().toString().slice(-6)}`,
         tipoMaterial: tipo, 
-        idObra: formData.get('idObra') || 'No especificada', 
+        idObra: obra, 
         tipoCable: formData.get('tipoCable') || formData.get('tipoSubconducto'),
         metros: metrosInput, 
         accion: accion, 
@@ -499,8 +503,24 @@ function agregarMaterial(tipo, formData, accion) {
 
     if (tipo === 'cable') cables.push(material); else subconductos.push(material);
     guardarTodosLosDatos(); 
-    mostrarToast(`✅ ${tipo==='cable'?'Cable':'Subconducto'} guardado en la Nube`);
+    mostrarToast(`✅ ${accion==='merma'?'Merma registrada':(tipo==='cable'?'Cable guardado':'Subconducto guardado')}`);
 }
+
+// NUEVA CALCULADORA PARA SUBCONDUCTO
+function calcularTotalSubconducto() {
+    const x1 = parseFloat(document.getElementById('sub_x1').value) || 0;
+    const x2 = parseFloat(document.getElementById('sub_x2').value) || 0;
+    const x3 = parseFloat(document.getElementById('sub_x3').value) || 0;
+    const x4 = parseFloat(document.getElementById('sub_x4').value) || 0;
+    
+    const total = (x1 * 1) + (x2 * 2) + (x3 * 3) + (x4 * 4);
+    const metrosInput = document.getElementById('sub_metros_totales');
+    
+    if (total > 0 || document.getElementById('sub_x1').value || document.getElementById('sub_x2').value || document.getElementById('sub_x3').value || document.getElementById('sub_x4').value) {
+        metrosInput.value = total.toFixed(1);
+    }
+}
+window.calcularTotalSubconducto = calcularTotalSubconducto;
 
 function marcarSubconductoSolicitado(id) {
     const material = subconductos.find(s => s.id === id);
@@ -513,15 +533,18 @@ function marcarSubconductoSolicitado(id) {
 }
 window.marcarSubconductoSolicitado = marcarSubconductoSolicitado;
 
+// SE ACTUALIZA CÁLCULO DE STOCK PARA AÑADIR MERMAS
 function calcularStock(tipo) {
     const arr = tipo === 'cable' ? cables : subconductos;
-    let rec = 0, inst = 0, pend = 0, pendRec = 0;
+    let rec = 0, inst = 0, pend = 0, pendRec = 0, merma = 0;
     
     arr.forEach(m => { 
         if(m.accion === 'entrada') {
             rec += m.metros; 
         } else if (m.accion === 'pendiente_recepcion') {
             pendRec += m.metros;
+        } else if (m.accion === 'merma') {
+            merma += m.metros; // La merma resta al disponible, se acumula aquí
         } else {
             inst += m.metros; 
             const isSolicitado = m.solicitado === true || m.accion === 'solicitado';
@@ -530,7 +553,8 @@ function calcularStock(tipo) {
             }
         }
     });
-    return { recibido: rec, instalado: inst, disponible: rec - inst, pendiente: pend, pendiente_recepcion: pendRec };
+    // Disponible es = Recibido - (Instalado + Mermado)
+    return { recibido: rec, instalado: inst, merma: merma, disponible: rec - inst - merma, pendiente: pend, pendiente_recepcion: pendRec };
 }
 
 function calcularStockPorTipo(tipoMaterial) {
@@ -540,11 +564,12 @@ function calcularStockPorTipo(tipoMaterial) {
     
     tipos.forEach(tipo => {
         const materialesDelTipo = materialArray.filter(m => (m.tipoCable || m.tipoSubconducto) === tipo);
-        let totalRecibido = 0; let totalInstalado = 0; let totalPendiente = 0; let totalPendienteRecibir = 0;
+        let totalRecibido = 0; let totalInstalado = 0; let totalPendiente = 0; let totalPendienteRecibir = 0; let totalMerma = 0;
         
         materialesDelTipo.forEach(material => {
             if (material.accion === 'entrada') totalRecibido += material.metros;
             else if (material.accion === 'pendiente_recepcion') totalPendienteRecibir += material.metros;
+            else if (material.accion === 'merma') totalMerma += material.metros;
             else if (material.accion === 'instalacion') {
                 totalInstalado += material.metros;
                 if (!material.solicitado) totalPendiente += material.metros;
@@ -553,8 +578,8 @@ function calcularStockPorTipo(tipoMaterial) {
         
         stockPorTipo[tipo] = {
             recibido: totalRecibido, instalado: totalInstalado, pendiente: totalPendiente,
-            pendiente_recepcion: totalPendienteRecibir,
-            disponible: totalRecibido - totalInstalado
+            pendiente_recepcion: totalPendienteRecibir, merma: totalMerma,
+            disponible: totalRecibido - totalInstalado - totalMerma
         };
     });
     return stockPorTipo;
@@ -585,13 +610,15 @@ function mostrarMateriales(tipo) {
     const agrupado = {};
     arr.forEach(m => {
         const t = m.tipoCable || 'General';
-        if(!agrupado[t]) agrupado[t] = { items: [], r:0, i:0, p:0, pr: 0 };
+        if(!agrupado[t]) agrupado[t] = { items: [], r:0, i:0, p:0, pr: 0, m: 0 };
         agrupado[t].items.push(m);
         
         if(m.accion === 'entrada') {
             agrupado[t].r += m.metros;
         } else if (m.accion === 'pendiente_recepcion') {
             agrupado[t].pr += m.metros;
+        } else if (m.accion === 'merma') {
+            agrupado[t].m += m.metros;
         } else {
             agrupado[t].i += m.metros; 
             const isSolicitado = m.solicitado === true || m.accion === 'solicitado';
@@ -602,12 +629,13 @@ function mostrarMateriales(tipo) {
     let html = '';
     Object.keys(agrupado).forEach(t => {
         const g = agrupado[t];
-        const disp = g.r - g.i;
+        const disp = g.r - g.i - g.m; // Restamos también la merma
         let cAlerta = 'stock-positivo', tAlerta = 'A favor';
         if(disp < 0) { cAlerta = 'stock-negativo'; tAlerta = 'Falta'; }
         else if(disp < 500) { cAlerta = 'stock-alerta'; tAlerta = 'Bajo'; }
         
         let pendHtml = tipo === 'subconducto' ? `<span>⏳ <b>Pend. Solic.:</b> ${g.p.toFixed(1)}m</span>` : `<span>⏳ <b>Pend. Recibir:</b> ${g.pr.toFixed(1)}m</span>`;
+        let mermaHtml = g.m > 0 ? `<span style="color:#8E8E93;">🗑️ <b>Mermas:</b> ${g.m.toFixed(1)}m</span>` : '';
 
         html += `
         <div class="tipo-section">
@@ -618,6 +646,7 @@ function mostrarMateriales(tipo) {
                 </div>
                 <div class="tipo-stock">
                     <span>📥 ${g.r.toFixed(1)}m</span> <span>🔧 ${g.i.toFixed(1)}m</span>
+                    ${mermaHtml}
                     ${pendHtml}
                     <span class="${cAlerta}">✅ Disp: ${disp.toFixed(1)}m (${tAlerta})</span>
                 </div>
@@ -626,15 +655,16 @@ function mostrarMateriales(tipo) {
                 ${g.items.map(m => {
                     const isEntrada = m.accion === 'entrada';
                     const isPendienteRec = m.accion === 'pendiente_recepcion';
-                    const isInstalacion = !isEntrada && !isPendienteRec;
+                    const isMerma = m.accion === 'merma';
+                    const isInstalacion = !isEntrada && !isPendienteRec && !isMerma;
                     const isSolicitado = m.solicitado === true || m.accion === 'solicitado';
 
-                    const cardClass = isEntrada ? 'card-entrada' : (isPendienteRec ? 'card-pendiente-recepcion' : 'card-instalacion');
-                    const icon = isEntrada ? '📥' : (isPendienteRec ? '⏳' : '🔧');
-                    const label = isEntrada ? 'ENTRADA' : (isPendienteRec ? 'ESPERANDO ALBARÁN' : 'INSTALADO');
+                    const cardClass = isEntrada ? 'card-entrada' : (isPendienteRec ? 'card-pendiente-recepcion' : (isMerma ? 'card-merma' : 'card-instalacion'));
+                    const icon = isEntrada ? '📥' : (isPendienteRec ? '⏳' : (isMerma ? '🗑️' : '🔧'));
+                    const label = isEntrada ? 'ENTRADA' : (isPendienteRec ? 'ESPERANDO ALBARÁN' : (isMerma ? 'MERMA / RETAL' : 'INSTALADO'));
                     
-                    const badgeColor = isEntrada ? 'var(--system-green)' : (isPendienteRec ? 'var(--system-blue)' : 'var(--system-red)');
-                    const badgeBg = isEntrada ? 'rgba(52,199,89,0.1)' : (isPendienteRec ? 'rgba(0,122,255,0.1)' : 'rgba(255, 59, 48, 0.1)');
+                    const badgeColor = isEntrada ? 'var(--system-green)' : (isPendienteRec ? 'var(--system-blue)' : (isMerma ? '#8E8E93' : 'var(--system-red)'));
+                    const badgeBg = isEntrada ? 'rgba(52,199,89,0.1)' : (isPendienteRec ? 'rgba(0,122,255,0.1)' : (isMerma ? 'rgba(142,142,147,0.1)' : 'rgba(255, 59, 48, 0.1)'));
 
                     let badgesHtml = `<b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b>`;
                     if (tipo === 'subconducto' && isInstalacion && isSolicitado) {
@@ -1003,16 +1033,14 @@ function abrirImportar() {
                     
                     if (confirm('⚠️ ¿Sobrescribir datos locales y en la nube con este archivo?')) {
                         
-                        // ===== MAGIA DE LIMPIEZA AUTOMÁTICA =====
                         let importAlbaranes = Array.isArray(d.albaranes) ? d.albaranes : [];
                         importAlbaranes.forEach(a => {
                             if (a.archivo && a.archivo.base64 && a.archivo.base64.length > 100) {
-                                a.archivo.base64 = ""; // Destruye el texto kilométrico para que Firebase no se sature
+                                a.archivo.base64 = ""; 
                             }
                         });
                         albaranes = importAlbaranes;
-                        // ========================================
-
+                        
                         cables = Array.isArray(d.cables) ? d.cables : [];
                         subconductos = Array.isArray(d.subconductos) ? d.subconductos : [];
                         devoluciones = Array.isArray(d.devoluciones) ? d.devoluciones : [];
@@ -1178,6 +1206,11 @@ function configurarEventListeners() {
     
     document.getElementById('btnEntradaCable').addEventListener('click', () => { document.getElementById('modalEntradaCable').classList.add('active'); establecerFechaActual(); });
     document.getElementById('btnNuevoCableInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoCable').classList.add('active'); establecerFechaActual(); });
+    
+    // NUEVO BOTÓN MERMA CABLES
+    document.getElementById('btnMermaCable').addEventListener('click', () => { document.getElementById('modalMermaCable').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('formMermaCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'merma'); cerrarTodosLosModales(); });
+
     document.getElementById('formEntradaCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'entrada'); cerrarTodosLosModales(); });
     document.getElementById('formNuevoCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'instalacion'); cerrarTodosLosModales(); });
 
@@ -1228,13 +1261,6 @@ function eliminarAlbaran(id) {
     if(confirm('¿Eliminar albarán permanentemente?')) { 
         albaranes = albaranes.filter(a=>a.id!==id); 
         cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
-        guardarTodosLosDatos(); 
-    }
-}
-
-function eliminarMaterial(tipo, id) {
-    if(confirm('¿Eliminar registro permanentemente?')) {
-        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); else subconductos = subconductos.filter(s=>s.id!==id);
         guardarTodosLosDatos(); 
     }
 }

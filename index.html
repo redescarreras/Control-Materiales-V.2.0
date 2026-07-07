@@ -86,6 +86,7 @@
                         <div class="tab-actions">
                             <button id="btnEntradaCable" class="btn btn-success">+ Entrada (Manual)</button>
                             <button id="btnNuevoCableInstalacion" class="btn btn-warning">+ Instalado (Salida)</button>
+                            <button id="btnMermaCable" class="btn btn-secondary" style="background: #8E8E93; color: white;">🗑️ Merma / Retal</button>
                         </div>
                     </div>
                     <div class="stock-grid">
@@ -344,6 +345,22 @@
         </div>
     </div>
 
+    <div id="modalMermaCable" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Registrar Merma / Retal</h2><button class="modal-close" onclick="cerrarModalCable()">&times;</button></div>
+            <form id="formMermaCable" class="modal-body">
+                <div class="form-group">
+                    <label>Tipo de Cable *</label>
+                    <select id="tipoCableMerma" name="tipoCable" required></select>
+                </div>
+                <div class="form-group"><label>Metros Desechados *</label><input type="number" name="metros" required min="0.1" step="0.1"></div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="fechaMerma" name="fecha"></div>
+                <div class="form-group"><label>Motivo / Observaciones</label><textarea name="observaciones" rows="2" placeholder="Ej: Restos de bobina inservibles" required></textarea></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalCable()">Cancelar</button><button type="submit" class="btn btn-secondary" style="background:#8E8E93; color:white;">Dar de Baja</button></div>
+            </form>
+        </div>
+    </div>
+
     <div id="modalEntradaCable" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h2>Registrar Entrada de Cable</h2><button class="modal-close" onclick="cerrarModalEntradaCable()">&times;</button></div>
@@ -372,7 +389,19 @@
                         <option value="">Seleccionar...</option><option value="Subconducto 32mm">Subconducto 32mm</option><option value="Subconducto 40mm">Subconducto 40mm</option><option value="Subconducto 63mm">Subconducto 63mm</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Metros *</label><input type="number" name="metros" required min="0.1" step="0.1"></div>
+                
+                <div class="form-group" style="background: #FAFAFA; border: 1px solid var(--bg-system); padding: 12px; border-radius: 8px;">
+                    <label style="margin-bottom: 8px; color: var(--text-primary);">📐 Calculadora de Conductos (Opcional)</label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 4px;">
+                        <div style="flex:1"><small style="display:block; text-align:center;">x1</small><input type="number" id="sub_x1" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div>
+                        <div style="flex:1"><small style="display:block; text-align:center;">x2</small><input type="number" id="sub_x2" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div>
+                        <div style="flex:1"><small style="display:block; text-align:center;">x3</small><input type="number" id="sub_x3" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div>
+                        <div style="flex:1"><small style="display:block; text-align:center;">x4</small><input type="number" id="sub_x4" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div>
+                    </div>
+                    <small style="color: var(--text-secondary); font-size: 11px;">Ej: 100 mts tirados en tubo x2 suman 200m en total de forma automática.</small>
+                </div>
+
+                <div class="form-group"><label>Metros Totales Instalados *</label><input type="number" id="sub_metros_totales" name="metros" required min="0.1" step="0.1"></div>
                 <div class="form-group"><label>Fecha</label><input type="date" id="fechaSubconducto" name="fecha"></div>
                 <div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2" placeholder="Nota adicional (Opcional)"></textarea></div>
                 <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalSubconducto()">Cancelar</button><button type="submit" class="btn btn-warning">Registrar Instalado</button></div>
