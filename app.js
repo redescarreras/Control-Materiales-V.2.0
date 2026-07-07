@@ -981,4 +981,464 @@ function toggleCamposMaterial(idx) {
     document.getElementById(`camposOtroMaterial_${idx}`).style.display = 'none';
     
     if(tipo === 'bobina_con_cable') document.getElementById(`camposBobinaCable_${idx}`).style.display = 'flex';
-    if(tipo === 'bobina_vacia') document.getElementById(`camposBob
+    if(tipo === 'bobina_vacia') document.getElementById(`camposBobinaVacia_${idx}`).style.display = 'flex';
+    if(tipo === 'otro') document.getElementById(`camposOtroMaterial_${idx}`).style.display = 'block';
+}
+
+function crearDevolucion(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const bobinas = document.querySelectorAll('.bobina-item');
+    if(bobinas.length === 0) return mostrarToast('Añada al menos una bobina');
+
+    const bobinasData = [];
+    bobinas.forEach((b) => {
+        const idx = b.dataset.bobina;
+        bobinasData.push({
+            entregaVacia: formData.get(`entregaVacia_${idx}`) === 'on',
+            tipoMaterial: formData.get(`tipoMaterial_${idx}`),
+            tipoCableDevolucion: formData.get(`tipoCableDevolucion_${idx}`) || '',
+            tipoCableDevolucionVacia: formData.get(`tipoCableDevolucionVacia_${idx}`) || '',
+            numeroMatriculaCable: formData.get(`numeroMatriculaCable_${idx}`) || '',
+            metrosCableBobina: parseFloat(formData.get(`metrosCable_${idx}`)) || 0,
+            numeroMatriculaVacia: formData.get(`numeroMatriculaVacia_${idx}`) || '',
+            descripcionOtroMaterial: formData.get(`descripcionOtroMaterial_${idx}`) || ''
+        });
+    });
+
+    devoluciones.push({
+        id: `DEV-${Date.now().toString().slice(-6)}`,
+        idObra: formData.get('idObra'), fechaEntrega: formData.get('fecha'),
+        tipoInstalacion: formData.get('tipoInstalacion'), bobinas: bobinasData,
+        observaciones: formData.get('observaciones') || ''
+    });
+
+    guardarTodosLosDatos(); cerrarTodosLosModales(); 
+    mostrarToast('✅ Devolución registrada en la Nube');
+}
+
+function mostrarDevoluciones() {
+    const cont = document.getElementById('lista-devoluciones');
+    if(devoluciones.length === 0) { cont.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);">No hay devoluciones</div>'; return; }
+    
+    let html = '';
+    devoluciones.sort((a, b) => new Date(b.fechaEntrega) - new Date(a.fechaEntrega));
+
+    devoluciones.forEach(d => {
+        const total = d.bobinas.length;
+        let detallesHtml = d.bobinas.map((b, i) => {
+            let info = '';
+            if (b.tipoMaterial === 'bobina_con_cable') {
+                info = `<span style="color:var(--text-secondary);">Cable:</span> <b>${b.tipoCableDevolucion}</b><br>
+                        <span style="color:var(--text-secondary);">Matrícula:</span> <b>${b.numeroMatriculaCable}</b><br>
+                        <span style="color:var(--text-secondary);">Metros:</span> <b>${b.metrosCableBobina}m</b>`;
+            } else if (b.tipoMaterial === 'bobina_vacia') {
+                info = `<span style="color:var(--text-secondary);">Cable Original:</span> <b>${b.tipoCableDevolucionVacia}</b><br>
+                        <span style="color:var(--text-secondary);">Matrícula:</span> <b>${b.numeroMatriculaVacia}</b>`;
+            } else {
+                info = `<span style="color:var(--text-secondary);">Descripción:</span> <b>${b.descripcionOtroMaterial}</b>`;
+            }
+            let estadoVacia = b.entregaVacia ? `<span style="display:inline-block; margin-top:6px; background:rgba(255,149,0,0.1); color:var(--system-orange); padding:2px 8px; border-radius:6px; font-size:11px; font-weight:bold;">ENTREGA VACÍA</span>` : '';
+            let tipoBadge = b.tipoMaterial === 'bobina_con_cable' ? '🔌 Con Cable' : (b.tipoMaterial === 'bobina_vacia' ? '🕳️ Vacía' : '📦 Otro');
+
+            return `
+            <div style="background:var(--bg-system); padding:12px; border-radius:10px; margin-bottom:12px; font-size:13px; border:1px solid #E5E5EA;">
+                <div style="margin-bottom:8px; display:flex; justify-content:space-between;">
+                    <strong>Bobina ${i+1}</strong> <span style="font-weight:600; color:var(--system-blue);">${tipoBadge}</span>
+                </div>
+                ${info}
+                ${estadoVacia ? `<br>${estadoVacia}` : ''}
+            </div>`;
+        }).join('');
+
+        html += `
+        <div class="albaran-card" id="card-${d.id}">
+            <div class="albaran-header"><span class="albaran-id">${d.id}</span> <span class="status-badge status-recibido">Completado</span></div>
+            <div class="albaran-info">
+                <div class="info-row"><span class="info-label">Obra:</span><span class="info-value">${d.idObra}</span></div>
+                <div class="info-row"><span class="info-label">Fecha:</span><span class="info-value">${new Date(d.fechaEntrega).toLocaleDateString()}</span></div>
+                <div class="info-row"><span class="info-label">Bobinas:</span><span class="info-value">${total}</span></div>
+                ${d.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary);"><em>Nota: ${d.observaciones}</em></div>` : ''}
+            </div>
+            <div id="detalles-${d.id}" style="display:none; margin-top:16px; border-top:1px solid var(--bg-system); padding-top:16px;">
+                ${detallesHtml}
+            </div>
+            <div class="albaran-actions">
+                <button class="btn btn-info w-100" onclick="const el = document.getElementById('detalles-${d.id}'); if(el.style.display==='none'){el.style.display='block'; this.innerText='Ocultar Bobinas';}else{el.style.display='none'; this.innerText='Ver Bobinas';}">Ver Bobinas</button>
+                <button class="btn btn-secondary w-100" onclick="eliminarDevolucion('${d.id}')">🗑️ Eliminar</button>
+            </div>
+        </div>`;
+    });
+    cont.innerHTML = html;
+}
+
+function eliminarDevolucion(id) {
+    if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
+}
+
+// ===== MAGIA NUEVA: VER TABLA HTML CREADA EN LOCAL =====
+function verArchivoAlbaran(id) {
+    const a = albaranes.find(x => x.id === id);
+    if(!a || !a.archivo) {
+        return mostrarToast('❌ El archivo no está disponible (quizás se limpió en un backup anterior). Los nuevos funcionarán perfectamente.');
+    }
+    
+    let contenido = '';
+    
+    if (a.archivo.tablaHtml) {
+        contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
+    } 
+    else if (a.archivo.base64) {
+        contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
+    } else {
+        contenido = `<p>Formato no previsualizable.</p>`;
+    }
+
+    const modalHtml = `
+    <div id="modalVerArchivo" class="modal active">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 style="font-size:16px;">📄 ${a.archivo.nombre}</h3>
+                <button class="modal-close" onclick="document.getElementById('modalVerArchivo').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                ${contenido}
+            </div>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// ===== BUSCADOR EN TIEMPO REAL =====
+function abrirBuscador() {
+    document.getElementById('modalBuscador').classList.add('active');
+    document.getElementById('buscarObra').value = '';
+    document.getElementById('resultados-busqueda').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>';
+    setTimeout(() => document.getElementById('buscarObra').focus(), 100);
+}
+
+function buscarEnTiempoReal() {
+    const termino = document.getElementById('buscarObra').value.trim().toLowerCase();
+    const container = document.getElementById('resultados-busqueda');
+    if (termino.length < 2) { container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>'; return; }
+    
+    const rAlb = albaranes.filter(a => a.idObra.toLowerCase().includes(termino) || a.id.toLowerCase().includes(termino));
+    const rCab = cables.filter(c => (c.idObra||'').toLowerCase().includes(termino));
+    const rSub = subconductos.filter(s => (s.idObra||'').toLowerCase().includes(termino));
+    const rMat = materialesGenerales.filter(m => (m.descripcion||'').toLowerCase().includes(termino) || (m.idObra||'').toLowerCase().includes(termino));
+    const rDev = devoluciones.filter(d => d.idObra.toLowerCase().includes(termino) || d.id.toLowerCase().includes(termino));
+    
+    if (rAlb.length === 0 && rCab.length === 0 && rSub.length === 0 && rDev.length === 0 && rMat.length === 0) { 
+        container.innerHTML = '<div style="text-align:center; padding:20px;">🔍 Sin resultados</div>'; 
+        return; 
+    }
+    
+    let html = '';
+    if (rAlb.length > 0) {
+        html += '<h4 style="margin-top:10px;">Albaranes</h4>';
+        rAlb.forEach(a => { html += `<div class="resultado-item" onclick="irAElemento('albaran', '${a.id}')"><strong>${a.id}</strong> - Obra: ${a.idObra} (${a.estado})</div>`; });
+    }
+    if (rCab.length > 0) {
+        html += '<h4 style="margin-top:10px;">Cables</h4>';
+        rCab.forEach(c => { html += `<div class="resultado-item" onclick="irAElemento('cables', '${c.id}')"><strong>${c.tipoCable}</strong> - Obra: ${c.idObra} (${c.metros}m)</div>`; });
+    }
+    if (rSub.length > 0) {
+        html += '<h4 style="margin-top:10px;">Subconductos</h4>';
+        rSub.forEach(s => { html += `<div class="resultado-item" onclick="irAElemento('subconductos', '${s.id}')"><strong>${s.tipoSubconducto}</strong> - Obra: ${s.idObra} (${s.metros}m)</div>`; });
+    }
+    if (rMat.length > 0) {
+        html += '<h4 style="margin-top:10px;">Materiales Gen.</h4>';
+        rMat.forEach(m => { html += `<div class="resultado-item" onclick="irAElemento('materiales', '${m.id}')"><strong>${m.descripcion}</strong> - Obra: ${m.idObra} (${m.cantidad})</div>`; });
+    }
+    if (rDev.length > 0) {
+        html += '<h4 style="margin-top:10px;">Devoluciones</h4>';
+        rDev.forEach(d => { html += `<div class="resultado-item" onclick="irAElemento('devoluciones', '${d.id}')"><strong>${d.id}</strong> - Obra: ${d.idObra}</div>`; });
+    }
+    container.innerHTML = html;
+}
+
+// ===== EXPORTAR / IMPORTAR DATOS =====
+function exportarDatos() {
+    try {
+        const datos = { timestamp: new Date().toISOString(), albaranes, cables, subconductos, materialesGenerales, devoluciones };
+        const blob = new Blob([JSON.stringify(datos, null, 2)], {type: 'application/json'});
+        const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+        link.download = `Backup_Materiales_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
+        link.click();
+        mostrarToast('✅ Backup descargado con éxito');
+    } catch(e) { mostrarToast('❌ Error exportando'); }
+}
+
+function abrirImportar() {
+    const input = document.createElement('input'); 
+    input.type = 'file'; 
+    input.accept = 'application/json,.json';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    let content = ev.target.result.trim();
+                    if (content.charCodeAt(0) === 0xFEFF) { content = content.slice(1); }
+                    
+                    const d = JSON.parse(content);
+                    if (typeof d !== 'object' || d === null) throw new Error('No es JSON');
+                    
+                    if (confirm('⚠️ ¿Sobrescribir datos locales y en la nube con este archivo?')) {
+                        let importAlbaranes = Array.isArray(d.albaranes) ? d.albaranes : [];
+                        importAlbaranes.forEach(a => {
+                            if (a.archivo && a.archivo.base64 && a.archivo.base64.length > 100) { a.archivo.base64 = ""; }
+                        });
+                        albaranes = importAlbaranes;
+                        
+                        cables = Array.isArray(d.cables) ? d.cables : [];
+                        subconductos = Array.isArray(d.subconductos) ? d.subconductos : [];
+                        materialesGenerales = Array.isArray(d.materialesGenerales) ? d.materialesGenerales : [];
+                        devoluciones = Array.isArray(d.devoluciones) ? d.devoluciones : [];
+                        
+                        guardarTodosLosDatos(); 
+                        actualizarContadores(); 
+                        cambiarTab('pendientes');
+                        mostrarToast('✅ Datos importados y guardados de forma segura');
+                    }
+                } catch(err) { 
+                    mostrarToast('❌ Archivo corrupto o límite superado'); 
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+}
+
+// ===== REPORTES PDF =====
+function abrirModalReportes(tipo) {
+    reporteActual = tipo;
+    document.getElementById('modalReportes').classList.add('active');
+}
+
+function iniciarGeneracionReporte() {
+    cerrarTodosLosModales();
+    mostrarToast('⏳ Generando PDF, por favor espere...');
+    
+    setTimeout(() => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFont('helvetica');
+        doc.setFontSize(20); doc.setTextColor(255, 85, 0); doc.text('Redes Carreras S.L.', 20, 30);
+        doc.setFontSize(16); doc.setTextColor(0, 0, 0); 
+        
+        let tituloReporte = reporteActual.toUpperCase();
+        if(reporteActual === 'cables_pendientes') tituloReporte = "CABLES EN CAMINO (LIMBO)";
+        doc.text(`Control de Materiales: ${tituloReporte}`, 20, 45);
+        
+        doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 55);
+        
+        let yPos = 70;
+        let datos = [];
+        
+        if(reporteActual === 'pendientes') datos = albaranes.filter(a=>a.estado==='pendiente');
+        else if(reporteActual === 'recibidos') datos = albaranes.filter(a=>a.estado==='recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
+        else if(reporteActual === 'faltantes') datos = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
+        else if(reporteActual === 'completo') datos = albaranes;
+        else if(reporteActual === 'cables') {
+            const stock = calcularStockPorTipo('cable');
+            datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
+        }
+        else if(reporteActual === 'subconductos') {
+            const stock = calcularStockPorTipo('subconducto');
+            datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
+        }
+        else if(reporteActual === 'devoluciones') datos = devoluciones;
+        else if(reporteActual === 'cables_pendientes') {
+            datos = cables.filter(c => c.accion === 'pendiente_recepcion');
+        }
+
+        if(datos.length === 0) {
+            doc.setFontSize(12); doc.setTextColor(0,0,0); doc.text('No hay registros para este reporte.', 20, yPos);
+        } else {
+            doc.setFillColor(255, 85, 0); doc.rect(20, yPos - 8, 170, 8, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(10);
+            
+            if (reporteActual === 'cables' || reporteActual === 'subconductos') {
+                doc.text('Tipo de Material', 22, yPos - 2); 
+                doc.text('Recib.', 122, yPos - 2); 
+                doc.text('Instal.', 142, yPos - 2); 
+                doc.text('Disponible', 162, yPos - 2);
+            } else if (reporteActual === 'devoluciones') {
+                doc.text('ID Dev', 22, yPos - 2); doc.text('Obra', 60, yPos - 2); doc.text('Bobinas', 110, yPos - 2); doc.text('Fecha', 150, yPos - 2);
+            } else if (reporteActual === 'cables_pendientes') {
+                doc.text('Albarán', 22, yPos - 2);
+                doc.text('Obra', 55, yPos - 2);
+                doc.text('Tipo de Cable', 100, yPos - 2);
+                doc.text('Metros', 170, yPos - 2);
+            } else {
+                doc.text('Obra', 22, yPos - 2); 
+                doc.text('Fecha', 75, yPos - 2); 
+                doc.text('Estado', 115, yPos - 2); 
+                doc.text('Cuenta', 155, yPos - 2);
+            }
+
+            yPos += 8; 
+
+            datos.forEach((d, i) => {
+                doc.setFontSize(9);
+                let textLines = [];
+                let rowHeight = 8;
+                
+                if (reporteActual === 'cables' || reporteActual === 'subconductos') {
+                    textLines = doc.splitTextToSize(String(d.tipo), 95); 
+                    rowHeight = Math.max(8, textLines.length * 5 + 2);
+                } else if (reporteActual === 'cables_pendientes') {
+                    textLines = doc.splitTextToSize(String(d.tipoCable), 65);
+                    rowHeight = Math.max(8, textLines.length * 5 + 2);
+                } else if (reporteActual === 'devoluciones') {
+                    textLines = [String(d.id)];
+                } else {
+                    textLines = doc.splitTextToSize(String(d.idObra), 45);
+                    rowHeight = Math.max(8, textLines.length * 5 + 2);
+                }
+                
+                if(yPos + rowHeight > 280) { doc.addPage(); yPos = 20; }
+                if (i % 2 === 0) { doc.setFillColor(245, 241, 230); doc.rect(20, yPos - 6, 170, rowHeight, 'F'); }
+                
+                if (reporteActual === 'cables' || reporteActual === 'subconductos') {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(textLines, 22, yPos); 
+                    doc.text(`${d.recibido.toFixed(1)}m`, 122, yPos);
+                    doc.text(`${d.instalado.toFixed(1)}m`, 142, yPos); 
+                    
+                    if (d.disponible < 0) {
+                        doc.setTextColor(220, 38, 38); 
+                        doc.text(`${d.disponible.toFixed(1)}m (Falta)`, 162, yPos);
+                    } else {
+                        doc.setTextColor(5, 150, 105); 
+                        doc.text(`${d.disponible.toFixed(1)}m (A favor)`, 162, yPos);
+                    }
+                    doc.setTextColor(0, 0, 0);
+                } else if (reporteActual === 'cables_pendientes') {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(String(d.idAlbaranAsociado || 'N/A').substring(0, 15), 22, yPos);
+                    doc.text(String(d.idObra || 'N/A').substring(0, 15), 55, yPos);
+                    doc.text(textLines, 100, yPos);
+                    doc.setTextColor(0, 122, 255); 
+                    doc.text(`${d.metros}m`, 170, yPos);
+                    doc.setTextColor(0, 0, 0);
+                } else if (reporteActual === 'devoluciones') {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(textLines, 22, yPos); 
+                    doc.text(String(d.idObra).substring(0, 20), 60, yPos);
+                    doc.text(`${d.bobinas.length} bobina(s)`, 110, yPos); 
+                    doc.text(new Date(d.fechaEntrega).toLocaleDateString(), 150, yPos);
+                } else {
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(textLines, 22, yPos);
+                    doc.text(new Date(d.fecha).toLocaleDateString(), 75, yPos);
+                    doc.text(String(d.materialFaltante ? 'FALTANTE' : d.estado).toUpperCase(), 115, yPos); 
+                    doc.text(String(d.cuentaCargo || '').substring(0, 20), 155, yPos);
+                }
+                yPos += rowHeight;
+            });
+        }
+        
+        doc.save(`Reporte_${reporteActual}_${new Date().toISOString().split('T')[0]}.pdf`);
+        mostrarToast('✅ PDF Generado con éxito');
+    }, 100);
+}
+
+// ===== EVENT LISTENERS Y CERRADO DE MODALES =====
+function configurarEventListeners() {
+    document.getElementById('btnBuscar').addEventListener('click', abrirBuscador);
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarTab(btn.dataset.tab)));
+    
+    document.getElementById('formNuevoAlbaran').addEventListener('submit', crearAlbaran);
+    document.getElementById('formEditarAlbaran').addEventListener('submit', guardarEdicionAlbaran);
+    
+    document.getElementById('btnEntradaCable').addEventListener('click', () => { document.getElementById('modalEntradaCable').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('btnNuevoCableInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoCable').classList.add('active'); establecerFechaActual(); });
+    
+    document.getElementById('btnMermaCable').addEventListener('click', () => { document.getElementById('modalMermaCable').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('formMermaCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'merma'); cerrarTodosLosModales(); });
+
+    document.getElementById('formEntradaCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'entrada'); cerrarTodosLosModales(); });
+    document.getElementById('formNuevoCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'instalacion'); cerrarTodosLosModales(); });
+
+    document.getElementById('btnEntradaSubconducto').addEventListener('click', () => { document.getElementById('modalEntradaSubconducto').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('btnNuevoSubconductoInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoSubconducto').classList.add('active'); establecerFechaActual(); });
+    document.getElementById('formEntradaSubconducto').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('subconducto', new FormData(e.target), 'entrada'); cerrarTodosLosModales(); });
+    document.getElementById('formNuevoSubconducto').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('subconducto', new FormData(e.target), 'instalacion'); cerrarTodosLosModales(); });
+
+    document.getElementById('btnNuevaDevolucion').addEventListener('click', () => { document.getElementById('modalNuevaDevolucion').classList.add('active'); inicializarBobinas(); establecerFechaActual(); });
+    document.getElementById('formNuevaDevolucion').addEventListener('submit', crearDevolucion);
+
+    // EVENTOS PARA LOS NUEVOS MATERIALES GENERALES
+    document.getElementById('formEntradaMaterial').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterialGeneral(new FormData(e.target), 'entrada'); });
+    document.getElementById('formSalidaMaterial').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterialGeneral(new FormData(e.target), 'instalacion'); });
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) { if (e.target === modal) cerrarTodosLosModales(); });
+    });
+}
+
+function cerrarTodosLosModales() { 
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); 
+    document.querySelectorAll('form').forEach(f => f.reset());
+}
+window.cerrarModal = cerrarTodosLosModales;
+window.cerrarModalCable = cerrarTodosLosModales;
+window.cerrarModalEntradaCable = cerrarTodosLosModales;
+window.cerrarModalSubconducto = cerrarTodosLosModales;
+window.cerrarModalEntradaSubconducto = cerrarTodosLosModales;
+window.cerrarModalDevolucion = cerrarTodosLosModales;
+window.cerrarModalRecepcion = cerrarTodosLosModales;
+window.cerrarModalBuscador = cerrarTodosLosModales;
+window.cerrarModalReportes = cerrarTodosLosModales;
+window.cerrarModalVerArchivo = () => { const m = document.getElementById('modalVerArchivo'); if(m) m.remove(); };
+window.abrirModalEntradaMaterial = abrirModalEntradaMaterial;
+window.abrirModalSalidaMaterial = abrirModalSalidaMaterial;
+
+function abrirModalRecepcion(id) {
+    albaranSeleccionado = albaranes.find(a => a.id === id);
+    document.getElementById('modalRecepcion').classList.add('active');
+    document.querySelector('input[name="estadoRecepcion"][value="completo"]').checked = true;
+    document.getElementById('materialFaltante').value = '';
+    toggleDetalleFaltante();
+}
+
+function toggleDetalleFaltante() {
+    const val = document.querySelector('input[name="estadoRecepcion"]:checked').value;
+    document.getElementById('detalleFaltante').style.display = val === 'incompleto' ? 'block' : 'none';
+    document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+    document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
+}
+
+function establecerFechaActual() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = hoy; });
+}
+
+function mostrarToast(mensaje) {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = mensaje;
+    container.appendChild(t);
+    setTimeout(() => { if (t.parentNode) t.remove(); }, 4000);
+}
+
+// Exponer funciones globales necesarias
+window.exportarDatos = exportarDatos;
+window.abrirImportar = abrirImportar;
+window.confirmarRecepcion = confirmarRecepcion;
+window.marcarFaltanteRecibido = marcarFaltanteRecibido;
+window.eliminarAlbaran = eliminarAlbaran;
+window.verArchivoAlbaran = verArchivoAlbaran;
+window.eliminarMaterial = eliminarMaterial;
+window.eliminarBobina = eliminarBobina;
+window.toggleCamposMaterial = toggleCamposMaterial;
+window.agregarBobina = agregarBobina;
+window.crearDevolucion = crearDevolucion;
+window.eliminarDevolucion = eliminarDevolucion;
+window.buscarEnTiempoReal = buscarEnTiempoReal;
+window.iniciarGeneracionReporte = iniciarGeneracionReporte;
+window.abrirModalReportes = abrirModalReportes;
