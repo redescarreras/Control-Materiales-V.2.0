@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('tipoCableInstalacion').innerHTML = CABLE_OPTIONS_HTML;
     document.getElementById('tipoCableEntrada').innerHTML = CABLE_OPTIONS_HTML;
-    document.getElementById('tipoCableMerma').innerHTML = CABLE_OPTIONS_HTML; // Rellenar Opciones de Merma
+    document.getElementById('tipoCableMerma').innerHTML = CABLE_OPTIONS_HTML;
 });
 
 function migrarDatosLocalesALaNube() {
@@ -397,6 +397,9 @@ function mostrarAlbaranes() {
         return;
     }
 
+    // Ordenar Albaranes (más recientes primero)
+    abs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
     contenedor.innerHTML = abs.map(a => {
         const esFaltante = a.materialFaltante && String(a.materialFaltante).trim() !== "";
         const estadoClass = a.estado === 'pendiente' ? 'status-pendiente' : (esFaltante ? 'status-faltante' : 'status-recibido');
@@ -506,7 +509,6 @@ function agregarMaterial(tipo, formData, accion) {
     mostrarToast(`✅ ${accion==='merma'?'Merma registrada':(tipo==='cable'?'Cable guardado':'Subconducto guardado')}`);
 }
 
-// NUEVA CALCULADORA PARA SUBCONDUCTO
 function calcularTotalSubconducto() {
     const x1 = parseFloat(document.getElementById('sub_x1').value) || 0;
     const x2 = parseFloat(document.getElementById('sub_x2').value) || 0;
@@ -533,7 +535,6 @@ function marcarSubconductoSolicitado(id) {
 }
 window.marcarSubconductoSolicitado = marcarSubconductoSolicitado;
 
-// SE ACTUALIZA CÁLCULO DE STOCK PARA AÑADIR MERMAS
 function calcularStock(tipo) {
     const arr = tipo === 'cable' ? cables : subconductos;
     let rec = 0, inst = 0, pend = 0, pendRec = 0, merma = 0;
@@ -544,7 +545,7 @@ function calcularStock(tipo) {
         } else if (m.accion === 'pendiente_recepcion') {
             pendRec += m.metros;
         } else if (m.accion === 'merma') {
-            merma += m.metros; // La merma resta al disponible, se acumula aquí
+            merma += m.metros;
         } else {
             inst += m.metros; 
             const isSolicitado = m.solicitado === true || m.accion === 'solicitado';
@@ -553,7 +554,6 @@ function calcularStock(tipo) {
             }
         }
     });
-    // Disponible es = Recibido - (Instalado + Mermado)
     return { recibido: rec, instalado: inst, merma: merma, disponible: rec - inst - merma, pendiente: pend, pendiente_recepcion: pendRec };
 }
 
@@ -600,6 +600,7 @@ function actualizarStockDisplay(tipo) {
     }
 }
 
+// ESTA FUNCIÓN HACE LA MAGIA DEL ORDEN Y LA SEPARACIÓN VISUAL
 function mostrarMateriales(tipo) {
     const arr = tipo === 'cable' ? cables : subconductos;
     const cont = document.getElementById(`lista-${tipo}s`);
@@ -629,7 +630,7 @@ function mostrarMateriales(tipo) {
     let html = '';
     Object.keys(agrupado).forEach(t => {
         const g = agrupado[t];
-        const disp = g.r - g.i - g.m; // Restamos también la merma
+        const disp = g.r - g.i - g.m; 
         let cAlerta = 'stock-positivo', tAlerta = 'A favor';
         if(disp < 0) { cAlerta = 'stock-negativo'; tAlerta = 'Falta'; }
         else if(disp < 500) { cAlerta = 'stock-alerta'; tAlerta = 'Bajo'; }
@@ -637,9 +638,75 @@ function mostrarMateriales(tipo) {
         let pendHtml = tipo === 'subconducto' ? `<span>⏳ <b>Pend. Solic.:</b> ${g.p.toFixed(1)}m</span>` : `<span>⏳ <b>Pend. Recibir:</b> ${g.pr.toFixed(1)}m</span>`;
         let mermaHtml = g.m > 0 ? `<span style="color:#8E8E93;">🗑️ <b>Mermas:</b> ${g.m.toFixed(1)}m</span>` : '';
 
+        // ORDENAMOS TODOS LOS REGISTROS DE ESTE CABLE/SUBCONDUCTO: Más recientes primero
+        g.items.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        // Función interna para crear las tarjetas HTML
+        const renderCards = (itemsArray) => itemsArray.map(m => {
+            const isEntrada = m.accion === 'entrada';
+            const isPendienteRec = m.accion === 'pendiente_recepcion';
+            const isMerma = m.accion === 'merma';
+            const isInstalacion = !isEntrada && !isPendienteRec && !isMerma;
+            const isSolicitado = m.solicitado === true || m.accion === 'solicitado';
+
+            const cardClass = isEntrada ? 'card-entrada' : (isPendienteRec ? 'card-pendiente-recepcion' : (isMerma ? 'card-merma' : 'card-instalacion'));
+            const icon = isEntrada ? '📥' : (isPendienteRec ? '⏳' : (isMerma ? '🗑️' : '🔧'));
+            const label = isEntrada ? 'ENTRADA' : (isPendienteRec ? 'ESPERANDO ALBARÁN' : (isMerma ? 'MERMA / RETAL' : 'INSTALADO'));
+            
+            const badgeColor = isEntrada ? 'var(--system-green)' : (isPendienteRec ? 'var(--system-blue)' : (isMerma ? '#8E8E93' : 'var(--system-red)'));
+            const badgeBg = isEntrada ? 'rgba(52,199,89,0.1)' : (isPendienteRec ? 'rgba(0,122,255,0.1)' : (isMerma ? 'rgba(142,142,147,0.1)' : 'rgba(255, 59, 48, 0.1)'));
+
+            let badgesHtml = `<b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b>`;
+            if (tipo === 'subconducto' && isInstalacion && isSolicitado) {
+                badgesHtml += `<b style="font-size:12px; color:var(--system-orange); background:rgba(255,149,0,0.1); padding: 4px 8px; border-radius: 6px; margin-left: 8px;">📦 SOLICITADO</b>`;
+            }
+
+            let actionBtns = '';
+            if (tipo === 'subconducto' && isInstalacion && !isSolicitado) {
+                actionBtns += `<button class="btn btn-warning w-100" style="margin-top:12px; padding:8px; font-size: 13px;" onclick="marcarSubconductoSolicitado('${m.id}')">📦 Marcar Solicitado</button>`;
+            }
+            const marginTopEliminar = (tipo === 'subconducto' && isInstalacion && !isSolicitado) ? '8px' : '12px';
+            actionBtns += `<button class="btn btn-secondary w-100" style="margin-top:${marginTopEliminar}; padding:8px; font-size: 13px; background: var(--bg-system);" onclick="eliminarMaterial('${tipo}','${m.id}')">🗑️ Eliminar Registro</button>`;
+
+            return `
+            <div class="albaran-card ${cardClass}" id="card-${m.id}" style="box-shadow:var(--shadow-sm); border:1px solid var(--bg-system); margin-bottom: 8px; padding: 16px;">
+                <div class="info-row" style="margin-bottom: 8px; align-items:center; flex-wrap:wrap; gap:4px;">
+                    <div>${badgesHtml}</div> 
+                    <span style="font-size:16px; font-weight:800; color:var(--text-primary);">${m.metros} m</span>
+                </div>
+                <div class="info-row" style="color:var(--text-secondary); font-size:12px; border-top: 1px solid var(--bg-system); padding-top: 10px;">
+                    <span>🏢 Obra/Origen: ${m.idObra}</span>
+                    <span>📅 ${new Date(m.fecha).toLocaleDateString()}</span>
+                </div>
+                ${m.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary); background: var(--bg-system); padding: 6px; border-radius: 6px;"><em>📝 Obs: ${m.observaciones}</em></div>` : ''}
+                ${actionBtns}
+            </div>`;
+        });
+
+        let gridsHtml = '';
+
+        if (tipo === 'subconducto') {
+            // SEPARAMOS LAS TARJETAS EN DOS GRUPOS
+            const pendientes = g.items.filter(m => m.accion === 'instalacion' && !m.solicitado && m.accion !== 'solicitado');
+            const historial = g.items.filter(m => !(m.accion === 'instalacion' && !m.solicitado && m.accion !== 'solicitado'));
+
+            if(pendientes.length > 0) {
+                gridsHtml += `<h4 style="margin: 16px 16px 8px 16px; color: var(--system-orange); font-size: 14px; display: flex; align-items: center; gap: 6px;">⏳ Pendientes de Solicitar (${pendientes.length})</h4>`;
+                gridsHtml += `<div class="albaranes-grid" style="padding:0 16px;">${renderCards(pendientes).join('')}</div>`;
+            }
+            
+            if(historial.length > 0) {
+                gridsHtml += `<h4 style="margin: 24px 16px 8px 16px; color: var(--text-secondary); font-size: 14px; border-top: 1px solid var(--bg-system); padding-top: 16px; display: flex; align-items: center; gap: 6px;">📋 Historial (Entradas, Mermas y Solicitados)</h4>`;
+                gridsHtml += `<div class="albaranes-grid" style="padding:0 16px 16px 16px;">${renderCards(historial).join('')}</div>`;
+            }
+        } else {
+            // CABLES NORMALES
+            gridsHtml = `<div class="albaranes-grid" style="padding:16px;">${renderCards(g.items).join('')}</div>`;
+        }
+
         html += `
         <div class="tipo-section">
-            <div class="tipo-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='none'?'grid':'none'">
+            <div class="tipo-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='none'?'block':'none'">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 12px;">
                     <h3 style="font-size:15px; font-weight:700; line-height:1.3; color:var(--text-primary); margin:0; word-break: break-word;">${t}</h3>
                     <span class="count-badge" style="flex-shrink:0;">${g.items.length} reg. ▼</span>
@@ -651,47 +718,8 @@ function mostrarMateriales(tipo) {
                     <span class="${cAlerta}">✅ Disp: ${disp.toFixed(1)}m (${tAlerta})</span>
                 </div>
             </div>
-            <div class="albaranes-grid" style="display:none; padding:16px;">
-                ${g.items.map(m => {
-                    const isEntrada = m.accion === 'entrada';
-                    const isPendienteRec = m.accion === 'pendiente_recepcion';
-                    const isMerma = m.accion === 'merma';
-                    const isInstalacion = !isEntrada && !isPendienteRec && !isMerma;
-                    const isSolicitado = m.solicitado === true || m.accion === 'solicitado';
-
-                    const cardClass = isEntrada ? 'card-entrada' : (isPendienteRec ? 'card-pendiente-recepcion' : (isMerma ? 'card-merma' : 'card-instalacion'));
-                    const icon = isEntrada ? '📥' : (isPendienteRec ? '⏳' : (isMerma ? '🗑️' : '🔧'));
-                    const label = isEntrada ? 'ENTRADA' : (isPendienteRec ? 'ESPERANDO ALBARÁN' : (isMerma ? 'MERMA / RETAL' : 'INSTALADO'));
-                    
-                    const badgeColor = isEntrada ? 'var(--system-green)' : (isPendienteRec ? 'var(--system-blue)' : (isMerma ? '#8E8E93' : 'var(--system-red)'));
-                    const badgeBg = isEntrada ? 'rgba(52,199,89,0.1)' : (isPendienteRec ? 'rgba(0,122,255,0.1)' : (isMerma ? 'rgba(142,142,147,0.1)' : 'rgba(255, 59, 48, 0.1)'));
-
-                    let badgesHtml = `<b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b>`;
-                    if (tipo === 'subconducto' && isInstalacion && isSolicitado) {
-                        badgesHtml += `<b style="font-size:12px; color:var(--system-orange); background:rgba(255,149,0,0.1); padding: 4px 8px; border-radius: 6px; margin-left: 8px;">📦 SOLICITADO</b>`;
-                    }
-
-                    let actionBtns = '';
-                    if (tipo === 'subconducto' && isInstalacion && !isSolicitado) {
-                        actionBtns += `<button class="btn btn-warning w-100" style="margin-top:12px; padding:8px; font-size: 13px;" onclick="marcarSubconductoSolicitado('${m.id}')">📦 Marcar Solicitado</button>`;
-                    }
-                    const marginTopEliminar = (tipo === 'subconducto' && isInstalacion && !isSolicitado) ? '8px' : '12px';
-                    actionBtns += `<button class="btn btn-secondary w-100" style="margin-top:${marginTopEliminar}; padding:8px; font-size: 13px; background: var(--bg-system);" onclick="eliminarMaterial('${tipo}','${m.id}')">🗑️ Eliminar Registro</button>`;
-
-                    return `
-                    <div class="albaran-card ${cardClass}" id="card-${m.id}" style="box-shadow:var(--shadow-sm); border:1px solid var(--bg-system); margin-bottom: 8px; padding: 16px;">
-                        <div class="info-row" style="margin-bottom: 8px; align-items:center; flex-wrap:wrap; gap:4px;">
-                            <div>${badgesHtml}</div> 
-                            <span style="font-size:16px; font-weight:800; color:var(--text-primary);">${m.metros} m</span>
-                        </div>
-                        <div class="info-row" style="color:var(--text-secondary); font-size:12px; border-top: 1px solid var(--bg-system); padding-top: 10px;">
-                            <span>🏢 Obra/Origen: ${m.idObra}</span>
-                            <span>📅 ${new Date(m.fecha).toLocaleDateString()}</span>
-                        </div>
-                        ${m.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary); background: var(--bg-system); padding: 6px; border-radius: 6px;"><em>📝 Obs: ${m.observaciones}</em></div>` : ''}
-                        ${actionBtns}
-                    </div>`;
-                }).join('')}
+            <div style="display:none; background: #FAFAFA;">
+                ${gridsHtml}
             </div>
         </div>`;
     });
@@ -816,6 +844,9 @@ function mostrarDevoluciones() {
     if(devoluciones.length === 0) { cont.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);">No hay devoluciones</div>'; return; }
     
     let html = '';
+    // Ordenar Devoluciones por fecha (Nuevas primero)
+    devoluciones.sort((a, b) => new Date(b.fechaEntrega) - new Date(a.fechaEntrega));
+
     devoluciones.forEach(d => {
         const total = d.bobinas.length;
         let detallesHtml = d.bobinas.map((b, i) => {
@@ -1207,7 +1238,6 @@ function configurarEventListeners() {
     document.getElementById('btnEntradaCable').addEventListener('click', () => { document.getElementById('modalEntradaCable').classList.add('active'); establecerFechaActual(); });
     document.getElementById('btnNuevoCableInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoCable').classList.add('active'); establecerFechaActual(); });
     
-    // NUEVO BOTÓN MERMA CABLES
     document.getElementById('btnMermaCable').addEventListener('click', () => { document.getElementById('modalMermaCable').classList.add('active'); establecerFechaActual(); });
     document.getElementById('formMermaCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'merma'); cerrarTodosLosModales(); });
 
