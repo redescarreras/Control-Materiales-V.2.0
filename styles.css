@@ -54,12 +54,11 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .btn-icon { padding: 10px; border-radius: 50%; width: 44px; height: 44px; font-size: 18px; flex-shrink: 0;}
 .btn-glass { background: rgba(0,0,0,0.05); color: var(--text-primary); }
 
-/* ===== TABS ===== */
+/* ===== TABS (CORREGIDO PARA ADAPTARSE A PANTALLAS Y CENTRAR) ===== */
 .main-content { padding: 24px 0; min-height: 100vh; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-.tabs-wrapper { margin-bottom: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-.tabs-wrapper::-webkit-scrollbar { display: none; }
-.tabs-container { display: inline-flex; background: #E5E5EA; padding: 4px; border-radius: var(--radius-pill); gap: 4px; }
+.tabs-wrapper { margin-bottom: 24px; display: flex; justify-content: center; width: 100%; }
+.tabs-container { display: flex; flex-wrap: wrap; justify-content: center; background: #E5E5EA; padding: 4px; border-radius: 16px; gap: 4px; width: 100%; max-width: 100%; }
 .tab-btn { padding: 8px 16px; border: none; background: transparent; border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
 .tab-btn.active { background: var(--bg-card); color: var(--text-primary); box-shadow: var(--shadow-sm); }
 .count-badge { background: var(--primary-500); color: white; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
@@ -104,7 +103,6 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .card-entrada { border-left: 6px solid var(--system-green) !important; background: linear-gradient(90deg, rgba(52,199,89,0.05) 0%, var(--bg-card) 10%); }
 .card-instalacion { border-left: 6px solid var(--system-red) !important; background: linear-gradient(90deg, rgba(255,59,48,0.05) 0%, var(--bg-card) 10%); }
 .card-pendiente-recepcion { border-left: 6px solid var(--system-blue) !important; background: linear-gradient(90deg, rgba(0,122,255,0.05) 0%, var(--bg-card) 10%); }
-/* NUEVO COLOR PARA MERMAS */
 .card-merma { border-left: 6px solid #8E8E93 !important; background: linear-gradient(90deg, rgba(142,142,147,0.05) 0%, var(--bg-card) 10%); }
 
 /* ===== REPORTES GRID ===== */

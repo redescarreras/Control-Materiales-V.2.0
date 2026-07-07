@@ -16,7 +16,7 @@ const db = firebase.database();
 // ===== VARIABLES GLOBALES =====
 let albaranes = []; let albaranSeleccionado = null;
 let cables = []; let subconductos = []; let devoluciones = []; 
-let materialesGenerales = []; // NUEVO ARREGLO PARA MATERIALES
+let materialesGenerales = []; 
 let reporteActual = '';
 
 // Lista global de Opciones de Cable
@@ -239,7 +239,7 @@ function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
 }
 window.agregarCableAlbaranEdit = agregarCableAlbaranEdit;
 
-// ===== MAGIA NUEVA: EXTRACCIÓN INTELIGENTE DE EXCEL (CABLES + MATERIALES) =====
+// ===== EXTRACCIÓN INTELIGENTE DE EXCEL (CABLES + MATERIALES) =====
 function generarTablaHtmlYMaterialesDesdeBase64(b64) {
     try {
         const wb = XLSX.read(b64.split(',')[1], { type: 'base64' });
@@ -250,7 +250,6 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
 
         let headerRowIdx = -1; let qtyColIdx = -1; let descColIdx = -1;
 
-        // Buscamos las cabeceras (Dónde dice Cantidad y Dónde dice Descripción/Artículo)
         for (let i = 0; i < Math.min(20, jsonData.length); i++) {
             for (let j = 0; j < jsonData[i].length; j++) {
                 const cell = String(jsonData[i][j]).toLowerCase().trim();
@@ -261,7 +260,6 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
                     descColIdx = j;
                 }
             }
-            // Si encontramos la cabecera de cantidad, ya nos vale como inicio de tabla
             if (qtyColIdx !== -1) { headerRowIdx = i; break; }
         }
 
@@ -271,7 +269,6 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
         if (headerRowIdx !== -1 && qtyColIdx !== -1) {
             filteredData = jsonData.slice(0, headerRowIdx + 1);
             
-            // Recorremos las filas que están debajo de la cabecera
             for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
                 const row = jsonData[i];
                 const qtyVal = parseFloat(row[qtyColIdx]);
@@ -279,7 +276,6 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
                 if (!isNaN(qtyVal) && qtyVal > 0) {
                     filteredData.push(row);
                     
-                    // Extraemos los materiales para el Nuevo Módulo
                     if (descColIdx !== -1) {
                         const descVal = String(row[descColIdx]).trim();
                         if (descVal !== '') {
@@ -325,7 +321,6 @@ function crearAlbaran(e) {
             let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
 
             if (isExcel) {
-                // Extraemos la tabla y los materiales
                 const extraccion = generarTablaHtmlYMaterialesDesdeBase64(b64);
                 archivoInfo.tablaHtml = extraccion.html;
                 finalizarCreacionAlbaran(formData, archivoInfo, extraccion.materiales);
@@ -347,22 +342,22 @@ function crearAlbaran(e) {
 function finalizarCreacionAlbaran(formData, archivoInfo, materialesExtraidos = []) {
     const albaranId = `ALB-${Date.now().toString().slice(-6)}`;
     
-    // 1. Guardar Cables Esperados
     const itemsCables = document.querySelectorAll('#albaranCablesContainer .bobina-item');
     itemsCables.forEach(item => {
         const idx = item.dataset.cableAlbaran;
         const tipo = formData.get(`albaranTipoCable_${idx}`);
         const metros = parseFloat(formData.get(`albaranMetrosCable_${idx}`));
+        
         if (tipo && metros > 0) {
             cables.push({
-                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`, tipoMaterial: 'cable', idObra: formData.get('idObra'),
-                tipoCable: tipo, metros: metros, accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
+                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`,
+                tipoMaterial: 'cable', idObra: formData.get('idObra'), tipoCable: tipo, metros: metros,
+                accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
                 observaciones: `Esperando con Albarán: ${albaranId}`, idAlbaranAsociado: albaranId 
             });
         }
     });
 
-    // 2. Guardar Materiales Extraídos en el Limbo (Pendiente Recibir)
     materialesExtraidos.forEach((mat, idx) => {
         materialesGenerales.push({
             id: `MAT-${Date.now().toString().slice(-6)}-${idx}`,
@@ -420,7 +415,6 @@ function guardarEdicionAlbaran(e) {
         };
         reader.readAsDataURL(archivoInput);
     } else {
-        // Se mantiene el archivo viejo
         finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo, []);
     }
 }
@@ -431,7 +425,6 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, mate
     albaran.jefeObra = formData.get('jefeObra'); albaran.observaciones = formData.get('observaciones') || '';
     albaran.archivo = archivoInfo;
 
-    // Actualizar Cables (limpiamos los "esperando" viejos y metemos los nuevos)
     cables = cables.filter(c => !(c.idAlbaranAsociado === idAlbaran && c.accion === 'pendiente_recepcion'));
     const itemsCables = document.querySelectorAll('#editAlbaranCablesContainer .bobina-item');
     itemsCables.forEach(item => {
@@ -447,7 +440,6 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, mate
         }
     });
 
-    // Actualizar Materiales (solo si subió un nuevo Excel con materiales)
     if (materialesExtraidos.length > 0) {
         materialesGenerales = materialesGenerales.filter(m => !(m.idAlbaranAsociado === idAlbaran && m.accion === 'pendiente_recepcion'));
         materialesExtraidos.forEach((mat, idx) => {
@@ -535,14 +527,12 @@ function confirmarRecepcion() {
     const hoy = new Date().toISOString().split('T')[0];
     let itemsIngresados = 0;
     
-    // Ingresar Cables
     cables.forEach(c => {
         if (c.idAlbaranAsociado === albaranSeleccionado.id && c.accion === 'pendiente_recepcion') {
             c.accion = 'entrada'; c.fecha = hoy; c.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
         }
     });
 
-    // Ingresar Materiales Generales
     materialesGenerales.forEach(m => {
         if (m.idAlbaranAsociado === albaranSeleccionado.id && m.accion === 'pendiente_recepcion') {
             m.accion = 'entrada'; m.fecha = hoy; m.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
@@ -575,7 +565,7 @@ function eliminarAlbaran(id) {
     }
 }
 
-// ===== MATERIALES GENERALES (EL NUEVO MÓDULO) =====
+// ===== MATERIALES GENERALES =====
 function abrirModalEntradaMaterial() { document.getElementById('modalEntradaMaterial').classList.add('active'); establecerFechaActual(); }
 function abrirModalSalidaMaterial() { document.getElementById('modalSalidaMaterial').classList.add('active'); establecerFechaActual(); }
 
@@ -906,7 +896,7 @@ function eliminarMaterial(tipo, id) {
     if(confirm('¿Eliminar registro permanentemente?')) {
         if(tipo==='cable') cables = cables.filter(c=>c.id!==id); 
         else if(tipo==='subconducto') subconductos = subconductos.filter(s=>s.id!==id);
-        else materialesGenerales = materialesGenerales.filter(m=>m.id!==id); // BORRAR MATERIAL GENERAL
+        else materialesGenerales = materialesGenerales.filter(m=>m.id!==id); 
         guardarTodosLosDatos(); 
     }
 }
@@ -1076,11 +1066,11 @@ function eliminarDevolucion(id) {
     if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
 }
 
-// ===== MAGIA NUEVA: VER TABLA HTML CREADA EN LOCAL =====
+// ===== EXCEL PREVIEW =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
     if(!a || !a.archivo) {
-        return mostrarToast('❌ El archivo no está disponible (quizás se limpió en un backup anterior). Los nuevos funcionarán perfectamente.');
+        return mostrarToast('❌ El archivo no está disponible.');
     }
     
     let contenido = '';
@@ -1232,8 +1222,10 @@ function iniciarGeneracionReporte() {
         
         let tituloReporte = reporteActual.toUpperCase();
         if(reporteActual === 'cables_pendientes') tituloReporte = "CABLES EN CAMINO (LIMBO)";
-        doc.text(`Control de Materiales: ${tituloReporte}`, 20, 45);
+        if(reporteActual === 'materiales_pendientes') tituloReporte = "MATERIALES EN CAMINO (LIMBO)";
+        if(reporteActual === 'materiales') tituloReporte = "STOCK DE MATERIALES (FERRETERÍA)";
         
+        doc.text(`Control de Materiales: ${tituloReporte}`, 20, 45);
         doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 55);
         
         let yPos = 70;
@@ -1255,6 +1247,25 @@ function iniciarGeneracionReporte() {
         else if(reporteActual === 'cables_pendientes') {
             datos = cables.filter(c => c.accion === 'pendiente_recepcion');
         }
+        // NUEVA LÓGICA PARA REPORTE DE MATERIALES GENERALES
+        else if(reporteActual === 'materiales') {
+            const agrupado = {};
+            materialesGenerales.forEach(m => {
+                const t = m.descripcion || 'Sin nombre';
+                if(!agrupado[t]) agrupado[t] = { tipo: t, entrada:0, salida:0, disponible:0 };
+                if(m.accion === 'entrada') agrupado[t].entrada += m.cantidad;
+                if(m.accion === 'instalacion') agrupado[t].salida += m.cantidad;
+            });
+            datos = Object.values(agrupado).map(item => {
+                item.disponible = item.entrada - item.salida;
+                return item;
+            });
+            // Ordenar alfabéticamente
+            datos.sort((a, b) => a.tipo.localeCompare(b.tipo));
+        }
+        else if(reporteActual === 'materiales_pendientes') {
+            datos = materialesGenerales.filter(m => m.accion === 'pendiente_recepcion');
+        }
 
         if(datos.length === 0) {
             doc.setFontSize(12); doc.setTextColor(0,0,0); doc.text('No hay registros para este reporte.', 20, yPos);
@@ -1262,18 +1273,19 @@ function iniciarGeneracionReporte() {
             doc.setFillColor(255, 85, 0); doc.rect(20, yPos - 8, 170, 8, 'F');
             doc.setTextColor(255, 255, 255); doc.setFontSize(10);
             
-            if (reporteActual === 'cables' || reporteActual === 'subconductos') {
-                doc.text('Tipo de Material', 22, yPos - 2); 
-                doc.text('Recib.', 122, yPos - 2); 
-                doc.text('Instal.', 142, yPos - 2); 
+            // CABECERAS DE TABLA
+            if (reporteActual === 'cables' || reporteActual === 'subconductos' || reporteActual === 'materiales') {
+                doc.text('Tipo de Material / Artículo', 22, yPos - 2); 
+                doc.text('Entrada', 122, yPos - 2); 
+                doc.text('Gastado', 142, yPos - 2); 
                 doc.text('Disponible', 162, yPos - 2);
             } else if (reporteActual === 'devoluciones') {
                 doc.text('ID Dev', 22, yPos - 2); doc.text('Obra', 60, yPos - 2); doc.text('Bobinas', 110, yPos - 2); doc.text('Fecha', 150, yPos - 2);
-            } else if (reporteActual === 'cables_pendientes') {
+            } else if (reporteActual === 'cables_pendientes' || reporteActual === 'materiales_pendientes') {
                 doc.text('Albarán', 22, yPos - 2);
                 doc.text('Obra', 55, yPos - 2);
-                doc.text('Tipo de Cable', 100, yPos - 2);
-                doc.text('Metros', 170, yPos - 2);
+                doc.text('Artículo / Cable', 100, yPos - 2);
+                doc.text('Cantidad', 170, yPos - 2);
             } else {
                 doc.text('Obra', 22, yPos - 2); 
                 doc.text('Fecha', 75, yPos - 2); 
@@ -1283,16 +1295,20 @@ function iniciarGeneracionReporte() {
 
             yPos += 8; 
 
+            // FILAS DE DATOS
             datos.forEach((d, i) => {
                 doc.setFontSize(9);
                 let textLines = [];
                 let rowHeight = 8;
                 
-                if (reporteActual === 'cables' || reporteActual === 'subconductos') {
+                if (reporteActual === 'cables' || reporteActual === 'subconductos' || reporteActual === 'materiales') {
                     textLines = doc.splitTextToSize(String(d.tipo), 95); 
                     rowHeight = Math.max(8, textLines.length * 5 + 2);
                 } else if (reporteActual === 'cables_pendientes') {
                     textLines = doc.splitTextToSize(String(d.tipoCable), 65);
+                    rowHeight = Math.max(8, textLines.length * 5 + 2);
+                } else if (reporteActual === 'materiales_pendientes') {
+                    textLines = doc.splitTextToSize(String(d.descripcion), 65);
                     rowHeight = Math.max(8, textLines.length * 5 + 2);
                 } else if (reporteActual === 'devoluciones') {
                     textLines = [String(d.id)];
@@ -1304,27 +1320,34 @@ function iniciarGeneracionReporte() {
                 if(yPos + rowHeight > 280) { doc.addPage(); yPos = 20; }
                 if (i % 2 === 0) { doc.setFillColor(245, 241, 230); doc.rect(20, yPos - 6, 170, rowHeight, 'F'); }
                 
-                if (reporteActual === 'cables' || reporteActual === 'subconductos') {
+                if (reporteActual === 'cables' || reporteActual === 'subconductos' || reporteActual === 'materiales') {
                     doc.setTextColor(0, 0, 0);
                     doc.text(textLines, 22, yPos); 
-                    doc.text(`${d.recibido.toFixed(1)}m`, 122, yPos);
-                    doc.text(`${d.instalado.toFixed(1)}m`, 142, yPos); 
+                    
+                    let suffix = reporteActual === 'materiales' ? 'u' : 'm';
+                    let valEntrada = d.recibido !== undefined ? d.recibido : d.entrada;
+                    let valSalida = d.instalado !== undefined ? d.instalado : d.salida;
+
+                    doc.text(`${valEntrada.toFixed(1)}${suffix}`, 122, yPos);
+                    doc.text(`${valSalida.toFixed(1)}${suffix}`, 142, yPos); 
                     
                     if (d.disponible < 0) {
                         doc.setTextColor(220, 38, 38); 
-                        doc.text(`${d.disponible.toFixed(1)}m (Falta)`, 162, yPos);
+                        doc.text(`${d.disponible.toFixed(1)}${suffix} (Falta)`, 162, yPos);
                     } else {
                         doc.setTextColor(5, 150, 105); 
-                        doc.text(`${d.disponible.toFixed(1)}m (A favor)`, 162, yPos);
+                        doc.text(`${d.disponible.toFixed(1)}${suffix} (OK)`, 162, yPos);
                     }
                     doc.setTextColor(0, 0, 0);
-                } else if (reporteActual === 'cables_pendientes') {
+                } else if (reporteActual === 'cables_pendientes' || reporteActual === 'materiales_pendientes') {
                     doc.setTextColor(0, 0, 0);
                     doc.text(String(d.idAlbaranAsociado || 'N/A').substring(0, 15), 22, yPos);
                     doc.text(String(d.idObra || 'N/A').substring(0, 15), 55, yPos);
                     doc.text(textLines, 100, yPos);
                     doc.setTextColor(0, 122, 255); 
-                    doc.text(`${d.metros}m`, 170, yPos);
+                    
+                    let qty = d.metros !== undefined ? d.metros + 'm' : d.cantidad + 'u';
+                    doc.text(`${qty}`, 170, yPos);
                     doc.setTextColor(0, 0, 0);
                 } else if (reporteActual === 'devoluciones') {
                     doc.setTextColor(0, 0, 0);
@@ -1373,7 +1396,6 @@ function configurarEventListeners() {
     document.getElementById('btnNuevaDevolucion').addEventListener('click', () => { document.getElementById('modalNuevaDevolucion').classList.add('active'); inicializarBobinas(); establecerFechaActual(); });
     document.getElementById('formNuevaDevolucion').addEventListener('submit', crearDevolucion);
 
-    // EVENTOS PARA LOS NUEVOS MATERIALES GENERALES
     document.getElementById('formEntradaMaterial').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterialGeneral(new FormData(e.target), 'entrada'); });
     document.getElementById('formSalidaMaterial').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterialGeneral(new FormData(e.target), 'instalacion'); });
 
@@ -1426,7 +1448,6 @@ function mostrarToast(mensaje) {
     setTimeout(() => { if (t.parentNode) t.remove(); }, 4000);
 }
 
-// Exponer funciones globales necesarias
 window.exportarDatos = exportarDatos;
 window.abrirImportar = abrirImportar;
 window.confirmarRecepcion = confirmarRecepcion;
