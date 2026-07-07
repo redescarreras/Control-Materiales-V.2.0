@@ -59,6 +59,7 @@
                     <button class="tab-btn" data-tab="faltantes">⚠️ Faltante <span id="count-faltantes" class="count-badge">0</span></button>
                     <button class="tab-btn" data-tab="cables">🔌 Cable <span id="count-cables" class="count-badge">0</span></button>
                     <button class="tab-btn" data-tab="subconductos">🛡️ Subconducto <span id="count-subconductos" class="count-badge">0</span></button>
+                    <button class="tab-btn" data-tab="materiales">🛠️ Materiales <span id="count-materiales" class="count-badge">0</span></button>
                     <button class="tab-btn" data-tab="devoluciones">↩️ Devoluciones <span id="count-devoluciones" class="count-badge">0</span></button>
                     <button class="tab-btn" data-tab="reportes">📊 Reportes</button>
                 </div>
@@ -78,6 +79,18 @@
                 <div id="tab-faltantes" class="tab-content">
                     <div class="tab-header"><h2>Material Faltante</h2><p class="tab-description">Albaranes registrados con incidencias de material.</p></div>
                     <div id="lista-faltantes" class="albaranes-grid"></div>
+                </div>
+
+                <div id="tab-materiales" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Control de Materiales (Ferretería/Accesorios)</h2>
+                        <p class="tab-description" style="margin-bottom:12px;">El stock se extrae automáticamente de los excels de los Albaranes.</p>
+                        <div class="tab-actions">
+                            <button class="btn btn-success" onclick="abrirModalEntradaMaterial()">+ Entrada (Manual)</button>
+                            <button class="btn btn-warning" onclick="abrirModalSalidaMaterial()">+ Instalado (Salida)</button>
+                        </div>
+                    </div>
+                    <div id="lista-materiales" class="albaranes-grid"></div>
                 </div>
 
                 <div id="tab-cables" class="tab-content">
@@ -191,6 +204,7 @@
                 <div class="form-group">
                     <label>Archivo del Albarán (Excel/PDF)</label>
                     <input type="file" id="archivoAlbaran" name="archivoAlbaran" accept=".pdf,.xlsx,.xls">
+                    <small style="display:block; color:var(--text-secondary); margin-top:4px;">💡 Si subes un Excel, se extraerán todos los materiales (bridas, bandejas, etc.) automáticamente.</small>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -233,7 +247,7 @@
                 <div class="form-group" style="border-top: 1px solid var(--bg-system); padding-top: 16px;">
                     <label>Reemplazar Archivo (Excel/PDF) - Opcional</label>
                     <input type="file" id="editArchivoAlbaran" name="archivoAlbaran" accept=".pdf,.xlsx,.xls">
-                    <small style="color: var(--text-secondary); display: block; margin-top: 4px;">Si no seleccionas nada, se mantendrá el archivo original.</small>
+                    <small style="color: var(--text-secondary); display: block; margin-top: 4px;">Si subes un nuevo Excel, reemplazará los materiales extraídos anteriores.</small>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -251,7 +265,7 @@
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">
-                    Al marcar como entregado correcto, <b>los cables que estén esperando este albarán se añadirán automáticamente a tu stock disponible</b>.
+                    Al marcar como entregado correcto, <b>los cables y todo el material (bridas, bandejas...) que estén esperando este albarán se añadirán automáticamente a tu stock disponible</b>.
                 </p>
                 <div class="recepcion-options">
                     <label class="radio-option selected" id="lbl-completo">
@@ -273,7 +287,7 @@
                 </div>
                 <div id="detalleFaltante" class="form-group" style="display: none; margin-top: 20px; animation: fadeIn 0.3s ease;">
                     <label>Detalle del Material Faltante</label>
-                    <textarea id="materialFaltante" rows="3" placeholder="Ej: Faltan 2 bobinas de 16fo..."></textarea>
+                    <textarea id="materialFaltante" rows="3" placeholder="Ej: Faltan 2 bobinas de 16fo, o faltan 50 bridas..."></textarea>
                 </div>
                 <div class="form-actions" style="margin-top: 24px;">
                     <button type="button" class="btn btn-secondary" onclick="cerrarModalRecepcion()">Cancelar</button>
@@ -283,50 +297,40 @@
         </div>
     </div>
 
-    <div id="modalBuscador" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>🔍 Buscar Obra</h2>
-                <button class="modal-close" onclick="cerrarModalBuscador()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <input type="text" id="buscarObra" placeholder="Ingresa el ID de obra a buscar..." oninput="buscarEnTiempoReal()" autocomplete="off">
-                </div>
-                <div id="resultados-busqueda" style="max-height: 50vh; overflow-y: auto;">
-                    <div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalReportes" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Opciones de Reporte</h2>
-                <button class="modal-close" onclick="cerrarModalReportes()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Rango de fechas:</label>
-                    <select id="filtroFechaReporte" onchange="document.getElementById('rangoFechasReporte').style.display = this.value === 'rango' ? 'block' : 'none'">
-                        <option value="todo">Todo el historial</option>
-                        <option value="rango">Fechas específicas</option>
-                    </select>
-                </div>
-                <div id="rangoFechasReporte" style="display: none;">
-                    <div class="form-group"><label>Desde:</label><input type="date" id="fechaDesdeReporte"></div>
-                    <div class="form-group"><label>Hasta:</label><input type="date" id="fechaHastaReporte"></div>
-                </div>
-                <div class="form-actions">
-                    <button class="btn btn-secondary" onclick="cerrarModalReportes()">Cancelar</button>
-                    <button class="btn btn-primary" onclick="iniciarGeneracionReporte()">Descargar PDF</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <datalist id="opcionesCable"></datalist>
+    <datalist id="opcionesMaterialGral"></datalist> <div id="modalEntradaMaterial" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Registrar Entrada de Material</h2><button class="modal-close" onclick="cerrarModal()">&times;</button></div>
+            <form id="formEntradaMaterial" class="modal-body">
+                <div class="form-group"><label>ID de Obra / Origen</label><input type="text" name="idObra" placeholder="Ej: Almacén o Albarán N°" required></div>
+                <div class="form-group">
+                    <label>Descripción del Material *</label>
+                    <input type="text" name="descripcion" list="opcionesMaterialGral" autocomplete="off" required placeholder="Ej: BRIDA 300X4,8">
+                </div>
+                <div class="form-group"><label>Cantidad (Uds/Mts) *</label><input type="number" name="cantidad" required min="0.1" step="0.1"></div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="fechaEntradaMaterial" name="fecha"></div>
+                <div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2" placeholder="Opcional"></textarea></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button><button type="submit" class="btn btn-success">Registrar Entrada</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalSalidaMaterial" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Registrar Salida / Instalado</h2><button class="modal-close" onclick="cerrarModal()">&times;</button></div>
+            <form id="formSalidaMaterial" class="modal-body">
+                <div class="form-group"><label>ID de Obra / Destino *</label><input type="text" name="idObra" required></div>
+                <div class="form-group">
+                    <label>Descripción del Material *</label>
+                    <select id="selectMaterialSalida" name="descripcion" required></select>
+                </div>
+                <div class="form-group"><label>Cantidad Instalada *</label><input type="number" name="cantidad" required min="0.1" step="0.1"></div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="fechaSalidaMaterial" name="fecha"></div>
+                <div class="form-group"><label>Técnico / Observaciones</label><textarea name="observaciones" rows="2" placeholder="Opcional"></textarea></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button><button type="submit" class="btn btn-warning">Registrar Salida</button></div>
+            </form>
+        </div>
+    </div>
 
     <div id="modalNuevoCable" class="modal">
         <div class="modal-content">
@@ -455,6 +459,49 @@
                 <div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="3"></textarea></div>
                 <div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalDevolucion()">Cancelar</button><button type="submit" class="btn btn-primary">Registrar Devolución</button></div>
             </form>
+        </div>
+    </div>
+
+    <div id="modalBuscador" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔍 Buscar</h2>
+                <button class="modal-close" onclick="cerrarModalBuscador()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" id="buscarObra" placeholder="Ingresa ID de obra, albarán o material..." oninput="buscarEnTiempoReal()" autocomplete="off">
+                </div>
+                <div id="resultados-busqueda" style="max-height: 50vh; overflow-y: auto;">
+                    <div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalReportes" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Opciones de Reporte</h2>
+                <button class="modal-close" onclick="cerrarModalReportes()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Rango de fechas:</label>
+                    <select id="filtroFechaReporte" onchange="document.getElementById('rangoFechasReporte').style.display = this.value === 'rango' ? 'block' : 'none'">
+                        <option value="todo">Todo el historial</option>
+                        <option value="rango">Fechas específicas</option>
+                    </select>
+                </div>
+                <div id="rangoFechasReporte" style="display: none;">
+                    <div class="form-group"><label>Desde:</label><input type="date" id="fechaDesdeReporte"></div>
+                    <div class="form-group"><label>Hasta:</label><input type="date" id="fechaHastaReporte"></div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="cerrarModalReportes()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="iniciarGeneracionReporte()">Descargar PDF</button>
+                </div>
+            </div>
         </div>
     </div>
 

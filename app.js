@@ -15,7 +15,8 @@ const db = firebase.database();
 
 // ===== VARIABLES GLOBALES =====
 let albaranes = []; let albaranSeleccionado = null;
-let cables = []; let subconductos = []; let devoluciones = [];
+let cables = []; let subconductos = []; let devoluciones = []; 
+let materialesGenerales = []; // NUEVO ARREGLO PARA MATERIALES
 let reporteActual = '';
 
 // Lista global de Opciones de Cable
@@ -86,6 +87,7 @@ function conectarConNube() {
     db.ref('cables').on('value', (snapshot) => { cables = parsearDatosNube(snapshot.val()); actualizarUI(); });
     db.ref('subconductos').on('value', (snapshot) => { subconductos = parsearDatosNube(snapshot.val()); actualizarUI(); });
     db.ref('devoluciones').on('value', (snapshot) => { devoluciones = parsearDatosNube(snapshot.val()); actualizarUI(); });
+    db.ref('materialesGenerales').on('value', (snapshot) => { materialesGenerales = parsearDatosNube(snapshot.val()); actualizarOpcionesMaterialesGral(); actualizarUI(); });
 }
 
 function actualizarUI() {
@@ -93,6 +95,7 @@ function actualizarUI() {
     const tabActiva = document.querySelector('.tab-btn.active')?.dataset?.tab;
     if (tabActiva === 'cables') { mostrarMateriales('cable'); actualizarStockDisplay('cable'); }
     else if (tabActiva === 'subconductos') { mostrarMateriales('subconducto'); actualizarStockDisplay('subconducto'); }
+    else if (tabActiva === 'materiales') { mostrarMaterialesGenerales(); }
     else if (tabActiva === 'devoluciones') { mostrarDevoluciones(); }
     else if (tabActiva !== 'reportes') { mostrarAlbaranes(); }
 }
@@ -103,6 +106,7 @@ function guardarTodosLosDatos() {
         db.ref('cables').set(cables);
         db.ref('subconductos').set(subconductos);
         db.ref('devoluciones').set(devoluciones);
+        db.ref('materialesGenerales').set(materialesGenerales);
     } catch (e) {
         console.error("Error guardando en la Nube", e);
         mostrarToast('❌ Error sincronizando con Firebase. Inténtalo de nuevo.');
@@ -125,6 +129,7 @@ function actualizarContadores() {
         'count-faltantes': faltantesCount,
         'count-cables': cables.length,
         'count-subconductos': subconductos.length,
+        'count-materiales': materialesGenerales.length,
         'count-devoluciones': devoluciones.length
     };
     for (const [id, valor] of Object.entries(elements)) {
@@ -185,6 +190,7 @@ function agregarCableAlbaran() {
 }
 window.agregarCableAlbaran = agregarCableAlbaran;
 
+// --- EDICIÓN DE ALBARÁN ---
 function abrirModalEditarAlbaran(id) {
     const albaran = albaranes.find(a => a.id === id);
     if(!albaran) return;
@@ -233,36 +239,55 @@ function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
 }
 window.agregarCableAlbaranEdit = agregarCableAlbaranEdit;
 
-// ===== MAGIA NUEVA: EXTRACCIÓN INTELIGENTE LOCAL =====
-// En lugar de guardar el archivo pesado, extraemos el HTML de la tabla y desechamos el resto.
-
-function generarTablaHtmlDesdeBase64(b64) {
+// ===== MAGIA NUEVA: EXTRACCIÓN INTELIGENTE DE EXCEL (CABLES + MATERIALES) =====
+function generarTablaHtmlYMaterialesDesdeBase64(b64) {
     try {
         const wb = XLSX.read(b64.split(',')[1], { type: 'base64' });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-        if (jsonData.length === 0) return '<p>El Excel está vacío.</p>';
+        if (jsonData.length === 0) return { html: '<p>El Excel está vacío.</p>', materiales: [] };
 
-        let headerRowIdx = -1; let qtyColIdx = -1;
+        let headerRowIdx = -1; let qtyColIdx = -1; let descColIdx = -1;
+
+        // Buscamos las cabeceras (Dónde dice Cantidad y Dónde dice Descripción/Artículo)
         for (let i = 0; i < Math.min(20, jsonData.length); i++) {
             for (let j = 0; j < jsonData[i].length; j++) {
                 const cell = String(jsonData[i][j]).toLowerCase().trim();
-                if (cell.includes('uds') || cell.includes('mts') || cell.includes('cant') || cell === 'cantidad') {
-                    headerRowIdx = i; qtyColIdx = j; break;
+                if (cell.includes('uds') || cell.includes('cant') || cell === 'cantidad' || cell.includes('mts')) {
+                    qtyColIdx = j;
+                }
+                if (cell.includes('descrip') || cell.includes('artículo') || cell.includes('articulo') || cell.includes('concepto') || cell.includes('material')) {
+                    descColIdx = j;
                 }
             }
-            if (headerRowIdx !== -1) break;
+            // Si encontramos la cabecera de cantidad, ya nos vale como inicio de tabla
+            if (qtyColIdx !== -1) { headerRowIdx = i; break; }
         }
 
         let filteredData = [];
+        let materialesExtraidos = [];
+
         if (headerRowIdx !== -1 && qtyColIdx !== -1) {
             filteredData = jsonData.slice(0, headerRowIdx + 1);
-            const dataRows = jsonData.slice(headerRowIdx + 1).filter(row => {
-                const val = parseFloat(row[qtyColIdx]);
-                return !isNaN(val) && val > 0;
-            });
-            filteredData = filteredData.concat(dataRows);
+            
+            // Recorremos las filas que están debajo de la cabecera
+            for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                const qtyVal = parseFloat(row[qtyColIdx]);
+                
+                if (!isNaN(qtyVal) && qtyVal > 0) {
+                    filteredData.push(row);
+                    
+                    // Extraemos los materiales para el Nuevo Módulo
+                    if (descColIdx !== -1) {
+                        const descVal = String(row[descColIdx]).trim();
+                        if (descVal !== '') {
+                            materialesExtraidos.push({ descripcion: descVal, cantidad: qtyVal });
+                        }
+                    }
+                }
+            }
         } else {
             filteredData = jsonData.filter(row => row.some(cell => String(cell).trim() !== ''));
         }
@@ -278,9 +303,11 @@ function generarTablaHtmlDesdeBase64(b64) {
             html += '</tr>';
         });
         html += '</table>';
-        return html;
+        
+        return { html: html, materiales: materialesExtraidos };
     } catch(e) {
-        return '<p style="color:var(--system-red);">❌ Error procesando el Excel.</p>';
+        console.error(e);
+        return { html: '<p style="color:var(--system-red);">❌ Error procesando el Excel.</p>', materiales: [] };
     }
 }
 
@@ -298,42 +325,56 @@ function crearAlbaran(e) {
             let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
 
             if (isExcel) {
-                // Extraemos la tabla y guardamos solo el HTML (Peso casi nulo)
-                archivoInfo.tablaHtml = generarTablaHtmlDesdeBase64(b64);
-                finalizarCreacionAlbaran(formData, archivoInfo);
+                // Extraemos la tabla y los materiales
+                const extraccion = generarTablaHtmlYMaterialesDesdeBase64(b64);
+                archivoInfo.tablaHtml = extraccion.html;
+                finalizarCreacionAlbaran(formData, archivoInfo, extraccion.materiales);
             } else {
-                // Para PDFs, si es muy grande bloqueamos para que no colapse la BD
                 if (archivoInput.size > 1536000) {
                     mostrarToast('❌ El PDF es muy pesado (Max 1.5MB). Los Excel no tienen límite.');
                     return;
                 }
                 archivoInfo.base64 = b64;
-                finalizarCreacionAlbaran(formData, archivoInfo);
+                finalizarCreacionAlbaran(formData, archivoInfo, []);
             }
         };
         reader.readAsDataURL(archivoInput);
     } else {
-        finalizarCreacionAlbaran(formData, null);
+        finalizarCreacionAlbaran(formData, null, []);
     }
 }
 
-function finalizarCreacionAlbaran(formData, archivoInfo) {
+function finalizarCreacionAlbaran(formData, archivoInfo, materialesExtraidos = []) {
     const albaranId = `ALB-${Date.now().toString().slice(-6)}`;
     
+    // 1. Guardar Cables Esperados
     const itemsCables = document.querySelectorAll('#albaranCablesContainer .bobina-item');
     itemsCables.forEach(item => {
         const idx = item.dataset.cableAlbaran;
         const tipo = formData.get(`albaranTipoCable_${idx}`);
         const metros = parseFloat(formData.get(`albaranMetrosCable_${idx}`));
-        
         if (tipo && metros > 0) {
             cables.push({
-                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`,
-                tipoMaterial: 'cable', idObra: formData.get('idObra'), tipoCable: tipo, metros: metros,
-                accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
+                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`, tipoMaterial: 'cable', idObra: formData.get('idObra'),
+                tipoCable: tipo, metros: metros, accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
                 observaciones: `Esperando con Albarán: ${albaranId}`, idAlbaranAsociado: albaranId 
             });
         }
+    });
+
+    // 2. Guardar Materiales Extraídos en el Limbo (Pendiente Recibir)
+    materialesExtraidos.forEach((mat, idx) => {
+        materialesGenerales.push({
+            id: `MAT-${Date.now().toString().slice(-6)}-${idx}`,
+            tipoMaterial: 'general',
+            idObra: formData.get('idObra'),
+            descripcion: mat.descripcion,
+            cantidad: mat.cantidad,
+            accion: 'pendiente_recepcion',
+            fecha: formData.get('fecha'),
+            observaciones: `Auto-extraído Albarán: ${albaranId}`,
+            idAlbaranAsociado: albaranId
+        });
     });
 
     albaranes.push({
@@ -344,7 +385,7 @@ function finalizarCreacionAlbaran(formData, archivoInfo) {
     });
     
     guardarTodosLosDatos(); cerrarTodosLosModales(); 
-    mostrarToast('✅ Albarán creado con éxito');
+    mostrarToast(materialesExtraidos.length > 0 ? `✅ Albarán creado y ${materialesExtraidos.length} materiales detectados` : '✅ Albarán creado con éxito');
 }
 
 function guardarEdicionAlbaran(e) {
@@ -365,33 +406,33 @@ function guardarEdicionAlbaran(e) {
             let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
 
             if (isExcel) {
-                // Extraemos la tabla HTML y evitamos colapsar la Base de datos
-                archivoInfo.tablaHtml = generarTablaHtmlDesdeBase64(b64);
-                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo);
+                const extraccion = generarTablaHtmlYMaterialesDesdeBase64(b64);
+                archivoInfo.tablaHtml = extraccion.html;
+                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, extraccion.materiales);
             } else {
                 if (archivoInput.size > 1536000) {
                     mostrarToast('❌ El PDF es muy pesado (Max 1.5MB). Los Excel no tienen límite.');
                     return;
                 }
                 archivoInfo.base64 = b64;
-                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo);
+                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, []);
             }
         };
         reader.readAsDataURL(archivoInput);
     } else {
         // Se mantiene el archivo viejo
-        finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo);
+        finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo, []);
     }
 }
 
-function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo) {
+function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, materialesExtraidos = []) {
     albaran.idObra = formData.get('idObra'); albaran.fecha = formData.get('fecha');
     albaran.cuentaCargo = formData.get('cuentaCargo'); albaran.tipoInstalacion = formData.get('tipoInstalacion');
     albaran.jefeObra = formData.get('jefeObra'); albaran.observaciones = formData.get('observaciones') || '';
     albaran.archivo = archivoInfo;
 
+    // Actualizar Cables (limpiamos los "esperando" viejos y metemos los nuevos)
     cables = cables.filter(c => !(c.idAlbaranAsociado === idAlbaran && c.accion === 'pendiente_recepcion'));
-
     const itemsCables = document.querySelectorAll('#editAlbaranCablesContainer .bobina-item');
     itemsCables.forEach(item => {
         const idx = item.dataset.cableAlbaran;
@@ -405,6 +446,18 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo) {
             });
         }
     });
+
+    // Actualizar Materiales (solo si subió un nuevo Excel con materiales)
+    if (materialesExtraidos.length > 0) {
+        materialesGenerales = materialesGenerales.filter(m => !(m.idAlbaranAsociado === idAlbaran && m.accion === 'pendiente_recepcion'));
+        materialesExtraidos.forEach((mat, idx) => {
+            materialesGenerales.push({
+                id: `MAT-${Date.now().toString().slice(-6)}-${idx}`, tipoMaterial: 'general', idObra: formData.get('idObra'),
+                descripcion: mat.descripcion, cantidad: mat.cantidad, accion: 'pendiente_recepcion',
+                fecha: formData.get('fecha'), observaciones: `Auto-extraído Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran
+            });
+        });
+    }
 
     guardarTodosLosDatos(); cerrarTodosLosModales(); 
     mostrarToast('✅ Albarán editado correctamente');
@@ -434,7 +487,6 @@ function mostrarAlbaranes() {
         const estadoText = a.estado === 'pendiente' ? 'Pendiente' : (esFaltante ? 'Faltante' : 'Recibido');
         
         let actions = `<div class="albaran-actions">`;
-        // Boton Archivo actualizado
         if (a.archivo && (a.archivo.tablaHtml || a.archivo.base64)) {
             actions += `<button class="btn btn-info" onclick="verArchivoAlbaran('${a.id}')">📄 Ver Material</button>`;
         }
@@ -448,12 +500,16 @@ function mostrarAlbaranes() {
         actions += `<button class="btn btn-secondary" onclick="eliminarAlbaran('${a.id}')">🗑️ Eliminar</button></div>`;
 
         const cablesAsociados = cables.filter(c => c.idAlbaranAsociado === a.id && c.accion === 'pendiente_recepcion').length;
-        const etiquetaCables = cablesAsociados > 0 ? `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">⏳ Trae ${cablesAsociados} cables</b>` : '';
+        const matAsociados = materialesGenerales.filter(m => m.idAlbaranAsociado === a.id && m.accion === 'pendiente_recepcion').length;
+        
+        let etiquetas = '';
+        if (cablesAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">⏳ ${cablesAsociados} cables</b>`;
+        if (matAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🛒 ${matAsociados} acc.</b>`;
 
         return `
         <div class="albaran-card" id="card-${a.id}">
             <div class="albaran-header">
-                <div><span class="albaran-id">${a.id}</span> ${etiquetaCables}</div>
+                <div><span class="albaran-id">${a.id}</span> ${etiquetas}</div>
                 <span class="status-badge ${estadoClass}">${estadoText}</span>
             </div>
             <div class="albaran-info">
@@ -476,21 +532,26 @@ function confirmarRecepcion() {
     albaranSeleccionado.estado = 'recibido';
     albaranSeleccionado.materialFaltante = estado === 'incompleto' ? faltante : null;
     
-    let cablesIngresados = 0;
+    const hoy = new Date().toISOString().split('T')[0];
+    let itemsIngresados = 0;
+    
+    // Ingresar Cables
     cables.forEach(c => {
         if (c.idAlbaranAsociado === albaranSeleccionado.id && c.accion === 'pendiente_recepcion') {
-            c.accion = 'entrada'; 
-            c.fecha = new Date().toISOString().split('T')[0]; 
-            c.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`;
-            cablesIngresados++;
+            c.accion = 'entrada'; c.fecha = hoy; c.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+        }
+    });
+
+    // Ingresar Materiales Generales
+    materialesGenerales.forEach(m => {
+        if (m.idAlbaranAsociado === albaranSeleccionado.id && m.accion === 'pendiente_recepcion') {
+            m.accion = 'entrada'; m.fecha = hoy; m.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
         }
     });
 
     guardarTodosLosDatos(); cerrarTodosLosModales(); 
     mostrarToast('✅ Recepción completada');
-    if (cablesIngresados > 0) {
-        setTimeout(() => mostrarToast(`📦 ${cablesIngresados} cables han entrado al stock disponible`), 1000);
-    }
+    if (itemsIngresados > 0) setTimeout(() => mostrarToast(`📦 ${itemsIngresados} artículos han entrado al stock disponible`), 1000);
 }
 
 function marcarFaltanteRecibido(id) {
@@ -509,30 +570,127 @@ function eliminarAlbaran(id) {
     if(confirm('¿Eliminar albarán permanentemente?')) { 
         albaranes = albaranes.filter(a=>a.id!==id); 
         cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
+        materialesGenerales = materialesGenerales.filter(m => !(m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion'));
         guardarTodosLosDatos(); 
     }
 }
 
-// ===== MATERIALES Y STOCK =====
+// ===== MATERIALES GENERALES (EL NUEVO MÓDULO) =====
+function abrirModalEntradaMaterial() { document.getElementById('modalEntradaMaterial').classList.add('active'); establecerFechaActual(); }
+function abrirModalSalidaMaterial() { document.getElementById('modalSalidaMaterial').classList.add('active'); establecerFechaActual(); }
+
+function agregarMaterialGeneral(form, accion) {
+    const cantidad = parseFloat(form.get('cantidad'));
+    if (isNaN(cantidad) || cantidad <= 0) return mostrarToast('❌ La cantidad debe ser mayor a 0');
+    
+    let descripcion = form.get('descripcion');
+    if(!descripcion || descripcion.trim() === '') return mostrarToast('❌ La descripción es obligatoria');
+
+    materialesGenerales.push({
+        id: `MAT-${Date.now().toString().slice(-6)}`,
+        tipoMaterial: 'general', idObra: form.get('idObra') || 'Almacén',
+        descripcion: descripcion.toUpperCase().trim(), cantidad: cantidad, accion: accion,
+        fecha: form.get('fecha'), observaciones: form.get('observaciones') || ''
+    });
+
+    guardarTodosLosDatos(); cerrarTodosLosModales();
+    mostrarToast(`✅ Material ${accion === 'entrada' ? 'guardado' : 'restado'} del stock`);
+}
+
+function actualizarOpcionesMaterialesGral() {
+    const descripciones = [...new Set(materialesGenerales.map(m => m.descripcion))].sort();
+    const html = descripciones.map(d => `<option value="${d}">${d}</option>`).join('');
+    
+    const datalist = document.getElementById('opcionesMaterialGral');
+    if (datalist) datalist.innerHTML = html;
+    
+    const select = document.getElementById('selectMaterialSalida');
+    if (select) select.innerHTML = '<option value="">Selecciona qué has gastado...</option>' + html;
+}
+
+function mostrarMaterialesGenerales() {
+    const cont = document.getElementById('lista-materiales');
+    if(!cont) return;
+    if(materialesGenerales.length === 0) { cont.innerHTML = '<p style="text-align:center; padding:40px; color:var(--text-secondary);">No hay materiales registrados.</p>'; return; }
+
+    const agrupado = {};
+    materialesGenerales.forEach(m => {
+        const t = m.descripcion || 'Sin nombre';
+        if(!agrupado[t]) agrupado[t] = { items: [], entrada:0, salida:0, pendiente:0 };
+        agrupado[t].items.push(m);
+        
+        if(m.accion === 'entrada') agrupado[t].entrada += m.cantidad;
+        else if(m.accion === 'instalacion') agrupado[t].salida += m.cantidad;
+        else if(m.accion === 'pendiente_recepcion') agrupado[t].pendiente += m.cantidad;
+    });
+
+    let html = '';
+    Object.keys(agrupado).sort().forEach(t => {
+        const g = agrupado[t];
+        const disp = g.entrada - g.salida;
+        let cAlerta = 'stock-positivo';
+        if(disp < 0) cAlerta = 'stock-negativo'; else if(disp < 10) cAlerta = 'stock-alerta';
+
+        g.items.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        const renderCards = g.items.map(m => {
+            const isEntrada = m.accion === 'entrada';
+            const isPendiente = m.accion === 'pendiente_recepcion';
+            
+            const cardClass = isEntrada ? 'card-entrada' : (isPendiente ? 'card-pendiente-recepcion' : 'card-instalacion');
+            const icon = isEntrada ? '📥' : (isPendiente ? '⏳' : '🔧');
+            const label = isEntrada ? 'ENTRADA' : (isPendiente ? 'ESPERANDO ALBARÁN' : 'GASTADO');
+            const badgeColor = isEntrada ? 'var(--system-green)' : (isPendiente ? 'var(--system-blue)' : 'var(--system-red)');
+            const badgeBg = isEntrada ? 'rgba(52,199,89,0.1)' : (isPendiente ? 'rgba(0,122,255,0.1)' : 'rgba(255, 59, 48, 0.1)');
+
+            return `
+            <div class="albaran-card ${cardClass}" style="box-shadow:var(--shadow-sm); border:1px solid var(--bg-system); margin-bottom: 8px; padding: 16px;">
+                <div class="info-row" style="margin-bottom: 8px; align-items:center;">
+                    <b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b>
+                    <span style="font-size:16px; font-weight:800; color:var(--text-primary);">${m.cantidad}</span>
+                </div>
+                <div class="info-row" style="color:var(--text-secondary); font-size:12px; border-top: 1px solid var(--bg-system); padding-top: 10px;">
+                    <span>🏢 Obra/Destino: ${m.idObra}</span>
+                    <span>📅 ${new Date(m.fecha).toLocaleDateString()}</span>
+                </div>
+                ${m.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary); background: var(--bg-system); padding: 6px; border-radius: 6px;"><em>📝 Obs: ${m.observaciones}</em></div>` : ''}
+                <button class="btn btn-secondary w-100" style="margin-top:12px; padding:8px; font-size: 13px; background: var(--bg-system);" onclick="eliminarMaterial('general','${m.id}')">🗑️ Eliminar</button>
+            </div>`;
+        });
+
+        html += `
+        <div class="tipo-section">
+            <div class="tipo-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='none'?'block':'none'">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 12px;">
+                    <h3 style="font-size:15px; font-weight:700; line-height:1.3; color:var(--text-primary); margin:0; word-break: break-word;">${t}</h3>
+                </div>
+                <div class="tipo-stock">
+                    <span>📥 Entradas: ${g.entrada}</span> <span>🔧 Gastado: ${g.salida}</span>
+                    ${g.pendiente > 0 ? `<span>⏳ Pendiente: ${g.pendiente}</span>` : ''}
+                    <span class="${cAlerta}">✅ Disponible: ${disp}</span>
+                </div>
+            </div>
+            <div style="display:none; background: #FAFAFA;">
+                <div class="albaranes-grid" style="padding:16px;">${renderCards.join('')}</div>
+            </div>
+        </div>`;
+    });
+    cont.innerHTML = html;
+}
+
+// ===== MATERIALES Y STOCK (CABLES Y SUB) =====
 function agregarMaterial(tipo, formData, accion) {
     const metrosInput = parseFloat(formData.get('metros'));
     if (isNaN(metrosInput) || metrosInput <= 0) return mostrarToast('❌ Los metros deben ser mayor a 0');
 
     let obra = formData.get('idObra');
-    if (!obra || obra.trim() === '') {
-        obra = accion === 'merma' ? 'Baja / Almacén' : 'No especificada';
-    }
+    if (!obra || obra.trim() === '') obra = accion === 'merma' ? 'Baja / Almacén' : 'No especificada';
 
     const material = {
         id: `${tipo==='cable'?'CAB':'SUB'}-${Date.now().toString().slice(-6)}`,
-        tipoMaterial: tipo, 
-        idObra: obra, 
-        tipoCable: formData.get('tipoCable') || formData.get('tipoSubconducto'),
-        metros: metrosInput, 
-        accion: accion, 
-        fecha: formData.get('fecha'),
-        observaciones: formData.get('observaciones') || '', 
-        solicitado: false 
+        tipoMaterial: tipo, idObra: obra, tipoCable: formData.get('tipoCable') || formData.get('tipoSubconducto'),
+        metros: metrosInput, accion: accion, fecha: formData.get('fecha'),
+        observaciones: formData.get('observaciones') || '', solicitado: false 
     };
 
     if (tipo === 'cable') cables.push(material); else subconductos.push(material);
@@ -571,18 +729,13 @@ function calcularStock(tipo) {
     let rec = 0, inst = 0, pend = 0, pendRec = 0, merma = 0;
     
     arr.forEach(m => { 
-        if(m.accion === 'entrada') {
-            rec += m.metros; 
-        } else if (m.accion === 'pendiente_recepcion') {
-            pendRec += m.metros;
-        } else if (m.accion === 'merma') {
-            merma += m.metros;
-        } else {
+        if(m.accion === 'entrada') rec += m.metros; 
+        else if (m.accion === 'pendiente_recepcion') pendRec += m.metros;
+        else if (m.accion === 'merma') merma += m.metros;
+        else {
             inst += m.metros; 
             const isSolicitado = m.solicitado === true || m.accion === 'solicitado';
-            if(!isSolicitado && tipo === 'subconducto') {
-                pend += m.metros;
-            }
+            if(!isSolicitado && tipo === 'subconducto') pend += m.metros;
         }
     });
     return { recibido: rec, instalado: inst, merma: merma, disponible: rec - inst - merma, pendiente: pend, pendiente_recepcion: pendRec };
@@ -644,13 +797,10 @@ function mostrarMateriales(tipo) {
         if(!agrupado[t]) agrupado[t] = { items: [], r:0, i:0, p:0, pr: 0, m: 0 };
         agrupado[t].items.push(m);
         
-        if(m.accion === 'entrada') {
-            agrupado[t].r += m.metros;
-        } else if (m.accion === 'pendiente_recepcion') {
-            agrupado[t].pr += m.metros;
-        } else if (m.accion === 'merma') {
-            agrupado[t].m += m.metros;
-        } else {
+        if(m.accion === 'entrada') agrupado[t].r += m.metros;
+        else if (m.accion === 'pendiente_recepcion') agrupado[t].pr += m.metros;
+        else if (m.accion === 'merma') agrupado[t].m += m.metros;
+        else {
             agrupado[t].i += m.metros; 
             const isSolicitado = m.solicitado === true || m.accion === 'solicitado';
             if(!isSolicitado) agrupado[t].p += m.metros;
@@ -754,7 +904,9 @@ function mostrarMateriales(tipo) {
 
 function eliminarMaterial(tipo, id) {
     if(confirm('¿Eliminar registro permanentemente?')) {
-        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); else subconductos = subconductos.filter(s=>s.id!==id);
+        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); 
+        else if(tipo==='subconducto') subconductos = subconductos.filter(s=>s.id!==id);
+        else materialesGenerales = materialesGenerales.filter(m=>m.id!==id); // BORRAR MATERIAL GENERAL
         guardarTodosLosDatos(); 
     }
 }
@@ -829,456 +981,4 @@ function toggleCamposMaterial(idx) {
     document.getElementById(`camposOtroMaterial_${idx}`).style.display = 'none';
     
     if(tipo === 'bobina_con_cable') document.getElementById(`camposBobinaCable_${idx}`).style.display = 'flex';
-    if(tipo === 'bobina_vacia') document.getElementById(`camposBobinaVacia_${idx}`).style.display = 'flex';
-    if(tipo === 'otro') document.getElementById(`camposOtroMaterial_${idx}`).style.display = 'block';
-}
-
-function crearDevolucion(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const bobinas = document.querySelectorAll('.bobina-item');
-    if(bobinas.length === 0) return mostrarToast('Añada al menos una bobina');
-
-    const bobinasData = [];
-    bobinas.forEach((b) => {
-        const idx = b.dataset.bobina;
-        bobinasData.push({
-            entregaVacia: formData.get(`entregaVacia_${idx}`) === 'on',
-            tipoMaterial: formData.get(`tipoMaterial_${idx}`),
-            tipoCableDevolucion: formData.get(`tipoCableDevolucion_${idx}`) || '',
-            tipoCableDevolucionVacia: formData.get(`tipoCableDevolucionVacia_${idx}`) || '',
-            numeroMatriculaCable: formData.get(`numeroMatriculaCable_${idx}`) || '',
-            metrosCableBobina: parseFloat(formData.get(`metrosCable_${idx}`)) || 0,
-            numeroMatriculaVacia: formData.get(`numeroMatriculaVacia_${idx}`) || '',
-            descripcionOtroMaterial: formData.get(`descripcionOtroMaterial_${idx}`) || ''
-        });
-    });
-
-    devoluciones.push({
-        id: `DEV-${Date.now().toString().slice(-6)}`,
-        idObra: formData.get('idObra'), fechaEntrega: formData.get('fecha'),
-        tipoInstalacion: formData.get('tipoInstalacion'), bobinas: bobinasData,
-        observaciones: formData.get('observaciones') || ''
-    });
-
-    guardarTodosLosDatos(); cerrarTodosLosModales(); 
-    mostrarToast('✅ Devolución registrada en la Nube');
-}
-
-function mostrarDevoluciones() {
-    const cont = document.getElementById('lista-devoluciones');
-    if(devoluciones.length === 0) { cont.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);">No hay devoluciones</div>'; return; }
-    
-    let html = '';
-    devoluciones.sort((a, b) => new Date(b.fechaEntrega) - new Date(a.fechaEntrega));
-
-    devoluciones.forEach(d => {
-        const total = d.bobinas.length;
-        let detallesHtml = d.bobinas.map((b, i) => {
-            let info = '';
-            if (b.tipoMaterial === 'bobina_con_cable') {
-                info = `<span style="color:var(--text-secondary);">Cable:</span> <b>${b.tipoCableDevolucion}</b><br>
-                        <span style="color:var(--text-secondary);">Matrícula:</span> <b>${b.numeroMatriculaCable}</b><br>
-                        <span style="color:var(--text-secondary);">Metros:</span> <b>${b.metrosCableBobina}m</b>`;
-            } else if (b.tipoMaterial === 'bobina_vacia') {
-                info = `<span style="color:var(--text-secondary);">Cable Original:</span> <b>${b.tipoCableDevolucionVacia}</b><br>
-                        <span style="color:var(--text-secondary);">Matrícula:</span> <b>${b.numeroMatriculaVacia}</b>`;
-            } else {
-                info = `<span style="color:var(--text-secondary);">Descripción:</span> <b>${b.descripcionOtroMaterial}</b>`;
-            }
-            let estadoVacia = b.entregaVacia ? `<span style="display:inline-block; margin-top:6px; background:rgba(255,149,0,0.1); color:var(--system-orange); padding:2px 8px; border-radius:6px; font-size:11px; font-weight:bold;">ENTREGA VACÍA</span>` : '';
-            let tipoBadge = b.tipoMaterial === 'bobina_con_cable' ? '🔌 Con Cable' : (b.tipoMaterial === 'bobina_vacia' ? '🕳️ Vacía' : '📦 Otro');
-
-            return `
-            <div style="background:var(--bg-system); padding:12px; border-radius:10px; margin-bottom:12px; font-size:13px; border:1px solid #E5E5EA;">
-                <div style="margin-bottom:8px; display:flex; justify-content:space-between;">
-                    <strong>Bobina ${i+1}</strong> <span style="font-weight:600; color:var(--system-blue);">${tipoBadge}</span>
-                </div>
-                ${info}
-                ${estadoVacia ? `<br>${estadoVacia}` : ''}
-            </div>`;
-        }).join('');
-
-        html += `
-        <div class="albaran-card" id="card-${d.id}">
-            <div class="albaran-header"><span class="albaran-id">${d.id}</span> <span class="status-badge status-recibido">Completado</span></div>
-            <div class="albaran-info">
-                <div class="info-row"><span class="info-label">Obra:</span><span class="info-value">${d.idObra}</span></div>
-                <div class="info-row"><span class="info-label">Fecha:</span><span class="info-value">${new Date(d.fechaEntrega).toLocaleDateString()}</span></div>
-                <div class="info-row"><span class="info-label">Bobinas:</span><span class="info-value">${total}</span></div>
-                ${d.observaciones ? `<div class="info-row" style="margin-top:8px; font-size:12px; color:var(--text-secondary);"><em>Nota: ${d.observaciones}</em></div>` : ''}
-            </div>
-            <div id="detalles-${d.id}" style="display:none; margin-top:16px; border-top:1px solid var(--bg-system); padding-top:16px;">
-                ${detallesHtml}
-            </div>
-            <div class="albaran-actions">
-                <button class="btn btn-info w-100" onclick="const el = document.getElementById('detalles-${d.id}'); if(el.style.display==='none'){el.style.display='block'; this.innerText='Ocultar Bobinas';}else{el.style.display='none'; this.innerText='Ver Bobinas';}">Ver Bobinas</button>
-                <button class="btn btn-secondary w-100" onclick="eliminarDevolucion('${d.id}')">🗑️ Eliminar</button>
-            </div>
-        </div>`;
-    });
-    cont.innerHTML = html;
-}
-
-function eliminarDevolucion(id) {
-    if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
-}
-
-// ===== MAGIA NUEVA: VER TABLA HTML CREADA EN LOCAL =====
-function verArchivoAlbaran(id) {
-    const a = albaranes.find(x => x.id === id);
-    if(!a || !a.archivo) {
-        return mostrarToast('❌ El archivo no está disponible (quizás se limpió en un backup anterior). Los nuevos funcionarán perfectamente.');
-    }
-    
-    let contenido = '';
-    
-    // Mostramos la tabla HTML súper ligera extraída previamente del Excel
-    if (a.archivo.tablaHtml) {
-        contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
-    } 
-    // Fallback por si era un PDF antiguo (o uno nuevo que pesaba poco)
-    else if (a.archivo.base64) {
-        contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
-    } else {
-        contenido = `<p>Formato no previsualizable.</p>`;
-    }
-
-    const modalHtml = `
-    <div id="modalVerArchivo" class="modal active">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h3 style="font-size:16px;">📄 ${a.archivo.nombre}</h3>
-                <button class="modal-close" onclick="document.getElementById('modalVerArchivo').remove()">&times;</button>
-            </div>
-            <div class="modal-body">
-                ${contenido}
-                </div>
-        </div>
-    </div>`;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-// ===== BUSCADOR EN TIEMPO REAL =====
-function abrirBuscador() {
-    document.getElementById('modalBuscador').classList.add('active');
-    document.getElementById('buscarObra').value = '';
-    document.getElementById('resultados-busqueda').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>';
-    setTimeout(() => document.getElementById('buscarObra').focus(), 100);
-}
-
-function buscarEnTiempoReal() {
-    const termino = document.getElementById('buscarObra').value.trim().toLowerCase();
-    const container = document.getElementById('resultados-busqueda');
-    if (termino.length < 2) { container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>'; return; }
-    
-    const rAlb = albaranes.filter(a => a.idObra.toLowerCase().includes(termino) || a.id.toLowerCase().includes(termino));
-    const rCab = cables.filter(c => (c.idObra||'').toLowerCase().includes(termino));
-    const rSub = subconductos.filter(s => (s.idObra||'').toLowerCase().includes(termino));
-    const rDev = devoluciones.filter(d => d.idObra.toLowerCase().includes(termino) || d.id.toLowerCase().includes(termino));
-    
-    if (rAlb.length === 0 && rCab.length === 0 && rSub.length === 0 && rDev.length === 0) { 
-        container.innerHTML = '<div style="text-align:center; padding:20px;">🔍 Sin resultados</div>'; 
-        return; 
-    }
-    
-    let html = '';
-    if (rAlb.length > 0) {
-        html += '<h4 style="margin-top:10px;">Albaranes</h4>';
-        rAlb.forEach(a => { html += `<div class="resultado-item" onclick="irAElemento('albaran', '${a.id}')"><strong>${a.id}</strong> - Obra: ${a.idObra} (${a.estado})</div>`; });
-    }
-    if (rCab.length > 0) {
-        html += '<h4 style="margin-top:10px;">Cables</h4>';
-        rCab.forEach(c => { html += `<div class="resultado-item" onclick="irAElemento('cables', '${c.id}')"><strong>${c.tipoCable}</strong> - Obra: ${c.idObra} (${c.metros}m)</div>`; });
-    }
-    if (rSub.length > 0) {
-        html += '<h4 style="margin-top:10px;">Subconductos</h4>';
-        rSub.forEach(s => { html += `<div class="resultado-item" onclick="irAElemento('subconductos', '${s.id}')"><strong>${s.tipoSubconducto}</strong> - Obra: ${s.idObra} (${s.metros}m)</div>`; });
-    }
-    if (rDev.length > 0) {
-        html += '<h4 style="margin-top:10px;">Devoluciones</h4>';
-        rDev.forEach(d => { html += `<div class="resultado-item" onclick="irAElemento('devoluciones', '${d.id}')"><strong>${d.id}</strong> - Obra: ${d.idObra}</div>`; });
-    }
-    container.innerHTML = html;
-}
-
-// ===== EXPORTAR / IMPORTAR DATOS =====
-function exportarDatos() {
-    try {
-        const datos = { timestamp: new Date().toISOString(), albaranes, cables, subconductos, devoluciones };
-        const blob = new Blob([JSON.stringify(datos, null, 2)], {type: 'application/json'});
-        const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
-        link.download = `Backup_Materiales_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
-        link.click();
-        mostrarToast('✅ Backup descargado con éxito');
-    } catch(e) { mostrarToast('❌ Error exportando'); }
-}
-
-function abrirImportar() {
-    const input = document.createElement('input'); 
-    input.type = 'file'; 
-    input.accept = 'application/json,.json';
-    input.onchange = function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                try {
-                    let content = ev.target.result.trim();
-                    if (content.charCodeAt(0) === 0xFEFF) { content = content.slice(1); }
-                    
-                    const d = JSON.parse(content);
-                    if (typeof d !== 'object' || d === null) throw new Error('No es JSON');
-                    
-                    if (confirm('⚠️ ¿Sobrescribir datos locales y en la nube con este archivo?')) {
-                        
-                        let importAlbaranes = Array.isArray(d.albaranes) ? d.albaranes : [];
-                        importAlbaranes.forEach(a => {
-                            if (a.archivo && a.archivo.base64 && a.archivo.base64.length > 100) {
-                                a.archivo.base64 = ""; 
-                            }
-                        });
-                        albaranes = importAlbaranes;
-                        
-                        cables = Array.isArray(d.cables) ? d.cables : [];
-                        subconductos = Array.isArray(d.subconductos) ? d.subconductos : [];
-                        devoluciones = Array.isArray(d.devoluciones) ? d.devoluciones : [];
-                        
-                        guardarTodosLosDatos(); 
-                        actualizarContadores(); 
-                        cambiarTab('pendientes');
-                        mostrarToast('✅ Datos importados y guardados de forma segura');
-                    }
-                } catch(err) { 
-                    mostrarToast('❌ Archivo corrupto o límite superado'); 
-                }
-            };
-            reader.readAsText(file);
-        }
-    };
-    input.click();
-}
-
-// ===== REPORTES PDF =====
-function abrirModalReportes(tipo) {
-    reporteActual = tipo;
-    document.getElementById('modalReportes').classList.add('active');
-}
-
-function iniciarGeneracionReporte() {
-    cerrarTodosLosModales();
-    mostrarToast('⏳ Generando PDF, por favor espere...');
-    
-    setTimeout(() => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        doc.setFont('helvetica');
-        doc.setFontSize(20); doc.setTextColor(255, 85, 0); doc.text('Redes Carreras S.L.', 20, 30);
-        doc.setFontSize(16); doc.setTextColor(0, 0, 0); 
-        
-        let tituloReporte = reporteActual.toUpperCase();
-        if(reporteActual === 'cables_pendientes') tituloReporte = "CABLES EN CAMINO (LIMBO)";
-        doc.text(`Control de Materiales: ${tituloReporte}`, 20, 45);
-        
-        doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 55);
-        
-        let yPos = 70;
-        let datos = [];
-        
-        if(reporteActual === 'pendientes') datos = albaranes.filter(a=>a.estado==='pendiente');
-        else if(reporteActual === 'recibidos') datos = albaranes.filter(a=>a.estado==='recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
-        else if(reporteActual === 'faltantes') datos = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
-        else if(reporteActual === 'completo') datos = albaranes;
-        else if(reporteActual === 'cables') {
-            const stock = calcularStockPorTipo('cable');
-            datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
-        }
-        else if(reporteActual === 'subconductos') {
-            const stock = calcularStockPorTipo('subconducto');
-            datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
-        }
-        else if(reporteActual === 'devoluciones') datos = devoluciones;
-        else if(reporteActual === 'cables_pendientes') {
-            datos = cables.filter(c => c.accion === 'pendiente_recepcion');
-        }
-
-        if(datos.length === 0) {
-            doc.setFontSize(12); doc.setTextColor(0,0,0); doc.text('No hay registros para este reporte.', 20, yPos);
-        } else {
-            doc.setFillColor(255, 85, 0); doc.rect(20, yPos - 8, 170, 8, 'F');
-            doc.setTextColor(255, 255, 255); doc.setFontSize(10);
-            
-            if (reporteActual === 'cables' || reporteActual === 'subconductos') {
-                doc.text('Tipo de Material', 22, yPos - 2); 
-                doc.text('Recib.', 122, yPos - 2); 
-                doc.text('Instal.', 142, yPos - 2); 
-                doc.text('Disponible', 162, yPos - 2);
-            } else if (reporteActual === 'devoluciones') {
-                doc.text('ID Dev', 22, yPos - 2); doc.text('Obra', 60, yPos - 2); doc.text('Bobinas', 110, yPos - 2); doc.text('Fecha', 150, yPos - 2);
-            } else if (reporteActual === 'cables_pendientes') {
-                doc.text('Albarán', 22, yPos - 2);
-                doc.text('Obra', 55, yPos - 2);
-                doc.text('Tipo de Cable', 100, yPos - 2);
-                doc.text('Metros', 170, yPos - 2);
-            } else {
-                doc.text('Obra', 22, yPos - 2); 
-                doc.text('Fecha', 75, yPos - 2); 
-                doc.text('Estado', 115, yPos - 2); 
-                doc.text('Cuenta', 155, yPos - 2);
-            }
-
-            yPos += 8; 
-
-            datos.forEach((d, i) => {
-                doc.setFontSize(9);
-                let textLines = [];
-                let rowHeight = 8;
-                
-                if (reporteActual === 'cables' || reporteActual === 'subconductos') {
-                    textLines = doc.splitTextToSize(String(d.tipo), 95); 
-                    rowHeight = Math.max(8, textLines.length * 5 + 2);
-                } else if (reporteActual === 'cables_pendientes') {
-                    textLines = doc.splitTextToSize(String(d.tipoCable), 65);
-                    rowHeight = Math.max(8, textLines.length * 5 + 2);
-                } else if (reporteActual === 'devoluciones') {
-                    textLines = [String(d.id)];
-                } else {
-                    textLines = doc.splitTextToSize(String(d.idObra), 45);
-                    rowHeight = Math.max(8, textLines.length * 5 + 2);
-                }
-                
-                if(yPos + rowHeight > 280) { doc.addPage(); yPos = 20; }
-                if (i % 2 === 0) { doc.setFillColor(245, 241, 230); doc.rect(20, yPos - 6, 170, rowHeight, 'F'); }
-                
-                if (reporteActual === 'cables' || reporteActual === 'subconductos') {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(textLines, 22, yPos); 
-                    doc.text(`${d.recibido.toFixed(1)}m`, 122, yPos);
-                    doc.text(`${d.instalado.toFixed(1)}m`, 142, yPos); 
-                    
-                    if (d.disponible < 0) {
-                        doc.setTextColor(220, 38, 38); 
-                        doc.text(`${d.disponible.toFixed(1)}m (Falta)`, 162, yPos);
-                    } else {
-                        doc.setTextColor(5, 150, 105); 
-                        doc.text(`${d.disponible.toFixed(1)}m (A favor)`, 162, yPos);
-                    }
-                    doc.setTextColor(0, 0, 0);
-                } else if (reporteActual === 'cables_pendientes') {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(String(d.idAlbaranAsociado || 'N/A').substring(0, 15), 22, yPos);
-                    doc.text(String(d.idObra || 'N/A').substring(0, 15), 55, yPos);
-                    doc.text(textLines, 100, yPos);
-                    doc.setTextColor(0, 122, 255); 
-                    doc.text(`${d.metros}m`, 170, yPos);
-                    doc.setTextColor(0, 0, 0);
-                } else if (reporteActual === 'devoluciones') {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(textLines, 22, yPos); 
-                    doc.text(String(d.idObra).substring(0, 20), 60, yPos);
-                    doc.text(`${d.bobinas.length} bobina(s)`, 110, yPos); 
-                    doc.text(new Date(d.fechaEntrega).toLocaleDateString(), 150, yPos);
-                } else {
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(textLines, 22, yPos);
-                    doc.text(new Date(d.fecha).toLocaleDateString(), 75, yPos);
-                    doc.text(String(d.materialFaltante ? 'FALTANTE' : d.estado).toUpperCase(), 115, yPos); 
-                    doc.text(String(d.cuentaCargo || '').substring(0, 20), 155, yPos);
-                }
-                yPos += rowHeight;
-            });
-        }
-        
-        doc.save(`Reporte_${reporteActual}_${new Date().toISOString().split('T')[0]}.pdf`);
-        mostrarToast('✅ PDF Generado con éxito');
-    }, 100);
-}
-
-// ===== EVENT LISTENERS Y CERRADO DE MODALES =====
-function configurarEventListeners() {
-    document.getElementById('btnBuscar').addEventListener('click', abrirBuscador);
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarTab(btn.dataset.tab)));
-    
-    document.getElementById('formNuevoAlbaran').addEventListener('submit', crearAlbaran);
-    document.getElementById('formEditarAlbaran').addEventListener('submit', guardarEdicionAlbaran);
-    
-    document.getElementById('btnEntradaCable').addEventListener('click', () => { document.getElementById('modalEntradaCable').classList.add('active'); establecerFechaActual(); });
-    document.getElementById('btnNuevoCableInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoCable').classList.add('active'); establecerFechaActual(); });
-    
-    document.getElementById('btnMermaCable').addEventListener('click', () => { document.getElementById('modalMermaCable').classList.add('active'); establecerFechaActual(); });
-    document.getElementById('formMermaCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'merma'); cerrarTodosLosModales(); });
-
-    document.getElementById('formEntradaCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'entrada'); cerrarTodosLosModales(); });
-    document.getElementById('formNuevoCable').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('cable', new FormData(e.target), 'instalacion'); cerrarTodosLosModales(); });
-
-    document.getElementById('btnEntradaSubconducto').addEventListener('click', () => { document.getElementById('modalEntradaSubconducto').classList.add('active'); establecerFechaActual(); });
-    document.getElementById('btnNuevoSubconductoInstalacion').addEventListener('click', () => { document.getElementById('modalNuevoSubconducto').classList.add('active'); establecerFechaActual(); });
-    document.getElementById('formEntradaSubconducto').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('subconducto', new FormData(e.target), 'entrada'); cerrarTodosLosModales(); });
-    document.getElementById('formNuevoSubconducto').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterial('subconducto', new FormData(e.target), 'instalacion'); cerrarTodosLosModales(); });
-
-    document.getElementById('btnNuevaDevolucion').addEventListener('click', () => { document.getElementById('modalNuevaDevolucion').classList.add('active'); inicializarBobinas(); establecerFechaActual(); });
-    document.getElementById('formNuevaDevolucion').addEventListener('submit', crearDevolucion);
-
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) { if (e.target === modal) cerrarTodosLosModales(); });
-    });
-}
-
-function cerrarTodosLosModales() { 
-    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); 
-    document.querySelectorAll('form').forEach(f => f.reset());
-}
-window.cerrarModal = cerrarTodosLosModales;
-window.cerrarModalCable = cerrarTodosLosModales;
-window.cerrarModalEntradaCable = cerrarTodosLosModales;
-window.cerrarModalSubconducto = cerrarTodosLosModales;
-window.cerrarModalEntradaSubconducto = cerrarTodosLosModales;
-window.cerrarModalDevolucion = cerrarTodosLosModales;
-window.cerrarModalRecepcion = cerrarTodosLosModales;
-window.cerrarModalBuscador = cerrarTodosLosModales;
-window.cerrarModalReportes = cerrarTodosLosModales;
-window.cerrarModalVerArchivo = () => { const m = document.getElementById('modalVerArchivo'); if(m) m.remove(); };
-
-function abrirModalRecepcion(id) {
-    albaranSeleccionado = albaranes.find(a => a.id === id);
-    document.getElementById('modalRecepcion').classList.add('active');
-    document.querySelector('input[name="estadoRecepcion"][value="completo"]').checked = true;
-    document.getElementById('materialFaltante').value = '';
-    toggleDetalleFaltante();
-}
-
-function toggleDetalleFaltante() {
-    const val = document.querySelector('input[name="estadoRecepcion"]:checked').value;
-    document.getElementById('detalleFaltante').style.display = val === 'incompleto' ? 'block' : 'none';
-    document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
-    document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
-}
-
-function establecerFechaActual() {
-    const hoy = new Date().toISOString().split('T')[0];
-    document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = hoy; });
-}
-
-function mostrarToast(mensaje) {
-    const container = document.getElementById('toast-container');
-    const t = document.createElement('div'); t.className = 'toast'; t.textContent = mensaje;
-    container.appendChild(t);
-    setTimeout(() => { if (t.parentNode) t.remove(); }, 4000);
-}
-
-window.exportarDatos = exportarDatos;
-window.abrirImportar = abrirImportar;
-window.confirmarRecepcion = confirmarRecepcion;
-window.marcarFaltanteRecibido = marcarFaltanteRecibido;
-window.eliminarAlbaran = eliminarAlbaran;
-window.verArchivoAlbaran = verArchivoAlbaran;
-window.eliminarMaterial = eliminarMaterial;
-window.eliminarBobina = eliminarBobina;
-window.toggleCamposMaterial = toggleCamposMaterial;
-window.agregarBobina = agregarBobina;
-window.crearDevolucion = crearDevolucion;
-window.eliminarDevolucion = eliminarDevolucion;
-window.buscarEnTiempoReal = buscarEnTiempoReal;
-window.iniciarGeneracionReporte = iniciarGeneracionReporte;
-window.abrirModalReportes = abrirModalReportes;
+    if(tipo === 'bobina_vacia') document.getElementById(`camposBob
