@@ -9,7 +9,6 @@ const firebaseConfig = {
     appId: "1:994809951058:web:31d0cd19f4dcf49b84408b"
   };
   
-// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -18,8 +17,8 @@ let albaranes = []; let albaranSeleccionado = null;
 let cables = []; let subconductos = []; let devoluciones = []; 
 let materialesGenerales = []; 
 let reporteActual = '';
+let empresaActiva = 'Todas'; // El Selector Global
 
-// Lista global de Opciones de Cable
 const CABLE_OPTIONS_HTML = `
     <option value="">Seleccionar...</option>
     <option value="Cable de f.o. de exterior PKP holgado de 8 fo.">Cable de f.o. de exterior PKP holgado de 8 fo.</option>
@@ -67,9 +66,36 @@ const CABLE_OPTIONS_HTML = `
 
 function parsearDatosNube(data) {
     if (!data) return [];
-    if (Array.isArray(data)) return data.filter(item => item !== null);
-    return Object.values(data);
+    let arr = Array.isArray(data) ? data.filter(item => item !== null) : Object.values(data);
+    
+    // MIGRACIÓN AUTOMÁTICA DE DATOS ANTIGUOS
+    return arr.map(item => {
+        if (!item.empresa) item.empresa = 'Elecnor'; // Todo lo viejo se convierte a Elecnor por defecto
+        return item;
+    });
 }
+
+function filtrarPorEmpresa(arr) {
+    if (empresaActiva === 'Todas') return arr;
+    return arr.filter(item => item.empresa === empresaActiva);
+}
+
+function cambiarEmpresaActiva() {
+    empresaActiva = document.getElementById('globalEmpresaFilter').value;
+    
+    // Actualizamos las cabeceras de descripción visualmente
+    const sufijo = empresaActiva === 'Todas' ? 'Todas las empresas' : empresaActiva;
+    document.getElementById('desc-pendientes').textContent = `Albaranes esperando confirmación (${sufijo}).`;
+    document.getElementById('desc-recibidos').textContent = `Historial de entregas (${sufijo}).`;
+    document.getElementById('desc-faltantes').textContent = `Incidencias registradas (${sufijo}).`;
+    document.getElementById('desc-materiales').textContent = `Stock extraído de los excels (${sufijo}).`;
+    
+    actualizarOpcionesMaterialesGral(); // Actualizar desplegables
+    actualizarUI();
+    mostrarToast(`🏢 Mostrando datos de: ${empresaActiva}`);
+}
+window.cambiarEmpresaActiva = cambiarEmpresaActiva;
+
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
@@ -108,8 +134,7 @@ function guardarTodosLosDatos() {
         db.ref('devoluciones').set(devoluciones);
         db.ref('materialesGenerales').set(materialesGenerales);
     } catch (e) {
-        console.error("Error guardando en la Nube", e);
-        mostrarToast('❌ Error sincronizando con Firebase. Inténtalo de nuevo.');
+        mostrarToast('❌ Error sincronizando con Firebase.');
     }
 }
 
@@ -122,15 +147,17 @@ function cambiarTab(tab) {
 }
 
 function actualizarContadores() {
-    const faltantesCount = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "").length;
+    const fAlb = filtrarPorEmpresa(albaranes);
+    const faltantesCount = fAlb.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "").length;
+    
     const elements = {
-        'count-pendientes': albaranes.filter(a => a.estado === 'pendiente').length,
-        'count-recibidos': albaranes.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === "")).length,
+        'count-pendientes': fAlb.filter(a => a.estado === 'pendiente').length,
+        'count-recibidos': fAlb.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === "")).length,
         'count-faltantes': faltantesCount,
-        'count-cables': cables.length,
-        'count-subconductos': subconductos.length,
-        'count-materiales': materialesGenerales.length,
-        'count-devoluciones': devoluciones.length
+        'count-cables': filtrarPorEmpresa(cables).length,
+        'count-subconductos': filtrarPorEmpresa(subconductos).length,
+        'count-materiales': filtrarPorEmpresa(materialesGenerales).length,
+        'count-devoluciones': filtrarPorEmpresa(devoluciones).length
     };
     for (const [id, valor] of Object.entries(elements)) {
         const el = document.getElementById(id); if (el) el.textContent = valor;
@@ -190,12 +217,12 @@ function agregarCableAlbaran() {
 }
 window.agregarCableAlbaran = agregarCableAlbaran;
 
-// --- EDICIÓN DE ALBARÁN ---
 function abrirModalEditarAlbaran(id) {
     const albaran = albaranes.find(a => a.id === id);
     if(!albaran) return;
 
     document.getElementById('editIdAlbaran').value = albaran.id;
+    document.getElementById('editEmpresa').value = albaran.empresa || 'Elecnor'; // Seleccionar empresa
     document.getElementById('editIdObra').value = albaran.idObra;
     document.getElementById('editFecha').value = albaran.fecha;
     document.getElementById('editCuentaCargo').value = albaran.cuentaCargo || '';
@@ -206,7 +233,6 @@ function abrirModalEditarAlbaran(id) {
     const container = document.getElementById('editAlbaranCablesContainer');
     container.innerHTML = '';
     const cablesVinculados = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
-    
     cablesVinculados.forEach((c, i) => { agregarCableAlbaranEdit(c.tipoCable, c.metros); });
 
     document.getElementById('modalEditarAlbaran').classList.add('active');
@@ -239,7 +265,7 @@ function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
 }
 window.agregarCableAlbaranEdit = agregarCableAlbaranEdit;
 
-// ===== EXTRACCIÓN INTELIGENTE DE EXCEL (CABLES + MATERIALES) =====
+// ===== EXTRACCIÓN INTELIGENTE =====
 function generarTablaHtmlYMaterialesDesdeBase64(b64) {
     try {
         const wb = XLSX.read(b64.split(',')[1], { type: 'base64' });
@@ -275,7 +301,6 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
                 
                 if (!isNaN(qtyVal) && qtyVal > 0) {
                     filteredData.push(row);
-                    
                     if (descColIdx !== -1) {
                         const descVal = String(row[descColIdx]).trim();
                         if (descVal !== '') {
@@ -302,7 +327,6 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
         
         return { html: html, materiales: materialesExtraidos };
     } catch(e) {
-        console.error(e);
         return { html: '<p style="color:var(--system-red);">❌ Error procesando el Excel.</p>', materiales: [] };
     }
 }
@@ -325,10 +349,7 @@ function crearAlbaran(e) {
                 archivoInfo.tablaHtml = extraccion.html;
                 finalizarCreacionAlbaran(formData, archivoInfo, extraccion.materiales);
             } else {
-                if (archivoInput.size > 1536000) {
-                    mostrarToast('❌ El PDF es muy pesado (Max 1.5MB). Los Excel no tienen límite.');
-                    return;
-                }
+                if (archivoInput.size > 1536000) { return mostrarToast('❌ El PDF es muy pesado (Max 1.5MB).'); }
                 archivoInfo.base64 = b64;
                 finalizarCreacionAlbaran(formData, archivoInfo, []);
             }
@@ -341,16 +362,16 @@ function crearAlbaran(e) {
 
 function finalizarCreacionAlbaran(formData, archivoInfo, materialesExtraidos = []) {
     const albaranId = `ALB-${Date.now().toString().slice(-6)}`;
+    const emp = formData.get('empresa'); // CAPTURAMOS LA EMPRESA
     
     const itemsCables = document.querySelectorAll('#albaranCablesContainer .bobina-item');
     itemsCables.forEach(item => {
         const idx = item.dataset.cableAlbaran;
         const tipo = formData.get(`albaranTipoCable_${idx}`);
         const metros = parseFloat(formData.get(`albaranMetrosCable_${idx}`));
-        
         if (tipo && metros > 0) {
             cables.push({
-                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`,
+                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp,
                 tipoMaterial: 'cable', idObra: formData.get('idObra'), tipoCable: tipo, metros: metros,
                 accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
                 observaciones: `Esperando con Albarán: ${albaranId}`, idAlbaranAsociado: albaranId 
@@ -360,20 +381,15 @@ function finalizarCreacionAlbaran(formData, archivoInfo, materialesExtraidos = [
 
     materialesExtraidos.forEach((mat, idx) => {
         materialesGenerales.push({
-            id: `MAT-${Date.now().toString().slice(-6)}-${idx}`,
-            tipoMaterial: 'general',
-            idObra: formData.get('idObra'),
-            descripcion: mat.descripcion,
-            cantidad: mat.cantidad,
-            accion: 'pendiente_recepcion',
-            fecha: formData.get('fecha'),
-            observaciones: `Auto-extraído Albarán: ${albaranId}`,
-            idAlbaranAsociado: albaranId
+            id: `MAT-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp,
+            tipoMaterial: 'general', idObra: formData.get('idObra'),
+            descripcion: mat.descripcion, cantidad: mat.cantidad, accion: 'pendiente_recepcion',
+            fecha: formData.get('fecha'), observaciones: `Auto-extraído Albarán: ${albaranId}`, idAlbaranAsociado: albaranId
         });
     });
 
     albaranes.push({
-        id: albaranId, idObra: formData.get('idObra'), fecha: formData.get('fecha'),
+        id: albaranId, empresa: emp, idObra: formData.get('idObra'), fecha: formData.get('fecha'),
         cuentaCargo: formData.get('cuentaCargo'), tipoInstalacion: formData.get('tipoInstalacion'),
         observaciones: formData.get('observaciones') || '',
         estado: 'pendiente', materialFaltante: null, archivo: archivoInfo
@@ -405,10 +421,7 @@ function guardarEdicionAlbaran(e) {
                 archivoInfo.tablaHtml = extraccion.html;
                 finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, extraccion.materiales);
             } else {
-                if (archivoInput.size > 1536000) {
-                    mostrarToast('❌ El PDF es muy pesado (Max 1.5MB). Los Excel no tienen límite.');
-                    return;
-                }
+                if (archivoInput.size > 1536000) { return mostrarToast('❌ El PDF es muy pesado (Max 1.5MB).'); }
                 archivoInfo.base64 = b64;
                 finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, []);
             }
@@ -420,7 +433,8 @@ function guardarEdicionAlbaran(e) {
 }
 
 function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, materialesExtraidos = []) {
-    albaran.idObra = formData.get('idObra'); albaran.fecha = formData.get('fecha');
+    const emp = formData.get('empresa');
+    albaran.empresa = emp; albaran.idObra = formData.get('idObra'); albaran.fecha = formData.get('fecha');
     albaran.cuentaCargo = formData.get('cuentaCargo'); albaran.tipoInstalacion = formData.get('tipoInstalacion');
     albaran.jefeObra = formData.get('jefeObra'); albaran.observaciones = formData.get('observaciones') || '';
     albaran.archivo = archivoInfo;
@@ -433,7 +447,7 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, mate
         const metros = parseFloat(formData.get(`editAlbaranMetrosCable_${idx}`));
         if (tipo && metros > 0) {
             cables.push({
-                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`, tipoMaterial: 'cable', idObra: formData.get('idObra'),
+                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp, tipoMaterial: 'cable', idObra: formData.get('idObra'),
                 tipoCable: tipo, metros: metros, accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
                 observaciones: `Esperando con Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran 
             });
@@ -444,7 +458,7 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, mate
         materialesGenerales = materialesGenerales.filter(m => !(m.idAlbaranAsociado === idAlbaran && m.accion === 'pendiente_recepcion'));
         materialesExtraidos.forEach((mat, idx) => {
             materialesGenerales.push({
-                id: `MAT-${Date.now().toString().slice(-6)}-${idx}`, tipoMaterial: 'general', idObra: formData.get('idObra'),
+                id: `MAT-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp, tipoMaterial: 'general', idObra: formData.get('idObra'),
                 descripcion: mat.descripcion, cantidad: mat.cantidad, accion: 'pendiente_recepcion',
                 fecha: formData.get('fecha'), observaciones: `Auto-extraído Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran
             });
@@ -461,10 +475,13 @@ function mostrarAlbaranes() {
     const contenedor = document.getElementById(`lista-${tabActiva}`);
     if (!contenedor) return;
     
+    // FILTRADO POR EMPRESA
+    let fAlb = filtrarPorEmpresa(albaranes);
+    
     let abs = [];
-    if(tabActiva === 'pendientes') abs = albaranes.filter(a => a.estado === 'pendiente');
-    if(tabActiva === 'recibidos') abs = albaranes.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
-    if(tabActiva === 'faltantes') abs = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
+    if(tabActiva === 'pendientes') abs = fAlb.filter(a => a.estado === 'pendiente');
+    if(tabActiva === 'recibidos') abs = fAlb.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
+    if(tabActiva === 'faltantes') abs = fAlb.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
 
     if (abs.length === 0) {
         contenedor.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-secondary);">No hay albaranes aquí</div>`;
@@ -494,7 +511,7 @@ function mostrarAlbaranes() {
         const cablesAsociados = cables.filter(c => c.idAlbaranAsociado === a.id && c.accion === 'pendiente_recepcion').length;
         const matAsociados = materialesGenerales.filter(m => m.idAlbaranAsociado === a.id && m.accion === 'pendiente_recepcion').length;
         
-        let etiquetas = '';
+        let etiquetas = `<span class="badge-empresa">${a.empresa}</span>`;
         if (cablesAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">⏳ ${cablesAsociados} cables</b>`;
         if (matAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🛒 ${matAsociados} acc.</b>`;
 
@@ -578,6 +595,7 @@ function agregarMaterialGeneral(form, accion) {
 
     materialesGenerales.push({
         id: `MAT-${Date.now().toString().slice(-6)}`,
+        empresa: form.get('empresa'), // SE CAPTURA EMPRESA
         tipoMaterial: 'general', idObra: form.get('idObra') || 'Almacén',
         descripcion: descripcion.toUpperCase().trim(), cantidad: cantidad, accion: accion,
         fecha: form.get('fecha'), observaciones: form.get('observaciones') || ''
@@ -587,8 +605,13 @@ function agregarMaterialGeneral(form, accion) {
     mostrarToast(`✅ Material ${accion === 'entrada' ? 'guardado' : 'restado'} del stock`);
 }
 
-function actualizarOpcionesMaterialesGral() {
-    const descripciones = [...new Set(materialesGenerales.map(m => m.descripcion))].sort();
+function actualizarOpcionesMaterialesGral(empresaFiltro = null) {
+    // Si se pasa empresaFiltro, buscamos stock de esa empresa, si no, usamos la empresa Activa global
+    const emp = empresaFiltro || empresaActiva;
+    let matFiltrados = materialesGenerales;
+    if (emp !== 'Todas') matFiltrados = materialesGenerales.filter(m => m.empresa === emp);
+
+    const descripciones = [...new Set(matFiltrados.map(m => m.descripcion))].sort();
     const html = descripciones.map(d => `<option value="${d}">${d}</option>`).join('');
     
     const datalist = document.getElementById('opcionesMaterialGral');
@@ -597,14 +620,17 @@ function actualizarOpcionesMaterialesGral() {
     const select = document.getElementById('selectMaterialSalida');
     if (select) select.innerHTML = '<option value="">Selecciona qué has gastado...</option>' + html;
 }
+window.actualizarOpcionesMaterialesGral = actualizarOpcionesMaterialesGral;
 
 function mostrarMaterialesGenerales() {
     const cont = document.getElementById('lista-materiales');
     if(!cont) return;
-    if(materialesGenerales.length === 0) { cont.innerHTML = '<p style="text-align:center; padding:40px; color:var(--text-secondary);">No hay materiales registrados.</p>'; return; }
+    
+    const fMat = filtrarPorEmpresa(materialesGenerales);
+    if(fMat.length === 0) { cont.innerHTML = '<p style="text-align:center; padding:40px; color:var(--text-secondary);">No hay materiales registrados.</p>'; return; }
 
     const agrupado = {};
-    materialesGenerales.forEach(m => {
+    fMat.forEach(m => {
         const t = m.descripcion || 'Sin nombre';
         if(!agrupado[t]) agrupado[t] = { items: [], entrada:0, salida:0, pendiente:0 };
         agrupado[t].items.push(m);
@@ -636,7 +662,10 @@ function mostrarMaterialesGenerales() {
             return `
             <div class="albaran-card ${cardClass}" style="box-shadow:var(--shadow-sm); border:1px solid var(--bg-system); margin-bottom: 8px; padding: 16px;">
                 <div class="info-row" style="margin-bottom: 8px; align-items:center;">
-                    <b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <b style="font-size:12px; color:${badgeColor}; background:${badgeBg}; padding: 4px 8px; border-radius: 6px;">${icon} ${label}</b>
+                        <span class="badge-empresa">${m.empresa}</span>
+                    </div>
                     <span style="font-size:16px; font-weight:800; color:var(--text-primary);">${m.cantidad}</span>
                 </div>
                 <div class="info-row" style="color:var(--text-secondary); font-size:12px; border-top: 1px solid var(--bg-system); padding-top: 10px;">
@@ -678,6 +707,7 @@ function agregarMaterial(tipo, formData, accion) {
 
     const material = {
         id: `${tipo==='cable'?'CAB':'SUB'}-${Date.now().toString().slice(-6)}`,
+        empresa: formData.get('empresa'), // SE CAPTURA EMPRESA
         tipoMaterial: tipo, idObra: obra, tipoCable: formData.get('tipoCable') || formData.get('tipoSubconducto'),
         metros: metrosInput, accion: accion, fecha: formData.get('fecha'),
         observaciones: formData.get('observaciones') || '', solicitado: false 
@@ -715,7 +745,7 @@ function marcarSubconductoSolicitado(id) {
 window.marcarSubconductoSolicitado = marcarSubconductoSolicitado;
 
 function calcularStock(tipo) {
-    const arr = tipo === 'cable' ? cables : subconductos;
+    const arr = filtrarPorEmpresa(tipo === 'cable' ? cables : subconductos);
     let rec = 0, inst = 0, pend = 0, pendRec = 0, merma = 0;
     
     arr.forEach(m => { 
@@ -732,7 +762,7 @@ function calcularStock(tipo) {
 }
 
 function calcularStockPorTipo(tipoMaterial) {
-    const materialArray = tipoMaterial === 'cable' ? cables : subconductos;
+    const materialArray = filtrarPorEmpresa(tipoMaterial === 'cable' ? cables : subconductos);
     const stockPorTipo = {};
     const tipos = [...new Set(materialArray.map(m => m.tipoCable || m.tipoSubconducto))];
     
@@ -775,7 +805,7 @@ function actualizarStockDisplay(tipo) {
 }
 
 function mostrarMateriales(tipo) {
-    const arr = tipo === 'cable' ? cables : subconductos;
+    const arr = filtrarPorEmpresa(tipo === 'cable' ? cables : subconductos);
     const cont = document.getElementById(`lista-${tipo}s`);
     if(!cont) return;
 
@@ -839,7 +869,7 @@ function mostrarMateriales(tipo) {
             return `
             <div class="albaran-card ${cardClass}" id="card-${m.id}" style="box-shadow:var(--shadow-sm); border:1px solid var(--bg-system); margin-bottom: 8px; padding: 16px;">
                 <div class="info-row" style="margin-bottom: 8px; align-items:center; flex-wrap:wrap; gap:4px;">
-                    <div>${badgesHtml}</div> 
+                    <div style="display:flex; align-items:center; gap:8px;">${badgesHtml} <span class="badge-empresa">${m.empresa}</span></div> 
                     <span style="font-size:16px; font-weight:800; color:var(--text-primary);">${m.metros} m</span>
                 </div>
                 <div class="info-row" style="color:var(--text-secondary); font-size:12px; border-top: 1px solid var(--bg-system); padding-top: 10px;">
@@ -998,6 +1028,7 @@ function crearDevolucion(e) {
 
     devoluciones.push({
         id: `DEV-${Date.now().toString().slice(-6)}`,
+        empresa: formData.get('empresa'), // SE CAPTURA EMPRESA
         idObra: formData.get('idObra'), fechaEntrega: formData.get('fecha'),
         tipoInstalacion: formData.get('tipoInstalacion'), bobinas: bobinasData,
         observaciones: formData.get('observaciones') || ''
@@ -1009,12 +1040,15 @@ function crearDevolucion(e) {
 
 function mostrarDevoluciones() {
     const cont = document.getElementById('lista-devoluciones');
-    if(devoluciones.length === 0) { cont.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);">No hay devoluciones</div>'; return; }
+    if(!cont) return;
+    
+    const fDev = filtrarPorEmpresa(devoluciones);
+    if(fDev.length === 0) { cont.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);">No hay devoluciones</div>'; return; }
     
     let html = '';
-    devoluciones.sort((a, b) => new Date(b.fechaEntrega) - new Date(a.fechaEntrega));
+    fDev.sort((a, b) => new Date(b.fechaEntrega) - new Date(a.fechaEntrega));
 
-    devoluciones.forEach(d => {
+    fDev.forEach(d => {
         const total = d.bobinas.length;
         let detallesHtml = d.bobinas.map((b, i) => {
             let info = '';
@@ -1043,7 +1077,10 @@ function mostrarDevoluciones() {
 
         html += `
         <div class="albaran-card" id="card-${d.id}">
-            <div class="albaran-header"><span class="albaran-id">${d.id}</span> <span class="status-badge status-recibido">Completado</span></div>
+            <div class="albaran-header">
+                <div><span class="albaran-id">${d.id}</span> <span class="badge-empresa">${d.empresa}</span></div>
+                <span class="status-badge status-recibido">Completado</span>
+            </div>
             <div class="albaran-info">
                 <div class="info-row"><span class="info-label">Obra:</span><span class="info-value">${d.idObra}</span></div>
                 <div class="info-row"><span class="info-label">Fecha:</span><span class="info-value">${new Date(d.fechaEntrega).toLocaleDateString()}</span></div>
@@ -1074,15 +1111,9 @@ function verArchivoAlbaran(id) {
     }
     
     let contenido = '';
-    
-    if (a.archivo.tablaHtml) {
-        contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
-    } 
-    else if (a.archivo.base64) {
-        contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
-    } else {
-        contenido = `<p>Formato no previsualizable.</p>`;
-    }
+    if (a.archivo.tablaHtml) contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
+    else if (a.archivo.base64) contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
+    else contenido = `<p>Formato no previsualizable.</p>`;
 
     const modalHtml = `
     <div id="modalVerArchivo" class="modal active">
@@ -1112,14 +1143,15 @@ function buscarEnTiempoReal() {
     const container = document.getElementById('resultados-busqueda');
     if (termino.length < 2) { container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>'; return; }
     
-    const rAlb = albaranes.filter(a => a.idObra.toLowerCase().includes(termino) || a.id.toLowerCase().includes(termino));
-    const rCab = cables.filter(c => (c.idObra||'').toLowerCase().includes(termino));
-    const rSub = subconductos.filter(s => (s.idObra||'').toLowerCase().includes(termino));
-    const rMat = materialesGenerales.filter(m => (m.descripcion||'').toLowerCase().includes(termino) || (m.idObra||'').toLowerCase().includes(termino));
-    const rDev = devoluciones.filter(d => d.idObra.toLowerCase().includes(termino) || d.id.toLowerCase().includes(termino));
+    // FILTRAMOS RESULTADOS TAMBIÉN POR EMPRESA
+    const rAlb = filtrarPorEmpresa(albaranes).filter(a => a.idObra.toLowerCase().includes(termino) || a.id.toLowerCase().includes(termino));
+    const rCab = filtrarPorEmpresa(cables).filter(c => (c.idObra||'').toLowerCase().includes(termino));
+    const rSub = filtrarPorEmpresa(subconductos).filter(s => (s.idObra||'').toLowerCase().includes(termino));
+    const rMat = filtrarPorEmpresa(materialesGenerales).filter(m => (m.descripcion||'').toLowerCase().includes(termino) || (m.idObra||'').toLowerCase().includes(termino));
+    const rDev = filtrarPorEmpresa(devoluciones).filter(d => d.idObra.toLowerCase().includes(termino) || d.id.toLowerCase().includes(termino));
     
     if (rAlb.length === 0 && rCab.length === 0 && rSub.length === 0 && rDev.length === 0 && rMat.length === 0) { 
-        container.innerHTML = '<div style="text-align:center; padding:20px;">🔍 Sin resultados</div>'; 
+        container.innerHTML = '<div style="text-align:center; padding:20px;">🔍 Sin resultados en esta empresa</div>'; 
         return; 
     }
     
@@ -1202,7 +1234,7 @@ function abrirImportar() {
     input.click();
 }
 
-// ===== REPORTES PDF =====
+// ===== REPORTES PDF (FILTRADOS POR EMPRESA) =====
 function abrirModalReportes(tipo) {
     reporteActual = tipo;
     document.getElementById('modalReportes').classList.add('active');
@@ -1216,6 +1248,8 @@ function iniciarGeneracionReporte() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
+        const sufijoEmpresa = empresaActiva === 'Todas' ? '(GLOBAL)' : `(${empresaActiva.toUpperCase()})`;
+        
         doc.setFont('helvetica');
         doc.setFontSize(20); doc.setTextColor(255, 85, 0); doc.text('Redes Carreras S.L.', 20, 30);
         doc.setFontSize(16); doc.setTextColor(0, 0, 0); 
@@ -1225,16 +1259,16 @@ function iniciarGeneracionReporte() {
         if(reporteActual === 'materiales_pendientes') tituloReporte = "MATERIALES EN CAMINO (LIMBO)";
         if(reporteActual === 'materiales') tituloReporte = "STOCK DE MATERIALES (FERRETERÍA)";
         
-        doc.text(`Control de Materiales: ${tituloReporte}`, 20, 45);
+        doc.text(`Reporte: ${tituloReporte} ${sufijoEmpresa}`, 20, 45);
         doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 55);
         
         let yPos = 70;
         let datos = [];
         
-        if(reporteActual === 'pendientes') datos = albaranes.filter(a=>a.estado==='pendiente');
-        else if(reporteActual === 'recibidos') datos = albaranes.filter(a=>a.estado==='recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
-        else if(reporteActual === 'faltantes') datos = albaranes.filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
-        else if(reporteActual === 'completo') datos = albaranes;
+        if(reporteActual === 'pendientes') datos = filtrarPorEmpresa(albaranes).filter(a=>a.estado==='pendiente');
+        else if(reporteActual === 'recibidos') datos = filtrarPorEmpresa(albaranes).filter(a=>a.estado==='recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
+        else if(reporteActual === 'faltantes') datos = filtrarPorEmpresa(albaranes).filter(a => a.estado === 'recibido' && a.materialFaltante && String(a.materialFaltante).trim() !== "");
+        else if(reporteActual === 'completo') datos = filtrarPorEmpresa(albaranes);
         else if(reporteActual === 'cables') {
             const stock = calcularStockPorTipo('cable');
             datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
@@ -1243,11 +1277,10 @@ function iniciarGeneracionReporte() {
             const stock = calcularStockPorTipo('subconducto');
             datos = Object.keys(stock).map(k => ({ tipo: k, ...stock[k] }));
         }
-        else if(reporteActual === 'devoluciones') datos = devoluciones;
+        else if(reporteActual === 'devoluciones') datos = filtrarPorEmpresa(devoluciones);
         
-        // --- NUEVA LÓGICA DE AGRUPACIÓN PARA PENDIENTES ---
         else if(reporteActual === 'cables_pendientes') {
-            const pendientes = cables.filter(c => c.accion === 'pendiente_recepcion');
+            const pendientes = filtrarPorEmpresa(cables).filter(c => c.accion === 'pendiente_recepcion');
             const agrupado = {};
             pendientes.forEach(c => {
                 const t = c.tipoCable || 'Sin nombre';
@@ -1257,7 +1290,7 @@ function iniciarGeneracionReporte() {
             datos = Object.values(agrupado).sort((a,b) => a.articulo.localeCompare(b.articulo));
         }
         else if(reporteActual === 'materiales_pendientes') {
-            const pendientes = materialesGenerales.filter(m => m.accion === 'pendiente_recepcion');
+            const pendientes = filtrarPorEmpresa(materialesGenerales).filter(m => m.accion === 'pendiente_recepcion');
             const agrupado = {};
             pendientes.forEach(m => {
                 const t = m.descripcion || 'Sin nombre';
@@ -1267,8 +1300,9 @@ function iniciarGeneracionReporte() {
             datos = Object.values(agrupado).sort((a,b) => a.articulo.localeCompare(b.articulo));
         }
         else if(reporteActual === 'materiales') {
+            const fMat = filtrarPorEmpresa(materialesGenerales);
             const agrupado = {};
-            materialesGenerales.forEach(m => {
+            fMat.forEach(m => {
                 const t = m.descripcion || 'Sin nombre';
                 if(!agrupado[t]) agrupado[t] = { tipo: t, entrada:0, salida:0, disponible:0 };
                 if(m.accion === 'entrada') agrupado[t].entrada += m.cantidad;
@@ -1287,14 +1321,12 @@ function iniciarGeneracionReporte() {
             doc.setFillColor(255, 85, 0); doc.rect(20, yPos - 8, 170, 8, 'F');
             doc.setTextColor(255, 255, 255); doc.setFontSize(10);
             
-            // CABECERAS DE TABLA
             if (reporteActual === 'cables' || reporteActual === 'subconductos' || reporteActual === 'materiales') {
                 doc.text('Tipo de Material / Artículo', 22, yPos - 2); 
                 doc.text('Entrada', 122, yPos - 2); 
                 doc.text('Gastado', 142, yPos - 2); 
                 doc.text('Disponible', 162, yPos - 2);
             } else if (reporteActual === 'cables_pendientes' || reporteActual === 'materiales_pendientes') {
-                // CABECERAS SIMPLIFICADAS PARA PENDIENTES
                 doc.text('Artículo / Cable', 22, yPos - 2);
                 doc.text('Cantidad Total', 150, yPos - 2);
             } else if (reporteActual === 'devoluciones') {
@@ -1308,7 +1340,6 @@ function iniciarGeneracionReporte() {
 
             yPos += 8; 
 
-            // FILAS DE DATOS
             datos.forEach((d, i) => {
                 doc.setFontSize(9);
                 let textLines = [];
@@ -1374,7 +1405,8 @@ function iniciarGeneracionReporte() {
             });
         }
         
-        doc.save(`Reporte_${reporteActual}_${new Date().toISOString().split('T')[0]}.pdf`);
+        let nombreEmpresaPdf = empresaActiva === 'Todas' ? 'GLOBAL' : empresaActiva;
+        doc.save(`Reporte_${reporteActual}_${nombreEmpresaPdf}_${new Date().toISOString().split('T')[0]}.pdf`);
         mostrarToast('✅ PDF Generado con éxito');
     }, 100);
 }

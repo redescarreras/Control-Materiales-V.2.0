@@ -34,6 +34,14 @@
                 </div>
             </div>
             <div class="header-actions">
+                <select id="globalEmpresaFilter" class="global-empresa-select" onchange="cambiarEmpresaActiva()" style="margin-right: 8px;">
+                    <option value="Todas">🏢 Todas las Empresas</option>
+                    <option value="Elecnor">Elecnor</option>
+                    <option value="Circet">Circet</option>
+                    <option value="Zener">Zener</option>
+                    <option value="Magtel">Magtel</option>
+                </select>
+
                 <button id="btnBuscar" class="btn btn-icon btn-glass" title="Buscar">🔍</button>
                 <button id="btnExportar" class="btn btn-icon btn-glass" title="Exportar Backup Local" onclick="exportarDatos()">📤</button>
                 <button id="btnImportar" class="btn btn-icon btn-glass" title="Importar Backup" onclick="abrirImportar()">📥</button>
@@ -67,24 +75,24 @@
 
             <div id="tab-content">
                 <div id="tab-pendientes" class="tab-content active">
-                    <div class="tab-header"><h2>Pendientes de Recibir</h2><p class="tab-description">Albaranes esperando confirmación de entrega.</p></div>
+                    <div class="tab-header"><h2>Pendientes de Recibir</h2><p class="tab-description" id="desc-pendientes">Albaranes esperando confirmación de entrega.</p></div>
                     <div id="lista-pendientes" class="albaranes-grid"></div>
                 </div>
 
                 <div id="tab-recibidos" class="tab-content">
-                    <div class="tab-header"><h2>Albaranes Recibidos</h2><p class="tab-description">Historial de entregas completadas con éxito.</p></div>
+                    <div class="tab-header"><h2>Albaranes Recibidos</h2><p class="tab-description" id="desc-recibidos">Historial de entregas completadas con éxito.</p></div>
                     <div id="lista-recibidos" class="albaranes-grid"></div>
                 </div>
 
                 <div id="tab-faltantes" class="tab-content">
-                    <div class="tab-header"><h2>Material Faltante</h2><p class="tab-description">Albaranes registrados con incidencias de material.</p></div>
+                    <div class="tab-header"><h2>Material Faltante</h2><p class="tab-description" id="desc-faltantes">Albaranes registrados con incidencias de material.</p></div>
                     <div id="lista-faltantes" class="albaranes-grid"></div>
                 </div>
 
                 <div id="tab-materiales" class="tab-content">
                     <div class="tab-header">
-                        <h2>Control de Materiales (Ferretería/Accesorios)</h2>
-                        <p class="tab-description" style="margin-bottom:12px;">El stock se extrae automáticamente de los excels de los Albaranes.</p>
+                        <h2>Control de Materiales</h2>
+                        <p class="tab-description" id="desc-materiales" style="margin-bottom:12px;">Stock extraído de los excels de Albaranes.</p>
                         <div class="tab-actions">
                             <button class="btn btn-success" onclick="abrirModalEntradaMaterial()">+ Entrada (Manual)</button>
                             <button class="btn btn-warning" onclick="abrirModalSalidaMaterial()">+ Instalado (Salida)</button>
@@ -165,10 +173,8 @@
                         <div class="reporte-card"><div class="reporte-icon">🔌</div><h3>Cables</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('cables')">Generar PDF</button></div>
                         <div class="reporte-card" style="border: 2px solid var(--system-blue);"><div class="reporte-icon" style="color:var(--system-blue);">⏳</div><h3 style="color:var(--system-blue);">Cables en Camino</h3><button class="btn btn-info w-100" onclick="abrirModalReportes('cables_pendientes')">Generar PDF</button></div>
                         <div class="reporte-card"><div class="reporte-icon">🛡️</div><h3>Subconductos</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('subconductos')">Generar PDF</button></div>
-                        
                         <div class="reporte-card"><div class="reporte-icon">🛠️</div><h3>Materiales (Stock)</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('materiales')">Generar PDF</button></div>
                         <div class="reporte-card" style="border: 2px solid var(--system-blue);"><div class="reporte-icon" style="color:var(--system-blue);">🛒</div><h3 style="color:var(--system-blue);">Mat. en Camino</h3><button class="btn btn-info w-100" onclick="abrirModalReportes('materiales_pendientes')">Generar PDF</button></div>
-                        
                         <div class="reporte-card"><div class="reporte-icon">↩️</div><h3>Devoluciones</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('devoluciones')">Generar PDF</button></div>
                     </div>
                 </div>
@@ -183,6 +189,15 @@
                 <button class="modal-close" onclick="cerrarModal()">&times;</button>
             </div>
             <form id="formNuevoAlbaran" class="modal-body">
+                <div class="form-group">
+                    <label>Empresa Proveedora / Propietaria *</label>
+                    <select name="empresa" required>
+                        <option value="Elecnor">Elecnor</option>
+                        <option value="Circet">Circet</option>
+                        <option value="Zener">Zener</option>
+                        <option value="Magtel">Magtel</option>
+                    </select>
+                </div>
                 <div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div>
                 <div class="form-group"><label>Fecha *</label><input type="date" id="fecha" name="fecha" required></div>
                 <div class="form-group"><label>Cuenta de Cargo *</label><input type="text" name="cuentaCargo" required></div>
@@ -208,7 +223,7 @@
                 <div class="form-group">
                     <label>Archivo del Albarán (Excel/PDF)</label>
                     <input type="file" id="archivoAlbaran" name="archivoAlbaran" accept=".pdf,.xlsx,.xls">
-                    <small style="display:block; color:var(--text-secondary); margin-top:4px;">💡 Si subes un Excel, se extraerán todos los materiales (bridas, bandejas, etc.) automáticamente.</small>
+                    <small style="display:block; color:var(--text-secondary); margin-top:4px;">💡 Si subes un Excel, se extraerán todos los materiales (bridas, bandejas, etc.) automáticamente y heredarán la Empresa seleccionada.</small>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -226,6 +241,15 @@
             </div>
             <form id="formEditarAlbaran" class="modal-body">
                 <input type="hidden" id="editIdAlbaran" name="idAlbaran">
+                <div class="form-group">
+                    <label>Empresa Proveedora / Propietaria *</label>
+                    <select id="editEmpresa" name="empresa" required>
+                        <option value="Elecnor">Elecnor</option>
+                        <option value="Circet">Circet</option>
+                        <option value="Zener">Zener</option>
+                        <option value="Magtel">Magtel</option>
+                    </select>
+                </div>
                 <div class="form-group"><label>ID de Obra *</label><input type="text" id="editIdObra" name="idObra" required></div>
                 <div class="form-group"><label>Fecha *</label><input type="date" id="editFecha" name="fecha" required></div>
                 <div class="form-group"><label>Cuenta de Cargo *</label><input type="text" id="editCuentaCargo" name="cuentaCargo" required></div>
@@ -251,7 +275,6 @@
                 <div class="form-group" style="border-top: 1px solid var(--bg-system); padding-top: 16px;">
                     <label>Reemplazar Archivo (Excel/PDF) - Opcional</label>
                     <input type="file" id="editArchivoAlbaran" name="archivoAlbaran" accept=".pdf,.xlsx,.xls">
-                    <small style="color: var(--text-secondary); display: block; margin-top: 4px;">Si subes un nuevo Excel, reemplazará los materiales extraídos anteriores.</small>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -269,7 +292,7 @@
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">
-                    Al marcar como entregado correcto, <b>los cables y todo el material (bridas, bandejas...) que estén esperando este albarán se añadirán automáticamente a tu stock disponible</b>.
+                    Al marcar como entregado correcto, <b>los cables y todo el material que estén esperando este albarán se añadirán automáticamente a tu stock disponible</b>.
                 </p>
                 <div class="recepcion-options">
                     <label class="radio-option selected" id="lbl-completo">
@@ -301,11 +324,16 @@
         </div>
     </div>
 
-    <datalist id="opcionesCable"></datalist>
-    <datalist id="opcionesMaterialGral"></datalist> <div id="modalEntradaMaterial" class="modal">
+    <div id="modalEntradaMaterial" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h2>Registrar Entrada de Material</h2><button class="modal-close" onclick="cerrarModal()">&times;</button></div>
             <form id="formEntradaMaterial" class="modal-body">
+                <div class="form-group">
+                    <label>Empresa *</label>
+                    <select name="empresa" required>
+                        <option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option>
+                    </select>
+                </div>
                 <div class="form-group"><label>ID de Obra / Origen</label><input type="text" name="idObra" placeholder="Ej: Almacén o Albarán N°" required></div>
                 <div class="form-group">
                     <label>Descripción del Material *</label>
@@ -323,6 +351,12 @@
         <div class="modal-content">
             <div class="modal-header"><h2>Registrar Salida / Instalado</h2><button class="modal-close" onclick="cerrarModal()">&times;</button></div>
             <form id="formSalidaMaterial" class="modal-body">
+                <div class="form-group">
+                    <label>Empresa *</label>
+                    <select name="empresa" required onchange="actualizarOpcionesMaterialesGral(this.value)">
+                        <option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option>
+                    </select>
+                </div>
                 <div class="form-group"><label>ID de Obra / Destino *</label><input type="text" name="idObra" required></div>
                 <div class="form-group">
                     <label>Descripción del Material *</label>
@@ -340,6 +374,10 @@
         <div class="modal-content">
             <div class="modal-header"><h2>Registrar Cable Instalado</h2><button class="modal-close" onclick="cerrarModalCable()">&times;</button></div>
             <form id="formNuevoCable" class="modal-body">
+                <div class="form-group">
+                    <label>Empresa *</label>
+                    <select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select>
+                </div>
                 <div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div>
                 <div class="form-group">
                     <label>Tipo de Cable *</label>
@@ -358,6 +396,10 @@
             <div class="modal-header"><h2>Registrar Merma / Retal</h2><button class="modal-close" onclick="cerrarModalCable()">&times;</button></div>
             <form id="formMermaCable" class="modal-body">
                 <div class="form-group">
+                    <label>Empresa *</label>
+                    <select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select>
+                </div>
+                <div class="form-group">
                     <label>Tipo de Cable *</label>
                     <select id="tipoCableMerma" name="tipoCable" required></select>
                 </div>
@@ -373,6 +415,10 @@
         <div class="modal-content">
             <div class="modal-header"><h2>Registrar Entrada de Cable</h2><button class="modal-close" onclick="cerrarModalEntradaCable()">&times;</button></div>
             <form id="formEntradaCable" class="modal-body">
+                <div class="form-group">
+                    <label>Empresa *</label>
+                    <select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select>
+                </div>
                 <div class="form-group"><label>ID de Obra / Origen *</label><input type="text" name="idObra" required placeholder="Ej: Almacén o Albarán N°"></div>
                 <div class="form-group">
                     <label>Tipo de Cable *</label>
@@ -390,6 +436,10 @@
         <div class="modal-content">
             <div class="modal-header"><h2>Registrar Subconducto Instalado</h2><button class="modal-close" onclick="cerrarModalSubconducto()">&times;</button></div>
             <form id="formNuevoSubconducto" class="modal-body">
+                <div class="form-group">
+                    <label>Empresa *</label>
+                    <select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select>
+                </div>
                 <div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div>
                 <div class="form-group">
                     <label>Tipo de Subconducto *</label>
@@ -406,7 +456,7 @@
                         <div style="flex:1"><small style="display:block; text-align:center;">x3</small><input type="number" id="sub_x3" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div>
                         <div style="flex:1"><small style="display:block; text-align:center;">x4</small><input type="number" id="sub_x4" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div>
                     </div>
-                    <small style="color: var(--text-secondary); font-size: 11px;">Ej: 100 mts tirados en tubo x2 suman 200m en total de forma automática.</small>
+                    <small style="color: var(--text-secondary); font-size: 11px;">Ej: 100 mts tirados en tubo x2 suman 200m en total.</small>
                 </div>
 
                 <div class="form-group"><label>Metros Totales Instalados *</label><input type="number" id="sub_metros_totales" name="metros" required min="0.1" step="0.1"></div>
@@ -421,6 +471,10 @@
         <div class="modal-content">
             <div class="modal-header"><h2>Registrar Entrada de Subconducto</h2><button class="modal-close" onclick="cerrarModalEntradaSubconducto()">&times;</button></div>
             <form id="formEntradaSubconducto" class="modal-body">
+                <div class="form-group">
+                    <label>Empresa *</label>
+                    <select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select>
+                </div>
                 <div class="form-group"><label>ID de Obra / Origen *</label><input type="text" name="idObra" required placeholder="Ej: Almacén o Albarán N°"></div>
                 <div class="form-group">
                     <label>Tipo de Subconducto *</label>
@@ -440,16 +494,16 @@
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header"><h2>Registrar Devolución</h2><button class="modal-close" onclick="cerrarModalDevolucion()">&times;</button></div>
             <form id="formNuevaDevolucion" class="modal-body">
+                <div class="form-group">
+                    <label>Empresa *</label>
+                    <select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select>
+                </div>
                 <div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div>
                 <div class="form-group"><label>Fecha de Entrega *</label><input type="date" id="fechaDevolucion" name="fecha" required></div>
                 <div class="form-group">
                     <label>Tipo de Instalación *</label>
                     <select name="tipoInstalacion" required>
-                        <option value="">Seleccionar...</option>
-                        <option value="FTTH">FTTH</option>
-                        <option value="FTTN">FTTN</option>
-                        <option value="TESA">TESA</option>
-                        <option value="Lyntia">Lyntia</option>
+                        <option value="">Seleccionar...</option><option value="FTTH">FTTH</option><option value="FTTN">FTTN</option><option value="TESA">TESA</option><option value="Lyntia">Lyntia</option>
                     </select>
                 </div>
 
@@ -465,6 +519,9 @@
             </form>
         </div>
     </div>
+
+    <datalist id="opcionesCable"></datalist>
+    <datalist id="opcionesMaterialGral"></datalist> 
 
     <div id="modalBuscador" class="modal">
         <div class="modal-content">

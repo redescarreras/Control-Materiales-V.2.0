@@ -33,12 +33,17 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 
 /* ===== HEADER ===== */
 .header { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 0.5px solid rgba(0,0,0,0.1); }
-.header-content { max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+.header-content { max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .logo-container { display: flex; align-items: center; gap: 12px; }
 .logo { width: 44px; height: 44px; border-radius: 10px; }
 .company-info h1 { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
 .subtitle { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
-.header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap;} 
+.header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; flex: 1; justify-content: flex-end;} 
+
+/* SELECTOR GLOBAL EMPRESAS */
+.global-empresa-select { padding: 8px 12px; border-radius: var(--radius-pill); border: 2px solid transparent; background: #E5E5EA; font-weight: 600; font-size: 14px; color: var(--text-primary); cursor: pointer; outline: none; transition: all 0.2s; }
+.global-empresa-select:focus { border-color: var(--primary-500); background: var(--bg-card); box-shadow: var(--shadow-sm); }
+.badge-empresa { font-size: 11px; background: #E5E5EA; color: var(--text-primary); padding: 2px 8px; border-radius: 6px; font-weight: 700; text-transform: uppercase; margin-left: 6px; border: 1px solid #D1D1D6;}
 
 /* ===== BUTTONS ===== */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 20px; border: none; border-radius: var(--radius-pill); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.2s, opacity 0.2s, background 0.2s; text-decoration: none; white-space: nowrap; }
@@ -54,7 +59,7 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 .btn-icon { padding: 10px; border-radius: 50%; width: 44px; height: 44px; font-size: 18px; flex-shrink: 0;}
 .btn-glass { background: rgba(0,0,0,0.05); color: var(--text-primary); }
 
-/* ===== TABS (CORREGIDO PARA ADAPTARSE A PANTALLAS Y CENTRAR) ===== */
+/* ===== TABS ===== */
 .main-content { padding: 24px 0; min-height: 100vh; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 .tabs-wrapper { margin-bottom: 24px; display: flex; justify-content: center; width: 100%; }
@@ -86,7 +91,7 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 /* ===== ALBARANES GRID & CARDS ===== */
 .albaranes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start;}
 .albaran-card { background: var(--bg-card); padding: 20px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); display: flex; flex-direction: column; }
-.albaran-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.albaran-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;}
 .albaran-id { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--primary-500); }
 .status-badge { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 .status-pendiente { background: rgba(255, 149, 0, 0.15); color: var(--system-orange); }
@@ -177,15 +182,16 @@ body { font-family: var(--font-family); background-color: var(--bg-system); colo
 
 /* ===== MEDIA QUERIES ===== */
 @media (max-width: 768px) {
-  .header-content { flex-direction: row; padding: 10px 16px; justify-content: space-between; }
+  .header-content { flex-direction: column; align-items: flex-start; gap: 16px;}
+  .header-actions { width: 100%; justify-content: space-between; }
   .logo-container .subtitle { display: none; } 
   .company-info h1 { font-size: 16px; }
   .logo { width: 36px; height: 36px; }
   
   .hide-mobile { display: none; }
-  .header-actions { width: auto; gap: 4px; }
   .btn { padding: 8px 12px; }
   .btn-icon { width: 36px; height: 36px; padding: 6px; font-size: 16px; }
+  .global-empresa-select { flex: 1; margin-right: 0 !important; }
   
   .albaran-actions .btn { flex: 1 1 100%; }
   .recepcion-options { grid-template-columns: 1fr; }
