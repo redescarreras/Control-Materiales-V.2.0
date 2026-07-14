@@ -17,7 +17,7 @@ let albaranes = []; let albaranSeleccionado = null;
 let cables = []; let subconductos = []; let devoluciones = []; 
 let materialesGenerales = []; 
 let reporteActual = '';
-let empresaActiva = 'Todas'; // El Selector Global
+let empresaActiva = 'Todas';
 
 const CABLE_OPTIONS_HTML = `
     <option value="">Seleccionar...</option>
@@ -64,13 +64,18 @@ const CABLE_OPTIONS_HTML = `
     <option value="Cable de f.o. de exterior riser de 32 fo.">Cable de f.o. de exterior riser de 32 fo.</option>
 `;
 
+const SUBCONDUCTO_OPTIONS_HTML = `
+    <option value="">Seleccionar...</option>
+    <option value="Subconducto 32mm">Subconducto 32mm</option>
+    <option value="Subconducto 40mm">Subconducto 40mm</option>
+    <option value="Subconducto 63mm">Subconducto 63mm</option>
+`;
+
 function parsearDatosNube(data) {
     if (!data) return [];
     let arr = Array.isArray(data) ? data.filter(item => item !== null) : Object.values(data);
-    
-    // MIGRACIÓN AUTOMÁTICA DE DATOS ANTIGUOS
     return arr.map(item => {
-        if (!item.empresa) item.empresa = 'Elecnor'; // Todo lo viejo se convierte a Elecnor por defecto
+        if (!item.empresa) item.empresa = 'Elecnor'; 
         return item;
     });
 }
@@ -82,20 +87,17 @@ function filtrarPorEmpresa(arr) {
 
 function cambiarEmpresaActiva() {
     empresaActiva = document.getElementById('globalEmpresaFilter').value;
-    
-    // Actualizamos las cabeceras de descripción visualmente
     const sufijo = empresaActiva === 'Todas' ? 'Todas las empresas' : empresaActiva;
     document.getElementById('desc-pendientes').textContent = `Albaranes esperando confirmación (${sufijo}).`;
     document.getElementById('desc-recibidos').textContent = `Historial de entregas (${sufijo}).`;
     document.getElementById('desc-faltantes').textContent = `Incidencias registradas (${sufijo}).`;
     document.getElementById('desc-materiales').textContent = `Stock extraído de los excels (${sufijo}).`;
     
-    actualizarOpcionesMaterialesGral(); // Actualizar desplegables
+    actualizarOpcionesMaterialesGral(); 
     actualizarUI();
     mostrarToast(`🏢 Mostrando datos de: ${empresaActiva}`);
 }
 window.cambiarEmpresaActiva = cambiarEmpresaActiva;
-
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
@@ -187,9 +189,10 @@ function irAElemento(tab, id) {
     }, 150);
 }
 
-// ===== GESTIÓN DE ALBARANES Y CABLES ESPERADOS =====
+// ===== GESTIÓN DE ALBARANES Y ESPERADOS =====
 function abrirModalNuevoAlbaran() {
     document.getElementById('albaranCablesContainer').innerHTML = ''; 
+    document.getElementById('albaranSubconductosContainer').innerHTML = ''; 
     document.getElementById('modalNuevoAlbaran').classList.add('active');
 }
 window.abrirModalNuevoAlbaran = abrirModalNuevoAlbaran;
@@ -217,12 +220,35 @@ function agregarCableAlbaran() {
 }
 window.agregarCableAlbaran = agregarCableAlbaran;
 
+function agregarSubconductoAlbaran() {
+    const container = document.getElementById('albaranSubconductosContainer');
+    const index = container.children.length + 1;
+    const html = `
+        <div class="bobina-item" data-sub-albaran="${index}" style="padding: 12px; margin-bottom: 8px; border-color: var(--system-orange);">
+            <div class="bobina-header" style="margin-bottom: 8px; padding-bottom: 8px;">
+                <div class="bobina-title" style="font-size: 14px; color: var(--system-orange);">Subconducto Esperado ${index}</div>
+                <button type="button" class="btn-eliminar-bobina" style="background:var(--system-orange);" onclick="this.closest('.bobina-item').remove()">X</button>
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+                <label style="font-size: 12px;">Tipo Subconducto</label>
+                <select name="albaranTipoSub_${index}" style="padding: 10px;">${SUBCONDUCTO_OPTIONS_HTML}</select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 12px;">Metros Esperados</label>
+                <input type="number" step="0.1" name="albaranMetrosSub_${index}" style="padding: 10px;">
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+window.agregarSubconductoAlbaran = agregarSubconductoAlbaran;
+
 function abrirModalEditarAlbaran(id) {
     const albaran = albaranes.find(a => a.id === id);
     if(!albaran) return;
 
     document.getElementById('editIdAlbaran').value = albaran.id;
-    document.getElementById('editEmpresa').value = albaran.empresa || 'Elecnor'; // Seleccionar empresa
+    document.getElementById('editEmpresa').value = albaran.empresa || 'Elecnor';
     document.getElementById('editIdObra').value = albaran.idObra;
     document.getElementById('editFecha').value = albaran.fecha;
     document.getElementById('editCuentaCargo').value = albaran.cuentaCargo || '';
@@ -230,10 +256,15 @@ function abrirModalEditarAlbaran(id) {
     document.getElementById('editJefeObra').value = albaran.jefeObra || '';
     document.getElementById('editObservaciones').value = albaran.observaciones || '';
 
-    const container = document.getElementById('editAlbaranCablesContainer');
-    container.innerHTML = '';
+    const containerCables = document.getElementById('editAlbaranCablesContainer');
+    containerCables.innerHTML = '';
     const cablesVinculados = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
-    cablesVinculados.forEach((c, i) => { agregarCableAlbaranEdit(c.tipoCable, c.metros); });
+    cablesVinculados.forEach((c) => { agregarCableAlbaranEdit(c.tipoCable, c.metros); });
+
+    const containerSub = document.getElementById('editAlbaranSubconductosContainer');
+    containerSub.innerHTML = '';
+    const subsVinculados = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
+    subsVinculados.forEach((s) => { agregarSubconductoAlbaranEdit(s.tipoSubconducto, s.metros); });
 
     document.getElementById('modalEditarAlbaran').classList.add('active');
 }
@@ -265,6 +296,32 @@ function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
 }
 window.agregarCableAlbaranEdit = agregarCableAlbaranEdit;
 
+function agregarSubconductoAlbaranEdit(tipoSub = '', metros = '') {
+    const container = document.getElementById('editAlbaranSubconductosContainer');
+    const index = container.children.length + 1;
+    let opcionesConSeleccion = SUBCONDUCTO_OPTIONS_HTML;
+    if (tipoSub) opcionesConSeleccion = opcionesConSeleccion.replace(`value="${tipoSub}"`, `value="${tipoSub}" selected`);
+
+    const html = `
+        <div class="bobina-item" data-sub-albaran="${index}" style="padding: 12px; margin-bottom: 8px; border-color: var(--system-orange);">
+            <div class="bobina-header" style="margin-bottom: 8px; padding-bottom: 8px;">
+                <div class="bobina-title" style="font-size: 14px; color: var(--system-orange);">Subconducto Esperado ${index}</div>
+                <button type="button" class="btn-eliminar-bobina" style="background:var(--system-orange);" onclick="this.closest('.bobina-item').remove()">X</button>
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+                <label style="font-size: 12px;">Tipo Subconducto</label>
+                <select name="editAlbaranTipoSub_${index}" style="padding: 10px;">${opcionesConSeleccion}</select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 12px;">Metros Esperados</label>
+                <input type="number" step="0.1" name="editAlbaranMetrosSub_${index}" value="${metros}" style="padding: 10px;">
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+window.agregarSubconductoAlbaranEdit = agregarSubconductoAlbaranEdit;
+
 // ===== EXTRACCIÓN INTELIGENTE =====
 function generarTablaHtmlYMaterialesDesdeBase64(b64) {
     try {
@@ -277,16 +334,24 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
         let headerRowIdx = -1; let qtyColIdx = -1; let descColIdx = -1;
 
         for (let i = 0; i < Math.min(20, jsonData.length); i++) {
+            let tempQtyIdx = -1;
+            let tempDescIdx = -1;
+            
             for (let j = 0; j < jsonData[i].length; j++) {
                 const cell = String(jsonData[i][j]).toLowerCase().trim();
-                if (cell.includes('uds') || cell.includes('cant') || cell === 'cantidad' || cell.includes('mts')) {
-                    qtyColIdx = j;
+                if (cell === 'uds' || cell === 'cant' || cell === 'cantidad' || cell === 'mts' || cell.includes('uds/mts') || cell === 'uds.') {
+                    tempQtyIdx = j;
                 }
-                if (cell.includes('descrip') || cell.includes('artículo') || cell.includes('articulo') || cell.includes('concepto') || cell.includes('material')) {
-                    descColIdx = j;
+                if (cell.includes('descrip') || cell.includes('artículo') || cell.includes('articulo') || cell.includes('concepto') || cell === 'material') {
+                    tempDescIdx = j;
                 }
             }
-            if (qtyColIdx !== -1) { headerRowIdx = i; break; }
+            if (tempQtyIdx !== -1 && tempDescIdx !== -1) {
+                qtyColIdx = tempQtyIdx;
+                descColIdx = tempDescIdx;
+                headerRowIdx = i; 
+                break; 
+            }
         }
 
         let filteredData = [];
@@ -362,7 +427,7 @@ function crearAlbaran(e) {
 
 function finalizarCreacionAlbaran(formData, archivoInfo, materialesExtraidos = []) {
     const albaranId = `ALB-${Date.now().toString().slice(-6)}`;
-    const emp = formData.get('empresa'); // CAPTURAMOS LA EMPRESA
+    const emp = formData.get('empresa'); 
     
     const itemsCables = document.querySelectorAll('#albaranCablesContainer .bobina-item');
     itemsCables.forEach(item => {
@@ -375,6 +440,22 @@ function finalizarCreacionAlbaran(formData, archivoInfo, materialesExtraidos = [
                 tipoMaterial: 'cable', idObra: formData.get('idObra'), tipoCable: tipo, metros: metros,
                 accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
                 observaciones: `Esperando con Albarán: ${albaranId}`, idAlbaranAsociado: albaranId 
+            });
+        }
+    });
+
+    const itemsSub = document.querySelectorAll('#albaranSubconductosContainer .bobina-item');
+    itemsSub.forEach(item => {
+        const idx = item.dataset.subAlbaran;
+        const tipo = formData.get(`albaranTipoSub_${idx}`);
+        const metros = parseFloat(formData.get(`albaranMetrosSub_${idx}`));
+        if (tipo && metros > 0) {
+            subconductos.push({
+                id: `SUB-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp,
+                tipoMaterial: 'subconducto', idObra: formData.get('idObra'), tipoSubconducto: tipo, metros: metros,
+                accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
+                observaciones: `Esperando con Albarán: ${albaranId}`, idAlbaranAsociado: albaranId,
+                solicitado: false
             });
         }
     });
@@ -454,6 +535,21 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, mate
         }
     });
 
+    subconductos = subconductos.filter(s => !(s.idAlbaranAsociado === idAlbaran && s.accion === 'pendiente_recepcion'));
+    const itemsSub = document.querySelectorAll('#editAlbaranSubconductosContainer .bobina-item');
+    itemsSub.forEach(item => {
+        const idx = item.dataset.subAlbaran;
+        const tipo = formData.get(`editAlbaranTipoSub_${idx}`);
+        const metros = parseFloat(formData.get(`editAlbaranMetrosSub_${idx}`));
+        if (tipo && metros > 0) {
+            subconductos.push({
+                id: `SUB-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp, tipoMaterial: 'subconducto', idObra: formData.get('idObra'),
+                tipoSubconducto: tipo, metros: metros, accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
+                observaciones: `Esperando con Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran, solicitado: false
+            });
+        }
+    });
+
     if (materialesExtraidos.length > 0) {
         materialesGenerales = materialesGenerales.filter(m => !(m.idAlbaranAsociado === idAlbaran && m.accion === 'pendiente_recepcion'));
         materialesExtraidos.forEach((mat, idx) => {
@@ -475,9 +571,7 @@ function mostrarAlbaranes() {
     const contenedor = document.getElementById(`lista-${tabActiva}`);
     if (!contenedor) return;
     
-    // FILTRADO POR EMPRESA
     let fAlb = filtrarPorEmpresa(albaranes);
-    
     let abs = [];
     if(tabActiva === 'pendientes') abs = fAlb.filter(a => a.estado === 'pendiente');
     if(tabActiva === 'recibidos') abs = fAlb.filter(a => a.estado === 'recibido' && (!a.materialFaltante || String(a.materialFaltante).trim() === ""));
@@ -509,10 +603,12 @@ function mostrarAlbaranes() {
         actions += `<button class="btn btn-secondary" onclick="eliminarAlbaran('${a.id}')">🗑️ Eliminar</button></div>`;
 
         const cablesAsociados = cables.filter(c => c.idAlbaranAsociado === a.id && c.accion === 'pendiente_recepcion').length;
+        const subAsociados = subconductos.filter(s => s.idAlbaranAsociado === a.id && s.accion === 'pendiente_recepcion').length;
         const matAsociados = materialesGenerales.filter(m => m.idAlbaranAsociado === a.id && m.accion === 'pendiente_recepcion').length;
         
         let etiquetas = `<span class="badge-empresa">${a.empresa}</span>`;
         if (cablesAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">⏳ ${cablesAsociados} cables</b>`;
+        if (subAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(255,149,0,0.1); color:var(--system-orange); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🛡️ ${subAsociados} subcond.</b>`;
         if (matAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🛒 ${matAsociados} acc.</b>`;
 
         return `
@@ -532,27 +628,106 @@ function mostrarAlbaranes() {
     }).join('');
 }
 
+// ===== NUEVA LOGICA DE RECEPCION CON CHECKBOXES =====
+function abrirModalRecepcion(id) {
+    albaranSeleccionado = albaranes.find(a => a.id === id);
+    document.getElementById('modalRecepcion').classList.add('active');
+    document.querySelector('input[name="estadoRecepcion"][value="completo"]').checked = true;
+    document.getElementById('materialFaltante').value = '';
+    
+    // Generar checkboxes con los materiales en camino de este albarán
+    const listaItems = document.getElementById('listaItemsFaltantes');
+    listaItems.innerHTML = '';
+    
+    const esperadosCables = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
+    const esperadosSub = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
+    const esperadosMat = materialesGenerales.filter(m => m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion');
+
+    let html = '';
+    if (esperadosCables.length === 0 && esperadosSub.length === 0 && esperadosMat.length === 0) {
+        html = '<p style="font-size:13px; color:var(--text-secondary);">No hay materiales en camino asociados a este albarán.</p>';
+    } else {
+        esperadosCables.forEach(c => {
+            html += `
+            <label class="checkbox-label" style="background:var(--bg-card); padding:8px; border-radius:8px; border:1px solid #E5E5EA;">
+                <input type="checkbox" class="check-faltante" value="${c.id}">
+                <span class="checkbox-custom"></span> 
+                <span style="font-size:13px;">🔌 ${c.metros}m - ${c.tipoCable}</span>
+            </label>`;
+        });
+        esperadosSub.forEach(s => {
+            html += `
+            <label class="checkbox-label" style="background:var(--bg-card); padding:8px; border-radius:8px; border:1px solid #E5E5EA;">
+                <input type="checkbox" class="check-faltante" value="${s.id}">
+                <span class="checkbox-custom"></span> 
+                <span style="font-size:13px;">🛡️ ${s.metros}m - ${s.tipoSubconducto}</span>
+            </label>`;
+        });
+        esperadosMat.forEach(m => {
+            html += `
+            <label class="checkbox-label" style="background:var(--bg-card); padding:8px; border-radius:8px; border:1px solid #E5E5EA;">
+                <input type="checkbox" class="check-faltante" value="${m.id}">
+                <span class="checkbox-custom"></span> 
+                <span style="font-size:13px;">🛒 ${m.cantidad} - ${m.descripcion}</span>
+            </label>`;
+        });
+    }
+    listaItems.innerHTML = html;
+    toggleDetalleFaltante();
+}
+
+function toggleDetalleFaltante() {
+    const val = document.querySelector('input[name="estadoRecepcion"]:checked').value;
+    document.getElementById('detalleFaltante').style.display = val === 'incompleto' ? 'block' : 'none';
+    document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+    document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
+}
+
 function confirmarRecepcion() {
     if(!albaranSeleccionado) return;
     const estado = document.querySelector('input[name="estadoRecepcion"]:checked').value;
-    const faltante = document.getElementById('materialFaltante').value;
-    if(estado === 'incompleto' && !faltante.trim()) return mostrarToast('❌ Por favor especifica el material faltante');
+    const notaAdicional = document.getElementById('materialFaltante').value;
+    
+    const checkboxesFaltantes = document.querySelectorAll('.check-faltante:checked');
+    const idsFaltantes = Array.from(checkboxesFaltantes).map(cb => cb.value);
+
+    if(estado === 'incompleto' && idsFaltantes.length === 0 && !notaAdicional.trim()) {
+        return mostrarToast('❌ Debes marcar qué material falta o añadir una nota.');
+    }
+
+    let textoFaltante = '';
+    if (estado === 'incompleto') {
+        if (idsFaltantes.length > 0) textoFaltante += `Faltan ${idsFaltantes.length} artículo(s) esperado(s). `;
+        if (notaAdicional.trim() !== '') textoFaltante += notaAdicional;
+    }
 
     albaranSeleccionado.estado = 'recibido';
-    albaranSeleccionado.materialFaltante = estado === 'incompleto' ? faltante : null;
+    albaranSeleccionado.materialFaltante = estado === 'incompleto' ? textoFaltante.trim() : null;
     
     const hoy = new Date().toISOString().split('T')[0];
     let itemsIngresados = 0;
     
     cables.forEach(c => {
         if (c.idAlbaranAsociado === albaranSeleccionado.id && c.accion === 'pendiente_recepcion') {
-            c.accion = 'entrada'; c.fecha = hoy; c.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+            if (!idsFaltantes.includes(c.id)) {
+                c.accion = 'entrada'; c.fecha = hoy; c.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+            }
+        }
+    });
+
+    subconductos.forEach(s => {
+        if (s.idAlbaranAsociado === albaranSeleccionado.id && s.accion === 'pendiente_recepcion') {
+            if (!idsFaltantes.includes(s.id)) {
+                s.accion = 'entrada'; s.fecha = hoy; s.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+            }
         }
     });
 
     materialesGenerales.forEach(m => {
         if (m.idAlbaranAsociado === albaranSeleccionado.id && m.accion === 'pendiente_recepcion') {
-            m.accion = 'entrada'; m.fecha = hoy; m.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+            if (!idsFaltantes.includes(m.id)) {
+                m.accion = 'entrada'; m.fecha = hoy; m.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+            }
         }
     });
 
@@ -566,9 +741,16 @@ function marcarFaltanteRecibido(id) {
         const a = albaranes.find(x => x.id === id);
         if(a) { 
             a.materialFaltante = null; 
+            
+            // Ingresar el material que se había quedado colgando
+            const hoy = new Date().toISOString().split('T')[0];
+            cables.forEach(c => { if (c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion') { c.accion = 'entrada'; c.fecha = hoy; } });
+            subconductos.forEach(s => { if (s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion') { s.accion = 'entrada'; s.fecha = hoy; } });
+            materialesGenerales.forEach(m => { if (m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion') { m.accion = 'entrada'; m.fecha = hoy; } });
+
             guardarTodosLosDatos(); 
             actualizarUI();
-            mostrarToast('✅ Albarán completado y quitado de faltantes');
+            mostrarToast('✅ Albarán completado y material añadido al stock');
         }
     }
 }
@@ -577,6 +759,7 @@ function eliminarAlbaran(id) {
     if(confirm('¿Eliminar albarán permanentemente?')) { 
         albaranes = albaranes.filter(a=>a.id!==id); 
         cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
+        subconductos = subconductos.filter(s => !(s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion'));
         materialesGenerales = materialesGenerales.filter(m => !(m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion'));
         guardarTodosLosDatos(); 
     }
@@ -595,7 +778,7 @@ function agregarMaterialGeneral(form, accion) {
 
     materialesGenerales.push({
         id: `MAT-${Date.now().toString().slice(-6)}`,
-        empresa: form.get('empresa'), // SE CAPTURA EMPRESA
+        empresa: form.get('empresa'), 
         tipoMaterial: 'general', idObra: form.get('idObra') || 'Almacén',
         descripcion: descripcion.toUpperCase().trim(), cantidad: cantidad, accion: accion,
         fecha: form.get('fecha'), observaciones: form.get('observaciones') || ''
@@ -606,7 +789,6 @@ function agregarMaterialGeneral(form, accion) {
 }
 
 function actualizarOpcionesMaterialesGral(empresaFiltro = null) {
-    // Si se pasa empresaFiltro, buscamos stock de esa empresa, si no, usamos la empresa Activa global
     const emp = empresaFiltro || empresaActiva;
     let matFiltrados = materialesGenerales;
     if (emp !== 'Todas') matFiltrados = materialesGenerales.filter(m => m.empresa === emp);
@@ -707,7 +889,7 @@ function agregarMaterial(tipo, formData, accion) {
 
     const material = {
         id: `${tipo==='cable'?'CAB':'SUB'}-${Date.now().toString().slice(-6)}`,
-        empresa: formData.get('empresa'), // SE CAPTURA EMPRESA
+        empresa: formData.get('empresa'),
         tipoMaterial: tipo, idObra: obra, tipoCable: formData.get('tipoCable') || formData.get('tipoSubconducto'),
         metros: metrosInput, accion: accion, fecha: formData.get('fecha'),
         observaciones: formData.get('observaciones') || '', solicitado: false 
@@ -1028,7 +1210,7 @@ function crearDevolucion(e) {
 
     devoluciones.push({
         id: `DEV-${Date.now().toString().slice(-6)}`,
-        empresa: formData.get('empresa'), // SE CAPTURA EMPRESA
+        empresa: formData.get('empresa'), 
         idObra: formData.get('idObra'), fechaEntrega: formData.get('fecha'),
         tipoInstalacion: formData.get('tipoInstalacion'), bobinas: bobinasData,
         observaciones: formData.get('observaciones') || ''
@@ -1111,9 +1293,15 @@ function verArchivoAlbaran(id) {
     }
     
     let contenido = '';
-    if (a.archivo.tablaHtml) contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
-    else if (a.archivo.base64) contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
-    else contenido = `<p>Formato no previsualizable.</p>`;
+    
+    if (a.archivo.tablaHtml) {
+        contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
+    } 
+    else if (a.archivo.base64) {
+        contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
+    } else {
+        contenido = `<p>Formato no previsualizable.</p>`;
+    }
 
     const modalHtml = `
     <div id="modalVerArchivo" class="modal active">
@@ -1143,7 +1331,6 @@ function buscarEnTiempoReal() {
     const container = document.getElementById('resultados-busqueda');
     if (termino.length < 2) { container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>'; return; }
     
-    // FILTRAMOS RESULTADOS TAMBIÉN POR EMPRESA
     const rAlb = filtrarPorEmpresa(albaranes).filter(a => a.idObra.toLowerCase().includes(termino) || a.id.toLowerCase().includes(termino));
     const rCab = filtrarPorEmpresa(cables).filter(c => (c.idObra||'').toLowerCase().includes(termino));
     const rSub = filtrarPorEmpresa(subconductos).filter(s => (s.idObra||'').toLowerCase().includes(termino));
@@ -1234,7 +1421,7 @@ function abrirImportar() {
     input.click();
 }
 
-// ===== REPORTES PDF (FILTRADOS POR EMPRESA) =====
+// ===== REPORTES PDF =====
 function abrirModalReportes(tipo) {
     reporteActual = tipo;
     document.getElementById('modalReportes').classList.add('active');
@@ -1466,6 +1653,45 @@ function abrirModalRecepcion(id) {
     document.getElementById('modalRecepcion').classList.add('active');
     document.querySelector('input[name="estadoRecepcion"][value="completo"]').checked = true;
     document.getElementById('materialFaltante').value = '';
+    
+    // Generar checkboxes con los materiales en camino de este albarán
+    const listaItems = document.getElementById('listaItemsFaltantes');
+    listaItems.innerHTML = '';
+    
+    const esperadosCables = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
+    const esperadosSub = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
+    const esperadosMat = materialesGenerales.filter(m => m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion');
+
+    let html = '';
+    if (esperadosCables.length === 0 && esperadosSub.length === 0 && esperadosMat.length === 0) {
+        html = '<p style="font-size:13px; color:var(--text-secondary);">No hay materiales en camino asociados a este albarán.</p>';
+    } else {
+        esperadosCables.forEach(c => {
+            html += `
+            <label class="checkbox-label" style="background:var(--bg-card); padding:8px; border-radius:8px; border:1px solid #E5E5EA;">
+                <input type="checkbox" class="check-faltante" value="${c.id}">
+                <span class="checkbox-custom"></span> 
+                <span style="font-size:13px;">🔌 ${c.metros}m - ${c.tipoCable}</span>
+            </label>`;
+        });
+        esperadosSub.forEach(s => {
+            html += `
+            <label class="checkbox-label" style="background:var(--bg-card); padding:8px; border-radius:8px; border:1px solid #E5E5EA;">
+                <input type="checkbox" class="check-faltante" value="${s.id}">
+                <span class="checkbox-custom"></span> 
+                <span style="font-size:13px;">🛡️ ${s.metros}m - ${s.tipoSubconducto}</span>
+            </label>`;
+        });
+        esperadosMat.forEach(m => {
+            html += `
+            <label class="checkbox-label" style="background:var(--bg-card); padding:8px; border-radius:8px; border:1px solid #E5E5EA;">
+                <input type="checkbox" class="check-faltante" value="${m.id}">
+                <span class="checkbox-custom"></span> 
+                <span style="font-size:13px;">🛒 ${m.cantidad} - ${m.descripcion}</span>
+            </label>`;
+        });
+    }
+    listaItems.innerHTML = html;
     toggleDetalleFaltante();
 }
 
@@ -1474,6 +1700,87 @@ function toggleDetalleFaltante() {
     document.getElementById('detalleFaltante').style.display = val === 'incompleto' ? 'block' : 'none';
     document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
     document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
+}
+
+function confirmarRecepcion() {
+    if(!albaranSeleccionado) return;
+    const estado = document.querySelector('input[name="estadoRecepcion"]:checked').value;
+    const notaAdicional = document.getElementById('materialFaltante').value;
+    
+    const checkboxesFaltantes = document.querySelectorAll('.check-faltante:checked');
+    const idsFaltantes = Array.from(checkboxesFaltantes).map(cb => cb.value);
+
+    if(estado === 'incompleto' && idsFaltantes.length === 0 && !notaAdicional.trim()) {
+        return mostrarToast('❌ Debes marcar qué material falta o añadir una nota.');
+    }
+
+    let textoFaltante = '';
+    if (estado === 'incompleto') {
+        if (idsFaltantes.length > 0) textoFaltante += `Faltan ${idsFaltantes.length} artículo(s) esperado(s). `;
+        if (notaAdicional.trim() !== '') textoFaltante += notaAdicional;
+    }
+
+    albaranSeleccionado.estado = 'recibido';
+    albaranSeleccionado.materialFaltante = estado === 'incompleto' ? textoFaltante.trim() : null;
+    
+    const hoy = new Date().toISOString().split('T')[0];
+    let itemsIngresados = 0;
+    
+    cables.forEach(c => {
+        if (c.idAlbaranAsociado === albaranSeleccionado.id && c.accion === 'pendiente_recepcion') {
+            if (!idsFaltantes.includes(c.id)) {
+                c.accion = 'entrada'; c.fecha = hoy; c.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+            }
+        }
+    });
+
+    subconductos.forEach(s => {
+        if (s.idAlbaranAsociado === albaranSeleccionado.id && s.accion === 'pendiente_recepcion') {
+            if (!idsFaltantes.includes(s.id)) {
+                s.accion = 'entrada'; s.fecha = hoy; s.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+            }
+        }
+    });
+
+    materialesGenerales.forEach(m => {
+        if (m.idAlbaranAsociado === albaranSeleccionado.id && m.accion === 'pendiente_recepcion') {
+            if (!idsFaltantes.includes(m.id)) {
+                m.accion = 'entrada'; m.fecha = hoy; m.observaciones = `Recibido con Albarán: ${albaranSeleccionado.id}`; itemsIngresados++;
+            }
+        }
+    });
+
+    guardarTodosLosDatos(); cerrarTodosLosModales(); 
+    mostrarToast('✅ Recepción completada');
+    if (itemsIngresados > 0) setTimeout(() => mostrarToast(`📦 ${itemsIngresados} artículos han entrado al stock disponible`), 1000);
+}
+
+function marcarFaltanteRecibido(id) {
+    if(confirm('¿Confirmas que el material faltante ya ha sido recibido y está completo?')) {
+        const a = albaranes.find(x => x.id === id);
+        if(a) { 
+            a.materialFaltante = null; 
+            
+            const hoy = new Date().toISOString().split('T')[0];
+            cables.forEach(c => { if (c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion') { c.accion = 'entrada'; c.fecha = hoy; } });
+            subconductos.forEach(s => { if (s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion') { s.accion = 'entrada'; s.fecha = hoy; } });
+            materialesGenerales.forEach(m => { if (m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion') { m.accion = 'entrada'; m.fecha = hoy; } });
+
+            guardarTodosLosDatos(); 
+            actualizarUI();
+            mostrarToast('✅ Albarán completado y material añadido al stock');
+        }
+    }
+}
+
+function eliminarAlbaran(id) {
+    if(confirm('¿Eliminar albarán permanentemente?')) { 
+        albaranes = albaranes.filter(a=>a.id!==id); 
+        cables = cables.filter(c => !(c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion'));
+        subconductos = subconductos.filter(s => !(s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion'));
+        materialesGenerales = materialesGenerales.filter(m => !(m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion'));
+        guardarTodosLosDatos(); 
+    }
 }
 
 function establecerFechaActual() {
