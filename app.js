@@ -359,11 +359,9 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
 
         if (headerRowIdx !== -1 && qtyColIdx !== -1) {
             filteredData = jsonData.slice(0, headerRowIdx + 1);
-            
             for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
                 const row = jsonData[i];
                 const qtyVal = parseFloat(row[qtyColIdx]);
-                
                 if (!isNaN(qtyVal) && qtyVal > 0) {
                     filteredData.push(row);
                     if (descColIdx !== -1) {
@@ -404,11 +402,9 @@ function crearAlbaran(e) {
     if (archivoInput) {
         const isExcel = archivoInput.name.toLowerCase().match(/\.(xlsx|xls)$/i);
         const reader = new FileReader();
-
         reader.onload = function(ev) {
             const b64 = ev.target.result;
             let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
-
             if (isExcel) {
                 const extraccion = generarTablaHtmlYMaterialesDesdeBase64(b64);
                 archivoInfo.tablaHtml = extraccion.html;
@@ -597,7 +593,6 @@ function mostrarAlbaranes() {
             actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar</button>`;
             actions += `<button class="btn btn-success" onclick="abrirModalRecepcion('${a.id}')">✅ Marcar Recibido</button>`;
         } else if (esFaltante) {
-            // BOTÓN DE RE-SOLICITAR (BACKORDER)
             actions += `<button class="btn btn-info w-100" onclick="resolicitarFaltante('${a.id}')">🔄 Re-solicitar Faltante</button>`;
         }
         actions += `<button class="btn btn-secondary" onclick="eliminarAlbaran('${a.id}')">🗑️ Eliminar</button></div>`;
@@ -691,7 +686,6 @@ function confirmarRecepcion() {
     const checkboxesFaltantes = document.querySelectorAll('.check-faltante:checked');
     const idsFaltantes = Array.from(checkboxesFaltantes).map(cb => cb.value);
 
-    // Protección anti-errores
     if(estado === 'incompleto') {
         if(checkboxesTotales.length > 0 && idsFaltantes.length === 0) {
             return mostrarToast('❌ Por favor, marca en las casillas exactamente qué material no ha llegado.');
@@ -756,7 +750,6 @@ function resolicitarFaltante(id) {
     const nuevoId = albOriginal.id + '-RE';
     let materialMovido = 0;
 
-    // Pasamos lo que estaba en el limbo al nuevo Albarán Hijo
     cables.forEach(c => {
         if (c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion') { c.idAlbaranAsociado = nuevoId; materialMovido++; }
     });
@@ -767,13 +760,9 @@ function resolicitarFaltante(id) {
         if (m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion') { m.idAlbaranAsociado = nuevoId; materialMovido++; }
     });
 
-    // Guardamos el texto de Faltante antes de borrarlo
     const textoFaltanteOriginal = albOriginal.materialFaltante || 'Material pendiente de recepción';
-
-    // Limpiamos el original (pierde la mancha roja y se va a Recibidos normal)
     albOriginal.materialFaltante = null;
 
-    // SIEMPRE creamos el nuevo albarán en Pendientes
     albaranes.push({
         id: nuevoId, 
         empresa: albOriginal.empresa, 
@@ -1143,15 +1132,6 @@ function mostrarMateriales(tipo) {
     cont.innerHTML = html;
 }
 
-function eliminarMaterial(tipo, id) {
-    if(confirm('¿Eliminar registro permanentemente?')) {
-        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); 
-        else if(tipo==='subconducto') subconductos = subconductos.filter(s=>s.id!==id);
-        else materialesGenerales = materialesGenerales.filter(m=>m.id!==id); 
-        guardarTodosLosDatos(); 
-    }
-}
-
 // ===== GESTION DE DEVOLUCIONES =====
 function inicializarBobinas() {
     document.getElementById('bobinasContainer').innerHTML = '';
@@ -1320,30 +1300,68 @@ function mostrarDevoluciones() {
     cont.innerHTML = html;
 }
 
-function eliminarDevolucion(id) {
-    if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
-}
-
-// ===== EXCEL PREVIEW =====
+// ===== EXCEL PREVIEW INTELIGENTE =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
-    if(!a || !a.archivo) {
-        return mostrarToast('❌ El archivo no está disponible.');
-    }
+    if(!a) return mostrarToast('❌ El albarán no está disponible.');
     
     let contenido = '';
-    if (a.archivo.tablaHtml) contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
-    else if (a.archivo.base64) contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
-    else contenido = `<p>Formato no previsualizable.</p>`;
+    let originalContent = '';
+
+    if (a.archivo && a.archivo.tablaHtml) {
+        originalContent = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
+    } else if (a.archivo && a.archivo.base64) {
+        originalContent = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
+    } else {
+        originalContent = `<p style="padding:16px; color:var(--text-secondary); text-align:center;">No hay archivo original adjunto.</p>`;
+    }
+
+    const esFaltante = a.materialFaltante && String(a.materialFaltante).trim() !== "";
+
+    // SI ESTÁ EN FALTANTES, MOSTRAMOS SOLO LA LISTA ROJA DE LO QUE FALTA
+    if (esFaltante) {
+        const pendingCables = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
+        const pendingSub = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
+        const pendingMat = materialesGenerales.filter(m => m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion');
+
+        let htmlFaltante = '<table class="table-preview" style="margin-bottom:0;"><tr><th style="background:rgba(255,59,48,0.1); color:var(--system-red);">Tipo de Material / Artículo</th><th style="background:rgba(255,59,48,0.1); color:var(--system-red);">Cantidad</th></tr>';
+        
+        pendingCables.forEach(c => htmlFaltante += `<tr><td>🔌 ${c.tipoCable}</td><td><b>${c.metros} m</b></td></tr>`);
+        pendingSub.forEach(s => htmlFaltante += `<tr><td>🛡️ ${s.tipoSubconducto}</td><td><b>${s.metros} m</b></td></tr>`);
+        pendingMat.forEach(m => htmlFaltante += `<tr><td>🛒 ${m.descripcion}</td><td><b>${m.cantidad} u</b></td></tr>`);
+        
+        htmlFaltante += '</table>';
+        
+        contenido = `
+        <div style="background: #FFF; border: 2px solid var(--system-red); border-radius: var(--radius-md); margin-bottom: 16px; overflow: hidden;">
+            <div style="background: var(--system-red); color: white; padding: 12px 16px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                ⚠️ Resumen de Material Faltante
+            </div>
+            <div class="excel-preview" style="border: none; border-radius: 0; max-height: none;">
+                ${(pendingCables.length || pendingSub.length || pendingMat.length) ? htmlFaltante : '<p style="padding:16px;">Faltante manual registrado (Sin items vinculados).</p>'}
+            </div>
+            <div style="padding: 12px 16px; background: rgba(255,59,48,0.05); font-size: 13px; color: var(--text-primary); border-top: 1px solid rgba(255,59,48,0.1);">
+                <b>Nota adjunta:</b> ${a.materialFaltante}
+            </div>
+        </div>
+        <button class="btn btn-secondary w-100" onclick="document.getElementById('original-file-${a.id}').style.display='block'; this.style.display='none';">📄 Ver Albarán Original Completo</button>
+        <div id="original-file-${a.id}" style="display:none; margin-top: 16px; animation: fadeIn 0.3s ease;">
+            ${originalContent}
+        </div>
+        `;
+    } else {
+        // SI ES NORMAL, MUESTRA EL EXCEL
+        contenido = originalContent;
+    }
 
     const modalHtml = `
     <div id="modalVerArchivo" class="modal active">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
-                <h3 style="font-size:16px;">📄 ${a.archivo.nombre}</h3>
+                <h3 style="font-size:16px;">📄 ${a.archivo ? a.archivo.nombre : 'Detalle de Albarán'}</h3>
                 <button class="modal-close" onclick="document.getElementById('modalVerArchivo').remove()">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 20px;">
                 ${contenido}
             </div>
         </div>
