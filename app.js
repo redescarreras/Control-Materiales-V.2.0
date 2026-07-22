@@ -359,14 +359,18 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
 
         if (headerRowIdx !== -1 && qtyColIdx !== -1) {
             filteredData = jsonData.slice(0, headerRowIdx + 1);
+            
             for (let i = headerRowIdx + 1; i < jsonData.length; i++) {
                 const row = jsonData[i];
                 const qtyVal = parseFloat(row[qtyColIdx]);
+                
                 if (!isNaN(qtyVal) && qtyVal > 0) {
                     filteredData.push(row);
                     if (descColIdx !== -1) {
                         const descVal = String(row[descColIdx]).trim();
-                        if (descVal !== '') materialesExtraidos.push({ descripcion: descVal, cantidad: qtyVal });
+                        if (descVal !== '') {
+                            materialesExtraidos.push({ descripcion: descVal, cantidad: qtyVal });
+                        }
                     }
                 }
             }
@@ -400,9 +404,11 @@ function crearAlbaran(e) {
     if (archivoInput) {
         const isExcel = archivoInput.name.toLowerCase().match(/\.(xlsx|xls)$/i);
         const reader = new FileReader();
+
         reader.onload = function(ev) {
             const b64 = ev.target.result;
             let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
+
             if (isExcel) {
                 const extraccion = generarTablaHtmlYMaterialesDesdeBase64(b64);
                 archivoInfo.tablaHtml = extraccion.html;
@@ -558,6 +564,7 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, mate
     mostrarToast('✅ Albarán editado correctamente');
 }
 
+
 function mostrarAlbaranes() {
     const tabActiva = document.querySelector('.tab-btn.active')?.dataset?.tab;
     const contenedor = document.getElementById(`lista-${tabActiva}`);
@@ -590,7 +597,7 @@ function mostrarAlbaranes() {
             actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar</button>`;
             actions += `<button class="btn btn-success" onclick="abrirModalRecepcion('${a.id}')">✅ Marcar Recibido</button>`;
         } else if (esFaltante) {
-            // NUEVO BOTÓN DE RE-SOLICITAR EN LUGAR DEL DE COMPLETAR
+            // BOTÓN DE RE-SOLICITAR (BACKORDER)
             actions += `<button class="btn btn-info w-100" onclick="resolicitarFaltante('${a.id}')">🔄 Re-solicitar Faltante</button>`;
         }
         actions += `<button class="btn btn-secondary" onclick="eliminarAlbaran('${a.id}')">🗑️ Eliminar</button></div>`;
@@ -621,7 +628,7 @@ function mostrarAlbaranes() {
     }).join('');
 }
 
-// ===== NUEVA LOGICA DE RECEPCION CON CHECKBOXES =====
+// ===== RECEPCION CON CHECKBOXES =====
 function abrirModalRecepcion(id) {
     albaranSeleccionado = albaranes.find(a => a.id === id);
     document.getElementById('modalRecepcion').classList.add('active');
@@ -680,11 +687,18 @@ function confirmarRecepcion() {
     const estado = document.querySelector('input[name="estadoRecepcion"]:checked').value;
     const notaAdicional = document.getElementById('materialFaltante').value;
     
+    const checkboxesTotales = document.querySelectorAll('.check-faltante');
     const checkboxesFaltantes = document.querySelectorAll('.check-faltante:checked');
     const idsFaltantes = Array.from(checkboxesFaltantes).map(cb => cb.value);
 
-    if(estado === 'incompleto' && idsFaltantes.length === 0 && !notaAdicional.trim()) {
-        return mostrarToast('❌ Debes marcar qué material falta o añadir una nota.');
+    // Protección anti-errores
+    if(estado === 'incompleto') {
+        if(checkboxesTotales.length > 0 && idsFaltantes.length === 0) {
+            return mostrarToast('❌ Por favor, marca en las casillas exactamente qué material no ha llegado.');
+        }
+        if(checkboxesTotales.length === 0 && !notaAdicional.trim()) {
+            return mostrarToast('❌ Debes añadir una nota indicando qué material falta.');
+        }
     }
 
     let textoFaltante = '';
@@ -696,7 +710,7 @@ function confirmarRecepcion() {
         });
         
         if (descripciones.length > 0) {
-            textoFaltante = descripciones.join(' | '); // Guarda los nombres exactos
+            textoFaltante = descripciones.join(' | '); 
         }
         if (notaAdicional.trim() !== '') {
             textoFaltante += (textoFaltante ? " | Nota: " : "Nota: ") + notaAdicional;
@@ -732,50 +746,51 @@ function confirmarRecepcion() {
     if (itemsIngresados > 0) setTimeout(() => mostrarToast(`📦 ${itemsIngresados} artículos han entrado al stock disponible`), 1000);
 }
 
-// ===== NUEVA LOGICA: RE-SOLICITAR FALTANTE (BACKORDER) =====
+// ===== RE-SOLICITAR FALTANTE (BACKORDER) =====
 function resolicitarFaltante(id) {
-    if(!confirm('¿Crear un nuevo Albarán en PENDIENTES con este material faltante para recibirlo en el futuro?')) return;
+    if(!confirm('¿Crear un nuevo Albarán en PENDIENTES con este material para recibirlo en el futuro?')) return;
     
     const albOriginal = albaranes.find(a => a.id === id);
     if(!albOriginal) return;
 
     const nuevoId = albOriginal.id + '-RE';
-    let hayPendientes = false;
+    let materialMovido = 0;
 
     // Pasamos lo que estaba en el limbo al nuevo Albarán Hijo
     cables.forEach(c => {
-        if (c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion') { c.idAlbaranAsociado = nuevoId; hayPendientes = true; }
+        if (c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion') { c.idAlbaranAsociado = nuevoId; materialMovido++; }
     });
     subconductos.forEach(s => {
-        if (s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion') { s.idAlbaranAsociado = nuevoId; hayPendientes = true; }
+        if (s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion') { s.idAlbaranAsociado = nuevoId; materialMovido++; }
     });
     materialesGenerales.forEach(m => {
-        if (m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion') { m.idAlbaranAsociado = nuevoId; hayPendientes = true; }
+        if (m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion') { m.idAlbaranAsociado = nuevoId; materialMovido++; }
     });
 
-    // Limpiamos el original (se queda solo con lo que SÍ se recibió)
+    // Guardamos el texto de Faltante antes de borrarlo
+    const textoFaltanteOriginal = albOriginal.materialFaltante || 'Material pendiente de recepción';
+
+    // Limpiamos el original (pierde la mancha roja y se va a Recibidos normal)
     albOriginal.materialFaltante = null;
 
-    // Creamos el nuevo albarán en Pendientes
-    if(hayPendientes) {
-        albaranes.push({
-            id: nuevoId, 
-            empresa: albOriginal.empresa, 
-            idObra: albOriginal.idObra, 
-            fecha: new Date().toISOString().split('T')[0], 
-            cuentaCargo: albOriginal.cuentaCargo, 
-            tipoInstalacion: albOriginal.tipoInstalacion,
-            jefeObra: albOriginal.jefeObra,
-            observaciones: `⚠️ Re-solicitud automática de material que faltó en el albarán: ${albOriginal.id}`,
-            estado: 'pendiente', 
-            materialFaltante: null, 
-            archivo: albOriginal.archivo
-        });
-    }
+    // SIEMPRE creamos el nuevo albarán en Pendientes
+    albaranes.push({
+        id: nuevoId, 
+        empresa: albOriginal.empresa, 
+        idObra: albOriginal.idObra, 
+        fecha: new Date().toISOString().split('T')[0], 
+        cuentaCargo: albOriginal.cuentaCargo, 
+        tipoInstalacion: albOriginal.tipoInstalacion,
+        jefeObra: albOriginal.jefeObra,
+        observaciones: `⚠️ BACKORDER (Re-solicitud de faltante de: ${albOriginal.id}). Nota original: ${textoFaltanteOriginal}`,
+        estado: 'pendiente', 
+        materialFaltante: null, 
+        archivo: albOriginal.archivo
+    });
 
     guardarTodosLosDatos(); 
     actualizarUI();
-    mostrarToast('✅ Material re-solicitado. Ha pasado a la pestaña Pendientes.');
+    mostrarToast(`✅ Re-solicitud creada con ${materialMovido} artículo(s) físicos. Albarán enviado a Pendientes.`);
 }
 window.resolicitarFaltante = resolicitarFaltante;
 
