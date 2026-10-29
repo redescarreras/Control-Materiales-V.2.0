@@ -73,7 +73,7 @@ const SUBCONDUCTO_OPTIONS_HTML = `
 
 function parsearDatosNube(data) {
     if (!data) return [];
-    let arr = Array.isArray(data) ? data.filter(item => item !== null) : Object.values(data);
+    let arr = Array.isArray(data) ? data.filter(item => item !== null && item !== undefined) : Object.values(data);
     return arr.map(item => {
         if (!item.empresa) item.empresa = 'Elecnor'; 
         return item;
@@ -128,14 +128,19 @@ function actualizarUI() {
     else if (tabActiva !== 'reportes') { mostrarAlbaranes(); }
 }
 
+function limpiarUndefined(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
 function guardarTodosLosDatos() {
     try {
-        db.ref('albaranes').set(albaranes);
-        db.ref('cables').set(cables);
-        db.ref('subconductos').set(subconductos);
-        db.ref('devoluciones').set(devoluciones);
-        db.ref('materialesGenerales').set(materialesGenerales);
+        db.ref('albaranes').set(limpiarUndefined(albaranes));
+        db.ref('cables').set(limpiarUndefined(cables));
+        db.ref('subconductos').set(limpiarUndefined(subconductos));
+        db.ref('devoluciones').set(limpiarUndefined(devoluciones));
+        db.ref('materialesGenerales').set(limpiarUndefined(materialesGenerales));
     } catch (e) {
+        console.error(e);
         mostrarToast('❌ Error sincronizando con Firebase.');
     }
 }
@@ -322,7 +327,7 @@ function agregarSubconductoAlbaranEdit(tipoSub = '', metros = '') {
 }
 window.agregarSubconductoAlbaranEdit = agregarSubconductoAlbaranEdit;
 
-// ===== EXTRACCIÓN INTELIGENTE =====
+// ===== EXTRACCIÓN INTELIGENTE (ESTRICTA) =====
 function generarTablaHtmlYMaterialesDesdeBase64(b64) {
     try {
         const wb = XLSX.read(b64.split(',')[1], { type: 'base64' });
@@ -333,6 +338,7 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
 
         let headerRowIdx = -1; let qtyColIdx = -1; let descColIdx = -1;
 
+        // Búsqueda estricta
         for (let i = 0; i < Math.min(20, jsonData.length); i++) {
             let tempQtyIdx = -1;
             let tempDescIdx = -1;
@@ -468,7 +474,7 @@ function finalizarCreacionAlbaran(formData, archivoInfo, materialesExtraidos = [
         id: albaranId, empresa: emp, idObra: formData.get('idObra'), fecha: formData.get('fecha'),
         cuentaCargo: formData.get('cuentaCargo'), tipoInstalacion: formData.get('tipoInstalacion'),
         observaciones: formData.get('observaciones') || '',
-        estado: 'pendiente', materialFaltante: null, archivo: archivoInfo
+        estado: 'pendiente', materialFaltante: null, archivo: archivoInfo, isBackorder: false
     });
     
     guardarTodosLosDatos(); cerrarTodosLosModales(); 
@@ -585,7 +591,9 @@ function mostrarAlbaranes() {
         const estadoText = a.estado === 'pendiente' ? 'Pendiente' : (esFaltante ? 'Faltante' : 'Recibido');
         
         let actions = `<div class="albaran-actions">`;
-        if (a.archivo && (a.archivo.tablaHtml || a.archivo.base64)) {
+        
+        // Muestra el botón de Ver Material incluso si no tiene archivo PERO es un backorder
+        if ((a.archivo && (a.archivo.tablaHtml || a.archivo.base64)) || a.isBackorder || esFaltante) {
             actions += `<button class="btn btn-info" onclick="verArchivoAlbaran('${a.id}')">📄 Ver Material</button>`;
         }
         
@@ -602,6 +610,7 @@ function mostrarAlbaranes() {
         const matAsociados = materialesGenerales.filter(m => m.idAlbaranAsociado === a.id && m.accion === 'pendiente_recepcion').length;
         
         let etiquetas = `<span class="badge-empresa">${a.empresa}</span>`;
+        if (a.isBackorder) etiquetas += `<b style="font-size:11px; background:rgba(255,149,0,0.1); color:var(--system-orange); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🔄 RE-SOLICITUD</b>`;
         if (cablesAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">⏳ ${cablesAsociados} cables</b>`;
         if (subAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(255,149,0,0.1); color:var(--system-orange); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🛡️ ${subAsociados} subcond.</b>`;
         if (matAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🛒 ${matAsociados} acc.</b>`;
@@ -750,19 +759,27 @@ function resolicitarFaltante(id) {
     const nuevoId = albOriginal.id + '-RE';
     let materialMovido = 0;
 
+    // Pasamos lo que estaba en el limbo al nuevo Albarán Hijo
     cables.forEach(c => {
-        if (c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion') { c.idAlbaranAsociado = nuevoId; materialMovido++; }
+        if (c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion') { 
+            c.idAlbaranAsociado = nuevoId; materialMovido++; c.observaciones = 'Re-solicitado (Backorder)';
+        }
     });
     subconductos.forEach(s => {
-        if (s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion') { s.idAlbaranAsociado = nuevoId; materialMovido++; }
+        if (s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion') { 
+            s.idAlbaranAsociado = nuevoId; materialMovido++; s.observaciones = 'Re-solicitado (Backorder)';
+        }
     });
     materialesGenerales.forEach(m => {
-        if (m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion') { m.idAlbaranAsociado = nuevoId; materialMovido++; }
+        if (m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion') { 
+            m.idAlbaranAsociado = nuevoId; materialMovido++; m.observaciones = 'Re-solicitado (Backorder)';
+        }
     });
 
     const textoFaltanteOriginal = albOriginal.materialFaltante || 'Material pendiente de recepción';
     albOriginal.materialFaltante = null;
 
+    // SIEMPRE creamos el nuevo albarán (incluso si era solo una nota sin items físicos vinculados)
     albaranes.push({
         id: nuevoId, 
         empresa: albOriginal.empresa, 
@@ -771,15 +788,16 @@ function resolicitarFaltante(id) {
         cuentaCargo: albOriginal.cuentaCargo, 
         tipoInstalacion: albOriginal.tipoInstalacion,
         jefeObra: albOriginal.jefeObra,
-        observaciones: `⚠️ BACKORDER (Re-solicitud de faltante de: ${albOriginal.id}). Nota original: ${textoFaltanteOriginal}`,
+        observaciones: `⚠️ BACKORDER (Faltante de: ${albOriginal.id}). Nota original: ${textoFaltanteOriginal}`,
         estado: 'pendiente', 
         materialFaltante: null, 
-        archivo: albOriginal.archivo
+        isBackorder: true, // ETIQUETA CLAVE
+        archivo: null // Quitamos el excel original para que no confunda
     });
 
     guardarTodosLosDatos(); 
     actualizarUI();
-    mostrarToast(`✅ Re-solicitud creada con ${materialMovido} artículo(s) físicos. Albarán enviado a Pendientes.`);
+    mostrarToast(`✅ Re-solicitud creada con ${materialMovido} artículo(s). Albarán enviado a Pendientes.`);
 }
 window.resolicitarFaltante = resolicitarFaltante;
 
@@ -1132,6 +1150,16 @@ function mostrarMateriales(tipo) {
     cont.innerHTML = html;
 }
 
+function eliminarMaterial(tipo, id) {
+    if(confirm('¿Eliminar registro permanentemente?')) {
+        if(tipo==='cable') cables = cables.filter(c=>c.id!==id); 
+        else if(tipo==='subconducto') subconductos = subconductos.filter(s=>s.id!==id);
+        else materialesGenerales = materialesGenerales.filter(m=>m.id!==id); 
+        guardarTodosLosDatos(); 
+    }
+}
+window.eliminarMaterial = eliminarMaterial;
+
 // ===== GESTION DE DEVOLUCIONES =====
 function inicializarBobinas() {
     document.getElementById('bobinasContainer').innerHTML = '';
@@ -1300,65 +1328,73 @@ function mostrarDevoluciones() {
     cont.innerHTML = html;
 }
 
-// ===== EXCEL PREVIEW INTELIGENTE =====
+function eliminarDevolucion(id) {
+    if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
+}
+window.eliminarDevolucion = eliminarDevolucion;
+
+
+// ===== EXCEL PREVIEW INTELIGENTE (BACKORDERS Y FALTANTES) =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
     if(!a) return mostrarToast('❌ El albarán no está disponible.');
     
+    // Obtenemos los materiales que están actualmente vinculados a este albaran EN EL LIMBO (Pendiente de recibir)
+    const pendingCables = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
+    const pendingSub = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
+    const pendingMat = materialesGenerales.filter(m => m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion');
+
     let contenido = '';
-    let originalContent = '';
-
-    if (a.archivo && a.archivo.tablaHtml) {
-        originalContent = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
-    } else if (a.archivo && a.archivo.base64) {
-        originalContent = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
-    } else {
-        originalContent = `<p style="padding:16px; color:var(--text-secondary); text-align:center;">No hay archivo original adjunto.</p>`;
-    }
-
-    const esFaltante = a.materialFaltante && String(a.materialFaltante).trim() !== "";
-
-    // SI ESTÁ EN FALTANTES, MOSTRAMOS SOLO LA LISTA ROJA DE LO QUE FALTA
-    if (esFaltante) {
-        const pendingCables = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
-        const pendingSub = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
-        const pendingMat = materialesGenerales.filter(m => m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion');
-
-        let htmlFaltante = '<table class="table-preview" style="margin-bottom:0;"><tr><th style="background:rgba(255,59,48,0.1); color:var(--system-red);">Tipo de Material / Artículo</th><th style="background:rgba(255,59,48,0.1); color:var(--system-red);">Cantidad</th></tr>';
+    
+    // SI ES UN BACKORDER O UN FALTANTE: Mostramos la lista viva de lo que falta
+    if (a.isBackorder || (a.materialFaltante && String(a.materialFaltante).trim() !== "")) {
+        let htmlResumen = '<table class="table-preview" style="margin-bottom:0;"><tr><th style="background:rgba(255,149,0,0.1); color:var(--system-orange);">Tipo de Material / Artículo</th><th style="background:rgba(255,149,0,0.1); color:var(--system-orange);">Cantidad</th></tr>';
         
-        pendingCables.forEach(c => htmlFaltante += `<tr><td>🔌 ${c.tipoCable}</td><td><b>${c.metros} m</b></td></tr>`);
-        pendingSub.forEach(s => htmlFaltante += `<tr><td>🛡️ ${s.tipoSubconducto}</td><td><b>${s.metros} m</b></td></tr>`);
-        pendingMat.forEach(m => htmlFaltante += `<tr><td>🛒 ${m.descripcion}</td><td><b>${m.cantidad} u</b></td></tr>`);
-        
-        htmlFaltante += '</table>';
+        pendingCables.forEach(c => htmlResumen += `<tr><td>🔌 ${c.tipoCable}</td><td><b>${c.metros} m</b></td></tr>`);
+        pendingSub.forEach(s => htmlResumen += `<tr><td>🛡️ ${s.tipoSubconducto}</td><td><b>${s.metros} m</b></td></tr>`);
+        pendingMat.forEach(m => htmlResumen += `<tr><td>🛒 ${m.descripcion}</td><td><b>${m.cantidad} u</b></td></tr>`);
+        htmlResumen += '</table>';
         
         contenido = `
-        <div style="background: #FFF; border: 2px solid var(--system-red); border-radius: var(--radius-md); margin-bottom: 16px; overflow: hidden;">
-            <div style="background: var(--system-red); color: white; padding: 12px 16px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-                ⚠️ Resumen de Material Faltante
+        <div style="background: #FFF; border: 2px solid var(--system-orange); border-radius: var(--radius-md); margin-bottom: 16px; overflow: hidden;">
+            <div style="background: var(--system-orange); color: white; padding: 12px 16px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                🔄 Resumen de Material Pendiente
             </div>
             <div class="excel-preview" style="border: none; border-radius: 0; max-height: none;">
-                ${(pendingCables.length || pendingSub.length || pendingMat.length) ? htmlFaltante : '<p style="padding:16px;">Faltante manual registrado (Sin items vinculados).</p>'}
+                ${(pendingCables.length || pendingSub.length || pendingMat.length) ? htmlResumen : '<p style="padding:16px;">Sin items vinculados en la base de datos.</p>'}
             </div>
-            <div style="padding: 12px 16px; background: rgba(255,59,48,0.05); font-size: 13px; color: var(--text-primary); border-top: 1px solid rgba(255,59,48,0.1);">
-                <b>Nota adjunta:</b> ${a.materialFaltante}
-            </div>
-        </div>
-        <button class="btn btn-secondary w-100" onclick="document.getElementById('original-file-${a.id}').style.display='block'; this.style.display='none';">📄 Ver Albarán Original Completo</button>
-        <div id="original-file-${a.id}" style="display:none; margin-top: 16px; animation: fadeIn 0.3s ease;">
-            ${originalContent}
-        </div>
-        `;
-    } else {
-        // SI ES NORMAL, MUESTRA EL EXCEL
-        contenido = originalContent;
+            ${a.materialFaltante ? `
+            <div style="padding: 12px 16px; background: rgba(255,149,0,0.05); font-size: 13px; color: var(--text-primary); border-top: 1px solid rgba(255,149,0,0.1);">
+                <b>Nota:</b> ${a.materialFaltante}
+            </div>` : ''}
+        </div>`;
+
+        // Si existe un archivo original (porque es Faltante y no Backorder), le damos el botón gris para verlo
+        if (a.archivo && (a.archivo.tablaHtml || a.archivo.base64)) {
+            let originalContent = a.archivo.tablaHtml ? `<div class="excel-preview">${a.archivo.tablaHtml}</div>` : `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
+            contenido += `
+            <button class="btn btn-secondary w-100" onclick="document.getElementById('original-file-${a.id}').style.display='block'; this.style.display='none';">📄 Ver Albarán Original Completo</button>
+            <div id="original-file-${a.id}" style="display:none; margin-top: 16px; animation: fadeIn 0.3s ease;">
+                ${originalContent}
+            </div>`;
+        }
+    } 
+    // SI ES NORMAL Y CORRIENTE, MUESTRA EL ARCHIVO DIRECTAMENTE
+    else {
+        if (a.archivo && a.archivo.tablaHtml) {
+            contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
+        } else if (a.archivo && a.archivo.base64) {
+            contenido = `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
+        } else {
+            contenido = `<p style="padding:16px; text-align:center;">No hay archivo adjunto.</p>`;
+        }
     }
 
     const modalHtml = `
     <div id="modalVerArchivo" class="modal active">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
-                <h3 style="font-size:16px;">📄 ${a.archivo ? a.archivo.nombre : 'Detalle de Albarán'}</h3>
+                <h3 style="font-size:16px;">📄 ${a.id} - Detalles</h3>
                 <button class="modal-close" onclick="document.getElementById('modalVerArchivo').remove()">&times;</button>
             </div>
             <div class="modal-body" style="padding: 20px;">
@@ -1368,6 +1404,7 @@ function verArchivoAlbaran(id) {
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
+window.verArchivoAlbaran = verArchivoAlbaran;
 
 // ===== BUSCADOR EN TIEMPO REAL =====
 function abrirBuscador() {
@@ -1376,6 +1413,7 @@ function abrirBuscador() {
     document.getElementById('resultados-busqueda').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>';
     setTimeout(() => document.getElementById('buscarObra').focus(), 100);
 }
+window.abrirBuscador = abrirBuscador;
 
 function buscarEnTiempoReal() {
     const termino = document.getElementById('buscarObra').value.trim().toLowerCase();
@@ -1416,6 +1454,7 @@ function buscarEnTiempoReal() {
     }
     container.innerHTML = html;
 }
+window.buscarEnTiempoReal = buscarEnTiempoReal;
 
 // ===== EXPORTAR / IMPORTAR DATOS =====
 function exportarDatos() {
@@ -1428,6 +1467,7 @@ function exportarDatos() {
         mostrarToast('✅ Backup descargado con éxito');
     } catch(e) { mostrarToast('❌ Error exportando'); }
 }
+window.exportarDatos = exportarDatos;
 
 function abrirImportar() {
     const input = document.createElement('input'); 
@@ -1471,12 +1511,14 @@ function abrirImportar() {
     };
     input.click();
 }
+window.abrirImportar = abrirImportar;
 
 // ===== REPORTES PDF =====
 function abrirModalReportes(tipo) {
     reporteActual = tipo;
     document.getElementById('modalReportes').classList.add('active');
 }
+window.abrirModalReportes = abrirModalReportes;
 
 function iniciarGeneracionReporte() {
     cerrarTodosLosModales();
@@ -1648,6 +1690,7 @@ function iniciarGeneracionReporte() {
         mostrarToast('✅ PDF Generado con éxito');
     }, 100);
 }
+window.iniciarGeneracionReporte = iniciarGeneracionReporte;
 
 // ===== EVENT LISTENERS Y CERRADO DE MODALES =====
 function configurarEventListeners() {
@@ -1710,18 +1753,3 @@ function mostrarToast(mensaje) {
     container.appendChild(t);
     setTimeout(() => { if (t.parentNode) t.remove(); }, 4000);
 }
-
-window.exportarDatos = exportarDatos;
-window.abrirImportar = abrirImportar;
-window.confirmarRecepcion = confirmarRecepcion;
-window.eliminarAlbaran = eliminarAlbaran;
-window.verArchivoAlbaran = verArchivoAlbaran;
-window.eliminarMaterial = eliminarMaterial;
-window.eliminarBobina = eliminarBobina;
-window.toggleCamposMaterial = toggleCamposMaterial;
-window.agregarBobina = agregarBobina;
-window.crearDevolucion = crearDevolucion;
-window.eliminarDevolucion = eliminarDevolucion;
-window.buscarEnTiempoReal = buscarEnTiempoReal;
-window.iniciarGeneracionReporte = iniciarGeneracionReporte;
-window.abrirModalReportes = abrirModalReportes;
