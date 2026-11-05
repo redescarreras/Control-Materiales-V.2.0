@@ -62,7 +62,7 @@ const DICCIONARIO_CODIGOS = [
     { cod: "101049J", desc: "Cable de f.o. de exterior KP holgado de 128 fo.", tipo: "cable" },
     { cod: "101051J", desc: "Cable de f.o. de exterior riser de 16 fo.", tipo: "cable" },
     { cod: "101052J", desc: "Cable de f.o. de exterior riser de 32 fo.", tipo: "cable" },
-    { cod: "102001JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 64 fusiones  Tyco", tipo: "material" },
+    { cod: "102001JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 64 fusiones Tyco", tipo: "material" },
     { cod: "102002JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 128 fusiones Tyco", tipo: "material" },
     { cod: "102003JT", desc: "Caja de empalme TE FIST-GCO2-BD8, con bandejas de empalme 5SE para 128 (160) fusiones Tyco", tipo: "material" },
     { cod: "102003JM", desc: "Caja de empalme RA BPEO-2/128 3M", tipo: "material" },
@@ -85,14 +85,14 @@ const DICCIONARIO_CODIGOS = [
     { cod: "102026JT", desc: "Splitter 1:16 premontado en bandeja de empalme para caja UCAx o similar Tyco", tipo: "material" },
     { cod: "102028JT", desc: "Módulo de operador TE MOBI, o similar, marcado ORANGE Tyco", tipo: "material" },
     { cod: "102029JT", desc: "Módulo de cliente TE MOBI, o similar, con 16 adaptadores SC/APC y 16 pig-tails G.657A2 SC/APC \"low loss\" Tyco", tipo: "material" },
-    { cod: "102030JT", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\"  Tyco", tipo: "material" },
-    { cod: "102032JT", desc: "Suministro de 16 adaptadores SC/APC y 1 splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\"  Tyco", tipo: "material" },
-    { cod: "102034J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102035J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102036J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 150 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102037J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102038J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102039J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 150 m marcado ORANGE Corning", tipo: "material" },
+    { cod: "102030JT", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\" Tyco", tipo: "material" },
+    { cod: "102032JT", desc: "Suministro de 16 adaptadores SC/APC y 1 splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\" Tyco", tipo: "material" },
+    { cod: "102034J", desc: "Caja terminal multipuerto con 4 puertos Optitap® y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102035J", desc: "Caja terminal multipuerto con 4 puertos Optitap® y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102036J", desc: "Caja terminal multipuerto con 4 puertos Optitap® y rabillo de 150 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102037J", desc: "Caja terminal multipuerto con 8 puertos Optitap® y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102038J", desc: "Caja terminal multipuerto con 8 puertos Optitap® y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102039J", desc: "Caja terminal multipuerto con 8 puertos Optitap® y rabillo de 150 m marcado ORANGE Corning", tipo: "material" },
     { cod: "102040J", desc: "Caja de derivación óptica TE IFDB-M, o similar Tyco", tipo: "material" },
     { cod: "102045JT", desc: "Suministro de splitter 1:4 fuera de bandeja", tipo: "material" },
     { cod: "102047J", desc: "SPLITTER 1:16 FUERA DE BANDEJA (GENERICO)(SUSTITUYE A 102060J)", tipo: "material" },
@@ -275,9 +275,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tipoCableInstalacion').innerHTML = CABLE_OPTIONS_HTML;
     document.getElementById('tipoCableEntrada').innerHTML = CABLE_OPTIONS_HTML;
     document.getElementById('tipoCableMerma').innerHTML = CABLE_OPTIONS_HTML;
-    
-    const dl = document.getElementById('diccionarioCodigosExcel');
-    if (dl) dl.innerHTML = DICCIONARIO_CODIGOS.map(c => `<option value="${c.desc}">Código: ${c.cod}</option>`).join('');
 });
 
 function conectarConNube() {
@@ -372,10 +369,9 @@ function abrirModalNuevoAlbaranGenerador() {
     const tbody = document.getElementById('catalogoTablaCuerpo');
     tbody.innerHTML = '';
     
-    // Inyectar el catálogo completo en la tabla
     DICCIONARIO_CODIGOS.forEach((item, index) => {
         const tr = document.createElement('tr');
-        tr.className = 'catalogo-fila'; // Clase para identificar las filas de material
+        tr.className = 'catalogo-fila'; 
         tr.innerHTML = `
             <td style="color: var(--text-secondary); font-family: monospace;">
                 <input type="hidden" class="gen-cod" value="${item.cod}">
@@ -392,7 +388,6 @@ function abrirModalNuevoAlbaranGenerador() {
         tbody.appendChild(tr);
     });
     
-    // Botón para añadir material manual
     const trBoton = document.createElement('tr');
     trBoton.innerHTML = `
         <td colspan="3" style="text-align: center; padding: 16px;">
@@ -482,27 +477,22 @@ async function generarExcelYRegistrar(e) {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('ALBARAN');
 
-        // Configurar Ancho de Columnas igual a tu plantilla
         sheet.columns = [
-            { width: 25 }, // A
-            { width: 35 }, // B
-            { width: 20 }, // C
-            { width: 35 }, // D
-            { width: 12 }  // E
+            { width: 25 }, 
+            { width: 35 }, 
+            { width: 20 }, 
+            { width: 35 }, 
+            { width: 12 }  
         ];
 
         const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-        const borderOuter = { top: {style:'medium'}, left: {style:'medium'}, bottom: {style:'medium'}, right: {style:'medium'} };
         const fontTitle = { name: 'Arial', size: 14, bold: true, underline: true };
         const fontHeader = { name: 'Arial', size: 10, bold: true };
         const fontData = { name: 'Arial', size: 10 };
         const alignCenter = { vertical: 'middle', horizontal: 'center' };
         const alignLeft = { vertical: 'middle', horizontal: 'left' };
-        
-        // Color Gris para la cabecera de la tabla
         const fillGris = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB0B0B0' } };
 
-        // === INSERTAR LOGOS SEGÚN EMPRESA ===
         sheet.getRow(1).height = 40; 
         try {
             if (empresa === 'Elecnor') {
@@ -524,10 +514,9 @@ async function generarExcelYRegistrar(e) {
                 }
             }
         } catch (imgError) {
-            console.warn("No se pudieron cargar los logos locales. Se generará sin imágenes.");
+            console.warn("No se pudieron cargar los logos locales.");
         }
 
-        // Título Principal
         sheet.mergeCells('A4:D4');
         const titleCell = sheet.getCell('A4');
         titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA';
@@ -537,7 +526,6 @@ async function generarExcelYRegistrar(e) {
         sheet.getCell('E3').value = '134º'; sheet.getCell('E3').font = fontHeader; sheet.getCell('E3').alignment = alignCenter; sheet.getCell('E3').border = borderAll;
         sheet.getCell('E4').value = 'V15'; sheet.getCell('E4').font = {name:'Arial', size:10, bold:true, underline:true}; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderAll;
         
-        // Cabeceras de Obra
         const cabecerasInfo = [
             ['A5', 'ID OBRA', 'B5', idObra, 'C5', 'CR Y LATERAL:', 'D5', crLateral],
             ['A6', 'POBLACION', 'B6', poblacion, 'C6', 'FECHA:', 'D6', fechaExcel],
@@ -552,7 +540,6 @@ async function generarExcelYRegistrar(e) {
             let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontData; c4.alignment = alignCenter; c4.border = borderAll;
         });
 
-        // Títulos de la tabla (GRIS)
         sheet.getCell('A10').value = 'CODIGO'; sheet.getCell('A10').font = fontHeader; sheet.getCell('A10').alignment = alignLeft; sheet.getCell('A10').fill = fillGris; sheet.getCell('A10').border = borderAll;
         sheet.mergeCells('B10:D10'); 
         sheet.getCell('B10').value = 'DESCRIPCION'; sheet.getCell('B10').font = fontHeader; sheet.getCell('B10').alignment = alignLeft; sheet.getCell('B10').fill = fillGris; sheet.getCell('B10').border = borderAll;
@@ -818,7 +805,7 @@ function mostrarAlbaranes() {
         }
         
         if (a.estado === 'pendiente') {
-            actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar (Antiguo)</button>`;
+            actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar</button>`;
             actions += `<button class="btn btn-success" onclick="abrirModalRecepcion('${a.id}')">✅ Marcar Recibido</button>`;
         } else if (esFaltante) {
             actions += `<button class="btn btn-info w-100" onclick="resolicitarFaltante('${a.id}')">🔄 Re-solicitar Faltante</button>`;
@@ -1564,12 +1551,14 @@ function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
     if(!a) return mostrarToast('❌ El albarán no está disponible.');
     
+    // Obtenemos los materiales que están actualmente vinculados a este albaran EN EL LIMBO (Pendiente de recibir)
     const pendingCables = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
     const pendingSub = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
     const pendingMat = materialesGenerales.filter(m => m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion');
 
     let contenido = '';
     
+    // SI ES UN BACKORDER O UN FALTANTE: Mostramos la lista viva de lo que falta
     if (a.isBackorder || (a.materialFaltante && String(a.materialFaltante).trim() !== "")) {
         let htmlResumen = '<table class="table-preview" style="margin-bottom:0;"><tr><th style="background:rgba(255,149,0,0.1); color:var(--system-orange);">Tipo de Material / Artículo</th><th style="background:rgba(255,149,0,0.1); color:var(--system-orange);">Cantidad</th></tr>';
         
@@ -1592,6 +1581,7 @@ function verArchivoAlbaran(id) {
             </div>` : ''}
         </div>`;
 
+        // Si existe un archivo original (porque es Faltante y no Backorder), le damos el botón gris para verlo
         if (a.archivo && (a.archivo.tablaHtml || a.archivo.base64)) {
             let originalContent = a.archivo.tablaHtml ? `<div class="excel-preview">${a.archivo.tablaHtml}</div>` : `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
             contenido += `
@@ -1601,6 +1591,7 @@ function verArchivoAlbaran(id) {
             </div>`;
         }
     } 
+    // SI ES NORMAL Y CORRIENTE, MUESTRA EL ARCHIVO DIRECTAMENTE
     else {
         if (a.archivo && a.archivo.tablaHtml) {
             contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
@@ -1917,6 +1908,9 @@ window.iniciarGeneracionReporte = iniciarGeneracionReporte;
 function configurarEventListeners() {
     document.getElementById('btnBuscar').addEventListener('click', abrirBuscador);
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarTab(btn.dataset.tab)));
+    
+    // --> CONEXIÓN DEL FORMULARIO DE GENERACIÓN EXCEL <--
+    document.getElementById('formGenerarAlbaran').addEventListener('submit', generarExcelYRegistrar);
     
     document.getElementById('formEditarAlbaran').addEventListener('submit', guardarEdicionAlbaran);
     
