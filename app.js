@@ -19,57 +19,224 @@ let materialesGenerales = [];
 let reporteActual = '';
 let empresaActiva = 'Todas';
 
-const CABLE_OPTIONS_HTML = `
-    <option value="">Seleccionar...</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 8 fo.">Cable de f.o. de exterior PKP holgado de 8 fo.</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 16 fo.">Cable de f.o. de exterior PKP holgado de 16 fo.</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 24 fo.">Cable de f.o. de exterior PKP holgado de 24 fo.</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 32 fo.">Cable de f.o. de exterior PKP holgado de 32 fo.</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 48 fo.">Cable de f.o. de exterior PKP holgado de 48 fo.</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 64 fo.">Cable de f.o. de exterior PKP holgado de 64 fo.</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 128 fo.">Cable de f.o. de exterior PKP holgado de 128 fo.</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 256 fo.">Cable de f.o. de exterior PKP holgado de 256 fo.</option>
-    <option value="Cable de f.o. de exterior PKP holgado de 512 fo.">Cable de f.o. de exterior PKP holgado de 512 fo.</option>
-    <option value="Cable de f.o. de exterior KP holgado de 768 fo.">Cable de f.o. de exterior KP holgado de 768 fo.</option>
-    <option value="Cable de f.o. de exterior KP compacto de 864 fo.">Cable de f.o. de exterior KP compacto de 864 fo.</option>
-    <option value="Cable de f.o. de exterior KP compacto de 912 fo.">Cable de f.o. de exterior KP compacto de 912 fo.</option>
-    <option value="Cable de f.o. de interior KT de 8 fo.">Cable de f.o. de interior KT de 8 fo.</option>
-    <option value="Cable de f.o. de interior TKT de 16 fo.">Cable de f.o. de interior TKT de 16 fo.</option>
-    <option value="Cable de f.o. de interior TKT de 24 fo.">Cable de f.o. de interior TKT de 24 fo.</option>
-    <option value="Cable de f.o. de interior TKT de 32 fo.">Cable de f.o. de interior TKT de 32 fo.</option>
-    <option value="Cable de f.o. de interior TKT de 48 fo.">Cable de f.o. de interior TKT de 48 fo.</option>
-    <option value="Cable de f.o. de interior TKT de 64 fo.">Cable de f.o. de interior TKT de 64 fo.</option>
-    <option value="Cable de f.o. de interior TKT de 128 fo.">Cable de f.o. de interior TKT de 128 fo.</option>
-    <option value="Cable de f.o. de interior TKT de 256 fo.">Cable de f.o. de interior TKT de 256 fo.</option>
-    <option value="Cable de f.o. de interior KT de 512 fo.">Cable de f.o. de interior KT de 512 fo.</option>
-    <option value="Cable de f.o. 16 VT.">Cable de f.o. 16 VT.</option>
-    <option value="Cable de f.o. 32 VT.">Cable de f.o. 32 VT.</option>
-    <option value="Cable de f.o. 64 VT.">Cable de f.o. 64 VT.</option>
-    <option value="Cable KT 8 fo G.652.D monotubo BLANCO">Cable KT 8 fo G.652.D monotubo BLANCO</option>
-    <option value="Cable KP 16 fo G.652.D (4x4f+2e) BLANCO">Cable KP 16 fo G.652.D (4x4f+2e) BLANCO</option>
-    <option value="Cable FVT micromódulos 16 fo G.657 A2 (4x4f) BLANCO">Cable FVT micromódulos 16 fo G.657 A2 (4x4f) BLANCO</option>
-    <option value="Cable KP 32 fo G.652.D (8x4f) BLANCO">Cable KP 32 fo G.652.D (8x4f) BLANCO</option>
-    <option value="Cable FVT micromódulos 32 fo G.657 A2 (8x4f) BLANCO">Cable FVT micromódulos 32 fo G.657 A2 (8x4f) BLANCO</option>
-    <option value="Cable KP 64 fo G.652.D (8x8f) BLANCO">Cable KP 64 fo G.652.D (8x8f) BLANCO</option>
-    <option value="Cable FVT micromódulos 64 fo G.657 A2 (8x8f) BLANCO">Cable FVT micromódulos 64 fo G.657 A2 (8x8f) BLANCO</option>
-    <option value="Cable de f.o. de interior riser de 16 fo.">Cable de f.o. de interior riser de 16 fo.</option>
-    <option value="Cable de f.o. de interior riser de 24 fo.">Cable de f.o. de interior riser de 24 fo.</option>
-    <option value="Cable de f.o. de interior riser de 32 fo.">Cable de f.o. de interior riser de 32 fo.</option>
-    <option value="Cable de f.o. de interior riser de 48 fo.">Cable de f.o. de interior riser de 48 fo.</option>
-    <option value="Cable de f.o. de exterior KP holgado de 16 fo.">Cable de f.o. de exterior KP holgado de 16 fo.</option>
-    <option value="Cable de f.o. de exterior KP holgado de 32 fo.">Cable de f.o. de exterior KP holgado de 32 fo.</option>
-    <option value="Cable de f.o. de exterior KP holgado de 64 fo.">Cable de f.o. de exterior KP holgado de 64 fo.</option>
-    <option value="Cable de f.o. de exterior KP holgado de 128 fo.">Cable de f.o. de exterior KP holgado de 128 fo.</option>
-    <option value="Cable de f.o. de exterior riser de 16 fo.">Cable de f.o. de exterior riser de 16 fo.</option>
-    <option value="Cable de f.o. de exterior riser de 32 fo.">Cable de f.o. de exterior riser de 32 fo.</option>
-`;
+// CATÁLOGO COMPLETO EXTRAÍDO DIRECTAMENTE DEL EXCEL (196 ITEMS)
+const DICCIONARIO_CODIGOS = [
+    { cod: "101001J", desc: "Cable de f.o. de exterior PKP holgado de 8 fo.", tipo: "cable" },
+    { cod: "101003J", desc: "Cable de f.o. de exterior PKP holgado de 16 fo.", tipo: "cable" },
+    { cod: "101004J", desc: "Cable de f.o. de exterior PKP holgado de 24 fo.", tipo: "cable" },
+    { cod: "101005J", desc: "Cable de f.o. de exterior PKP holgado de 32 fo.", tipo: "cable" },
+    { cod: "101006J", desc: "Cable de f.o. de exterior PKP holgado de 48 fo.", tipo: "cable" },
+    { cod: "101007J", desc: "Cable de f.o. de exterior PKP holgado de 64 fo.", tipo: "cable" },
+    { cod: "101008J", desc: "Cable de f.o. de exterior PKP holgado de 128 fo.", tipo: "cable" },
+    { cod: "101009J", desc: "Cable de f.o. de exterior PKP holgado de 256 fo.", tipo: "cable" },
+    { cod: "101010J", desc: "Cable de f.o. de exterior PKP holgado de 512 fo.", tipo: "cable" },
+    { cod: "101011J", desc: "Cable de f.o. de exterior KP holgado de 768 fo.", tipo: "cable" },
+    { cod: "101012J", desc: "Cable de f.o. de exterior KP compacto de 864 fo.", tipo: "cable" },
+    { cod: "101013J", desc: "Cable de f.o. de exterior KP compacto de 912 fo.", tipo: "cable" },
+    { cod: "101014J", desc: "Cable de f.o. de interior KT de 8 fo.", tipo: "cable" },
+    { cod: "101016J", desc: "Cable de f.o. de interior TKT de 16 fo.", tipo: "cable" },
+    { cod: "101017J", desc: "Cable de f.o. de interior TKT de 24 fo.", tipo: "cable" },
+    { cod: "101018J", desc: "Cable de f.o. de interior TKT de 32 fo.", tipo: "cable" },
+    { cod: "101019J", desc: "Cable de f.o. de interior TKT de 48 fo.", tipo: "cable" },
+    { cod: "101020J", desc: "Cable de f.o. de interior TKT de 64 fo.", tipo: "cable" },
+    { cod: "101021J", desc: "Cable de f.o. de interior TKT de 128 fo.", tipo: "cable" },
+    { cod: "101022J", desc: "Cable de f.o. de interior TKT de 256 fo.", tipo: "cable" },
+    { cod: "101023J", desc: "Cable de f.o. de interior KT de 512 fo.", tipo: "cable" },
+    { cod: "101074J", desc: "Cable de f.o. 16 VT.", tipo: "cable" },
+    { cod: "101075J", desc: "Cable de f.o. 32 VT.", tipo: "cable" },
+    { cod: "101076J", desc: "Cable de f.o. 64 VT.", tipo: "cable" },
+    { cod: "101085J", desc: "Cable KT 8 fo G.652.D monotubo BLANCO", tipo: "cable" },
+    { cod: "101082J", desc: "Cable KP 16 fo G.652.D (4x4f+2e) BLANCO", tipo: "cable" },
+    { cod: "101086J", desc: "Cable FVT micromódulos 16 fo G.657 A2 (4x4f) BLANCO", tipo: "cable" },
+    { cod: "101083J", desc: "Cable KP 32 fo G.652.D (8x4f) BLANCO", tipo: "cable" },
+    { cod: "101087J", desc: "Cable FVT micromódulos 32 fo G.657 A2 (8x4f) BLANCO", tipo: "cable" },
+    { cod: "101084J", desc: "Cable KP 64 fo G.652.D (8x8f) BLANCO", tipo: "cable" },
+    { cod: "101088J", desc: "Cable FVT micromódulos 64 fo G.657 A2 (8x8f) BLANCO", tipo: "cable" },
+    { cod: "101024J", desc: "Cable de f.o. de interior riser de 16 fo.", tipo: "cable" },
+    { cod: "101025J", desc: "Cable de f.o. de interior riser de 24 fo.", tipo: "cable" },
+    { cod: "101026J", desc: "Cable de f.o. de interior riser de 32 fo.", tipo: "cable" },
+    { cod: "101027J", desc: "Cable de f.o. de interior riser de 48 fo.", tipo: "cable" },
+    { cod: "101046J", desc: "Cable de f.o. de exterior KP holgado de 16 fo.", tipo: "cable" },
+    { cod: "101047J", desc: "Cable de f.o. de exterior KP holgado de 32 fo.", tipo: "cable" },
+    { cod: "101048J", desc: "Cable de f.o. de exterior KP holgado de 64 fo.", tipo: "cable" },
+    { cod: "101049J", desc: "Cable de f.o. de exterior KP holgado de 128 fo.", tipo: "cable" },
+    { cod: "101051J", desc: "Cable de f.o. de exterior riser de 16 fo.", tipo: "cable" },
+    { cod: "101052J", desc: "Cable de f.o. de exterior riser de 32 fo.", tipo: "cable" },
+    { cod: "102001JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 64 fusiones  Tyco", tipo: "material" },
+    { cod: "102002JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 128 fusiones Tyco", tipo: "material" },
+    { cod: "102003JT", desc: "Caja de empalme TE FIST-GCO2-BD8, con bandejas de empalme 5SE para 128 (160) fusiones Tyco", tipo: "material" },
+    { cod: "102003JM", desc: "Caja de empalme RA BPEO-2/128 3M", tipo: "material" },
+    { cod: "102004JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 256 fusiones Tyco", tipo: "material" },
+    { cod: "102005JT", desc: "Caja de empalme TE FIST-GCO2-BD8, con bandejas de empalme 5SE para 256 (320) fusiones Tyco", tipo: "material" },
+    { cod: "102005JM", desc: "Caja de empalme RA BPEO-2/256 3M", tipo: "material" },
+    { cod: "102006JT", desc: "Caja de empalme TE FIST-GCO2-BD8, o similar, con bandejas de empalme 5SE para 512 fusiones Tyco", tipo: "material" },
+    { cod: "102007JT", desc: "Caja de empalme TE FIST-GCO2-BE8, con bandejas de empalme 5SE para 512 (560) fusiones Tyco", tipo: "material" },
+    { cod: "102007JM", desc: "Caja de empalme RA BPEO-2/512 3M", tipo: "material" },
+    { cod: "102011JT", desc: "Kit de sellado termorretráctil para puerto circular en caja de empalme tipo FIST o similar Tyco", tipo: "material" },
+    { cod: "102011JM", desc: "Kit de Sellado Circular 3M hasta 18 mm", tipo: "material" },
+    { cod: "102012JT", desc: "Kit de sellado termorretráctil para puerto oval en caja de empalme tipo FIST o similar Tyco", tipo: "material" },
+    { cod: "102012JM", desc: "Kit de sellado puerto oval 3M 27 mm", tipo: "material" },
+    { cod: "102013JT", desc: "Splitter 1:4 FSASA2 premontado en bloque de 4UMS con 2 bandejas SC con las fibras preinstaladas para caja FIST Tyco", tipo: "material" },
+    { cod: "102018JC", desc: "Caja de empalme Corning UCAO MFT7, con bandejas de empalme para hasta 168 fusiones.", tipo: "material" },
+    { cod: "102018JT", desc: "Caja de empalme FOSC350C. Con bandejas de empalme para capacidad de hasta 168 fusiones. Incluye etiquetas de Orange.", tipo: "material" },
+    { cod: "102022JT", desc: "Caja terminal Corning UCA8, o similar, con 1 splitter 1:16 y 8 puertos de salida conectorizados y premontados marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102023JT", desc: "Caja terminal Corning UCA16, o similar, con 1 splitter 1:16 y 16 puertos de salida conectorizados y premontados marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102026JC", desc: "Splitter 1:16 premontado en bandeja de empalme para caja UCAx o similar Corning", tipo: "material" },
+    { cod: "102026JT", desc: "Splitter 1:16 premontado en bandeja de empalme para caja UCAx o similar Tyco", tipo: "material" },
+    { cod: "102028JT", desc: "Módulo de operador TE MOBI, o similar, marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102029JT", desc: "Módulo de cliente TE MOBI, o similar, con 16 adaptadores SC/APC y 16 pig-tails G.657A2 SC/APC \"low loss\" Tyco", tipo: "material" },
+    { cod: "102030JT", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\"  Tyco", tipo: "material" },
+    { cod: "102032JT", desc: "Suministro de 16 adaptadores SC/APC y 1 splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\"  Tyco", tipo: "material" },
+    { cod: "102034J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102035J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102036J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 150 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102037J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102038J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102039J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 150 m marcado ORANGE Corning", tipo: "material" },
+    { cod: "102040J", desc: "Caja de derivación óptica TE IFDB-M, o similar Tyco", tipo: "material" },
+    { cod: "102045JT", desc: "Suministro de splitter 1:4 fuera de bandeja", tipo: "material" },
+    { cod: "102047J", desc: "SPLITTER 1:16 FUERA DE BANDEJA (GENERICO)(SUSTITUYE A 102060J)", tipo: "material" },
+    { cod: "102050JT", desc: "Caja de empalme DiviCAU o similar marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102053JE", desc: "CAJA DE EMPALME CAU HASTA 128 FUSIONES ORANGE", tipo: "material" },
+    { cod: "102057J", desc: "EMBELLECEDOR PARA CAJA DE DERIVACION", tipo: "material" },
+    { cod: "102058J", desc: "RETENEDOR PARA ACOMETIDA DIRECTA EN CTO MULTIOPRERADOR DE INTERIOR", tipo: "material" },
+    { cod: "102060J", desc: "(BANDEJA CON SPLITTER PARA CAJA FOSC) FOSC-TRAY-SPLT-116-1-ES07", tipo: "material" },
+    { cod: "102061J", desc: "CAJA MB2 FUNCIONALIDAD \"OPERADOR+CLIENTE\" MARCADO ORANGE", tipo: "material" },
+    { cod: "102062J", desc: "CAJA MB2 FUNCIONALIDAD \"OPERADOR\"MARCADO ORANGE", tipo: "material" },
+    { cod: "102067J", desc: "KIT DE SELLADO DE GEL PARA 4 CABLES DE HASTA 7MM", tipo: "cable" },
+    { cod: "102068J", desc: "KIT DE SELLADO DE GEL PARA 1 CABLE DE HASTA 20MM", tipo: "cable" },
+    { cod: "102069J", desc: "CAJA TERMINAL OTE16 O SIMILAR IP65C(SUSTITUYE A 102023J UCA16)", tipo: "material" },
+    { cod: "102073J", desc: "SUMINISTRO DE 4 ADAPTADORES SC/APC Y 1 SPLITTER 2X1X4", tipo: "material" },
+    { cod: "102075J", desc: "CAJA DE DERIVACION ESTANCA TIPO TBE-I4 O SIMILAR", tipo: "material" },
+    { cod: "102076J", desc: "Kit de extensión FIST de BC a BD", tipo: "material" },
+    { cod: "102077J", desc: "KIT DE EXTENSION FIST DE BD A BE", tipo: "material" },
+    { cod: "102084J", desc: "Bandeja de FO 19 ETSI F200", tipo: "material" },
+    { cod: "102085J", desc: "CTO mini Interior módulo de operador", tipo: "material" },
+    { cod: "102086J", desc: "CTO mini Interior módulo de edificio", tipo: "material" },
+    { cod: "102087J", desc: "RETENEDOR PARA ACOMETIDA DIRECTA EN MINI CTO MULTI", tipo: "material" },
+    { cod: "102089J", desc: "Caja terminal MiniCTO16 FastConnect con 16 puertos de salida", tipo: "material" },
+    { cod: "102091J", desc: "Caja Terminal miniOTE2-8 con 1 splitter 1:16 y 8 puertos de salida conectorizados Optitap  CTO MINI", tipo: "material" },
+    { cod: "102092J", desc: "SUMINISTRO DE CAJA TERMINAL OTE8 O SIMILAR IP65C", tipo: "material" },
+    { cod: "102093J", desc: "Caja de empalme BPEO-1,5 hasta 128 fusiones, con marcado Orange", tipo: "material" },
+    { cod: "102096J", desc: "Suministro de Kit de sellado de Gel para 2 cables Ø8-12 mm (para uso en FOSC350C Tyco)", tipo: "cable" },
+    { cod: "102113J", desc: "SPLITTER 1X4 PLC EN PUNTA", tipo: "material" },
+    { cod: "102114J", desc: "Armario Intemperie CTO 48 NO DV", tipo: "material" },
+    { cod: "102115J", desc: "Armario Intemperie CTO 48 1DV16", tipo: "material" },
+    { cod: "102117J", desc: "SPLITTER 1X4 PLC PRECONECTADO", tipo: "material" },
+    { cod: "102118J", desc: "Band.F.O.19/ETSI F200 (Spli 1:4) (COLEGIOS)", tipo: "material" },
+    { cod: "102119J", desc: "Suministro de caja de empalme TENIO B6 64 fusiones", tipo: "material" },
+    { cod: "102120J", desc: "Suministro de caja de empalme TENIO C6 128 fusiones", tipo: "material" },
+    { cod: "102122J", desc: "Bandeja de F.O 19\"/ETSI F200 (Splitter 1:16)", tipo: "material" },
+    { cod: "102124J", desc: "Kit Sellado salida cable para TENIO-SKG2-13/16mm CTE-16P000", tipo: "cable" },
+    { cod: "102141J", desc: "Bandeja de 32 F.O 19' equipado con 2 Splitter 1:16", tipo: "material" },
+    { cod: "206001J", desc: "MMELCTE-16P000 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE SIN SPLITTER", tipo: "material" },
+    { cod: "206002J", desc: "MMHUCTE-16P000 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE SIN SPLITTER", tipo: "material" },
+    { cod: "206003J", desc: "MMELCTE-16P108 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE EQUIPADA CON SPLITTER 1:8", tipo: "material" },
+    { cod: "206004J", desc: "MMHUCTE-16P108 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE EQUIPADA CON SPLITTER 1:8", tipo: "material" },
+    { cod: "206005J", desc: "MMHUCTE-SAT000 - MINI CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE SIN SPLITTER", tipo: "material" },
+    { cod: "206006J", desc: "MMHUCTA-08P108 - CTO DE EXTERIOR IP68 FASTCONECT SSC2801-TM 8 ports with splitter 1:8", tipo: "material" },
+    { cod: "206007J", desc: "MMELCTA-16P000 - CTO DE EXTERIOR IP68 FASTCONECT 16 PUERTOS IP68 SIN SPLITTER (con doble carcasa para Splitter Cassete)", tipo: "material" },
+    { cod: "206008J", desc: "MMELCTA-16P108 - CTO DE EXTERIOR IP68 FASTCONECT 16 PUERTOS IP68 CON SPLITTER 1:8 (con doble carcasa para Splitter Cassete)", tipo: "material" },
+    { cod: "206009J", desc: "MMELSPL-SPP104 - DIVISOR PLC SPLITTER PLC 1:4 (G657A2)", tipo: "material" },
+    { cod: "206010J", desc: "MMHUSPL-SPP104 - DIVISOR PLC SPLITTER PLC 1:4 (G657A2)", tipo: "material" },
+    { cod: "206011J", desc: "MMELSPL-SPP108 - DIVISOR PLC SPLITTER PLC 1:8 (G657A2)", tipo: "material" },
+    { cod: "206012J", desc: "MMHUSPL-SPP108 - DIVISOR PLC SPLITTER PLC 1:8 (G657A2)", tipo: "material" },
+    { cod: "206013J", desc: "MMELCTI-SPC108 - SPLITTER 1:8 CASSETTE PARA CTO y adaptadores SC/APC", tipo: "material" },
+    { cod: "206014J", desc: "MMHUCTI-SPC108 - SPLITTER 1:8 CASSETTE PARA CTO y adaptadores SC/APC", tipo: "material" },
+    { cod: "206015J", desc: "MMELCTI-SPR104 - SPLITTER PRECONECTORIZADO 1:4 PLC 900 micras", tipo: "material" },
+    { cod: "206016J", desc: "MMHUCTI-SPR104 - SPLITTER PRECONECTORIZADO 1:4 PLC 900 micras", tipo: "material" },
+    { cod: "206017J", desc: "MMELCTI-SPR108 - SPLITTER PRECONECTORIZADO  1:8 PLC 900 micras", tipo: "material" },
+    { cod: "206018J", desc: "MMHUCTI-SPR108 - SPLITTER PRECONECTORIZADO  1:8 PLC 900 micras", tipo: "material" },
+    { cod: "206019J", desc: "MMELCTI-SPR116 - SPLITTER PRECONECTORIZADO  1:16 PLC 900 micras", tipo: "material" },
+    { cod: "206020J", desc: "MMHUCTI-SPR116 - SPLITTER PRECONECTORIZADO  1:16 PLC 900 micras", tipo: "material" },
+    { cod: "D15060170016", desc: "ANCLA TIPO A PARA PASOS AEREOS", tipo: "material" },
+    { cod: "D08140040015", desc: "ANILLA TIPO 1 PARA GRAPA (BOLSA DE 100 UNIDADES) (CAJA DE 1000 UNIDADES)", tipo: "material" },
+    { cod: "D15120060001", desc: "ARANDELA CUADRADA", tipo: "material" },
+    { cod: "D15160010022", desc: "BRIDA 300X4,8(BOLSA DE 100 UNIDADES)", tipo: "material" },
+    { cod: "D15160010023", desc: "BRIDA 370X7,6(BOLSA DE 100 UNIDADES)", tipo: "material" },
+    { cod: "D15160010025", desc: "BRIDA/CINTILLO REUTILIZABLE KIT(INCLUYE 75 CABEZAS)", tipo: "material" },
+    { cod: "D15160010025", desc: "CABEZA PARA BRIDA/CINTILLO REUTILIZABLE(SOLO CABEZA, BOLSA DE 75 UNIDADES)", tipo: "material" },
+    { cod: "D06020040001", desc: "CABLE DE ACERO 1,6(CON CUBIERTA PLASTIFICADA)", tipo: "cable" },
+    { cod: "D15120060001", desc: "CHUPETA M16(TUERCA CANCAMO)", tipo: "material" },
+    { cod: "D02180260004", desc: "CINTA AISLANTE NARANJA", tipo: "material" },
+    { cod: "D02180260019", desc: "CINTA AISLANTE NEGRA", tipo: "material" },
+    { cod: "D15020160005", desc: "CINTA PERFORADA PARA TUBO DE SALIDA(SOLO PARA AVERIAS)", tipo: "subconducto" },
+    { cod: "D08140430234", desc: "CONJUNTO RETENCION ANCLAJE KP ᴓ 11 MM AMARILLO 500316", tipo: "material" },
+    { cod: "D08140430238", desc: "CONJUNTO RETENCION SUSPENSION KP ᴓ 11 MM AMARILLO 500317", tipo: "material" },
+    { cod: "D08140430235", desc: "CONJUNTO RETENCION ANCLAJE KP ᴓ 12 MM ROJO 500318", tipo: "material" },
+    { cod: "D08140430240", desc: "CONJUNTO RETENCION SUSPENSION KP ᴓ 12 MM ROJO 500319", tipo: "material" },
+    { cod: "D08140430233", desc: "CONJUNTO RETENCION ANCLAJE F.O. MULTIUSOS MARRON 500321", tipo: "material" },
+    { cod: "D08140430239", desc: "CONJUNTO RETENCION SUSPENSION F.O. MULTIUSOS MARRON 500330", tipo: "material" },
+    { cod: "D08140430361", desc: "CONJUNTO RETENCION ANCLAJE F.O. ᴓ 18 MM ROJO 500283", tipo: "material" },
+    { cod: "D08140430362", desc: "CONJUNTO RETENCION SUSPENSION F.O. ᴓ 18 MM ROJO 500291", tipo: "material" },
+    { cod: "D15020020012", desc: "CUERDA NEGRA (200 METROS POR ROLLO)", tipo: "material" },
+    { cod: "D15020020012", desc: "CUERDA NEGRA (1300 METROS POR ROLLO)", tipo: "material" },
+    { cod: "D19040050017", desc: "DIGITO 0-9 Y GUION 20MM", tipo: "material" },
+    { cod: "D19040050014", desc: "DIGITO \"E\" DE ORANGE", tipo: "material" },
+    { cod: "U61060110003", desc: "ESCUADRA ANCLAJE PARA RETENCION CABLES DE ACOMETIDA", tipo: "cable" },
+    { cod: "D19040050014", desc: "ETIQUETAS ORANGE 3M(JUEGO DE 100 CON 200 BRIDAS)", tipo: "material" },
+    { cod: "D08140410009", desc: "GANCHO ACERO P.AISLADOR - RETENEDOR", tipo: "material" },
+    { cod: "D08140120023", desc: "GRAPA DE PARED 00 (BOLSA DE 100 UNIDADES) (CAJA DE 1200 UNIDADES)", tipo: "material" },
+    { cod: "D08140120020", desc: "GRAPA DE PARED 0 DE 12MM (BOLSA DE 100 UNIDADES) (CAJA DE 1200 UNIDADES)", tipo: "material" },
+    { cod: "D08140120021", desc: "GRAPA DE PARED 1 DE 16MM (BOLSA DE 100 UNIDADES) (CAJA DE 1200 UNIDADES)", tipo: "material" },
+    { cod: "D08140320011", desc: "GUARDACABO Nº9", tipo: "material" },
+    { cod: "D19040090004", desc: "HILO DE COSER", tipo: "material" },
+    { cod: "D09260020001", desc: "MARCO CON PUERTA348X356 (PARA REGISTROS)", tipo: "material" },
+    { cod: "D04060060001", desc: "MONOTUBO 25 X 2 NEGRO", tipo: "subconducto" },
+    { cod: "D04060060002", desc: "MONOTUBO 32 X 2,4 NEGRO", tipo: "subconducto" },
+    { cod: "D04060060009", desc: "MONOTUBO 40 X 2,4 NEGRO", tipo: "subconducto" },
+    { cod: "D04100030005", desc: "OBTURADOR  INFLABLE DE 25 (OKT25)", tipo: "material" },
+    { cod: "D04100030002", desc: "OBTURADOR INFLABLE DE 32 (OKT32)", tipo: "material" },
+    { cod: "D04100030001", desc: "OBTURADOR INFLABLE DE 40 (OKT40)", tipo: "material" },
+    { cod: "D04100030003", desc: "OBTURADOR INFLABLE DE 63 (OKT63)", tipo: "material" },
+    { cod: "D04100030004", desc: "OBTURADOR INFLABLE DE 110 (OKT110)", tipo: "material" },
+    { cod: "D15120120072", desc: "PASANTE ESPARRAGO ROSCADO M16 (2 TUERCAS + 2 ARANDELAS)", tipo: "material" },
+    { cod: "D08140240129", desc: "PREFORMADO DE AMARRE 1,6MM", tipo: "material" },
+    { cod: "D08140430363", desc: "RETENEDOR F.O. ACOMETIDAS CON GANCHO", tipo: "material" },
+    { cod: "D15060170014", desc: "TACO 10X25 PARA TORNILLO 6MM (BOLSA 50UNI)", tipo: "material" },
+    { cod: "D15060170015", desc: "TACO M10 CON ARGOLLA", tipo: "material" },
+    { cod: "D09300040026", desc: "TAPA FUNDICIÓN JC", tipo: "material" },
+    { cod: "D09300040027", desc: "TAPA FUNDICIÓN HSK", tipo: "material" },
+    { cod: "D09300040024", desc: "TAPA ORANGE FUNDICION JM(2 HOJAS)", tipo: "material" },
+    { cod: "D09300040025", desc: "TAPA ORANGE FUNDICION JG(4 HOJAS)", tipo: "material" },
+    { cod: "D07080080147", desc: "TAPON CUATRIPOLAR METAL 32MM(4-32)", tipo: "material" },
+    { cod: "D07080080142", desc: "TAPON LEVA PARA 25MM", tipo: "material" },
+    { cod: "D07080080143", desc: "TAPON LEVA PARA 32MM", tipo: "material" },
+    { cod: "D07080080144", desc: "TAPON LEVA PARA 40MM", tipo: "material" },
+    { cod: "D07080080145", desc: "TAPON TRIPOLAR METAL 32MM(3-32)", tipo: "material" },
+    { cod: "D07080080146", desc: "TAPON TRIPOLAR METAL 40MM(3-40)", tipo: "material" },
+    { cod: "D15060170015", desc: "TORNILLO EXPANSION M10 CON TACO", tipo: "material" },
+    { cod: "D15120120039", desc: "TORNILLO ROSCA MADERA 6*30(CAJA 100UNI)", tipo: "material" },
+    { cod: "D15120120100", desc: "TORNILLO ROSCA MADERA 6*60(CAJA 100UNI)", tipo: "material" },
+    { cod: "D07060030039", desc: "TUBO CORRUGADO VERDE 63 mm", tipo: "subconducto" },
+    { cod: "D07060030040", desc: "TUBO CORRUGADO VERDE 110 mm", tipo: "subconducto" },
+    { cod: "D04060170013", desc: "TUBO FO 45MM PARA FUSIONES(PROTECTOR EMPALME)(BOLSA DE 100 UNIDADES)", tipo: "subconducto" },
+    { cod: "D08160050005", desc: "TUBO PG16 de ACEROFLEX", tipo: "subconducto" },
+    { cod: "D08160050006", desc: "TUBO PG21 de ACEROFLEX", tipo: "subconducto" },
+    { cod: "D08160050007", desc: "TUBO PG16 de SIN ACERO", tipo: "subconducto" },
+    { cod: "D08160050008", desc: "TUBO PG21 de SIN ACERO", tipo: "subconducto" },
+    { cod: "D07060040024", desc: "TUBO PLASTICO 40MM PARA SALIDA LATERAL(KIT CON PIE Y CONO)", tipo: "subconducto" },
+    { cod: "D15180010001", desc: "ABRAZADERA PARA TUBO DE SALIDA LATERAL", tipo: "subconducto" }
+];
 
-const SUBCONDUCTO_OPTIONS_HTML = `
-    <option value="">Seleccionar...</option>
-    <option value="Subconducto 32mm">Subconducto 32mm</option>
-    <option value="Subconducto 40mm">Subconducto 40mm</option>
-    <option value="Subconducto 63mm">Subconducto 63mm</option>
-`;
+const CABLE_OPTIONS_HTML = DICCIONARIO_CODIGOS.filter(c => c.tipo === 'cable').map(c => `<option value="${c.desc}">${c.desc}</option>`).join('');
+const SUBCONDUCTO_OPTIONS_HTML = DICCIONARIO_CODIGOS.filter(c => c.tipo === 'subconducto').map(c => `<option value="${c.desc}">${c.desc}</option>`).join('');
+
+// Funciones Auxiliares para cargar Imágenes Base64
+async function urlToBase64(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const blob = await response.blob();
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    } catch (e) {
+        return null;
+    }
+}
 
 function parsearDatosNube(data) {
     if (!data) return [];
@@ -108,6 +275,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tipoCableInstalacion').innerHTML = CABLE_OPTIONS_HTML;
     document.getElementById('tipoCableEntrada').innerHTML = CABLE_OPTIONS_HTML;
     document.getElementById('tipoCableMerma').innerHTML = CABLE_OPTIONS_HTML;
+    
+    const dl = document.getElementById('diccionarioCodigosExcel');
+    if (dl) dl.innerHTML = DICCIONARIO_CODIGOS.map(c => `<option value="${c.desc}">Código: ${c.cod}</option>`).join('');
 });
 
 function conectarConNube() {
@@ -194,140 +364,307 @@ function irAElemento(tab, id) {
     }, 150);
 }
 
-// ===== GESTIÓN DE ALBARANES Y ESPERADOS =====
-function abrirModalNuevoAlbaran() {
-    document.getElementById('albaranCablesContainer').innerHTML = ''; 
-    document.getElementById('albaranSubconductosContainer').innerHTML = ''; 
-    document.getElementById('modalNuevoAlbaran').classList.add('active');
-}
-window.abrirModalNuevoAlbaran = abrirModalNuevoAlbaran;
+// ============================================================================
+// ===== NUEVO SISTEMA: GENERADOR DE PLANTILLA EXCELJS EN VIVO ================
+// ============================================================================
 
-function agregarCableAlbaran() {
-    const container = document.getElementById('albaranCablesContainer');
-    const index = container.children.length + 1;
-    const html = `
-        <div class="bobina-item" data-cable-albaran="${index}" style="padding: 12px; margin-bottom: 8px;">
-            <div class="bobina-header" style="margin-bottom: 8px; padding-bottom: 8px;">
-                <div class="bobina-title" style="font-size: 14px; color: var(--system-blue);">Cable Esperado ${index}</div>
-                <button type="button" class="btn-eliminar-bobina" onclick="this.closest('.bobina-item').remove()">X</button>
-            </div>
-            <div class="form-group" style="margin-bottom: 8px;">
-                <label style="font-size: 12px;">Tipo Cable</label>
-                <select name="albaranTipoCable_${index}" style="padding: 10px;">${CABLE_OPTIONS_HTML}</select>
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 12px;">Metros Esperados</label>
-                <input type="number" step="0.1" name="albaranMetrosCable_${index}" style="padding: 10px;">
-            </div>
-        </div>
+function abrirModalNuevoAlbaranGenerador() {
+    const tbody = document.getElementById('catalogoTablaCuerpo');
+    tbody.innerHTML = '';
+    
+    // Inyectar el catálogo completo en la tabla
+    DICCIONARIO_CODIGOS.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'catalogo-fila'; // Clase para identificar las filas de material
+        tr.innerHTML = `
+            <td style="color: var(--text-secondary); font-family: monospace;">
+                <input type="hidden" class="gen-cod" value="${item.cod}">
+                ${item.cod}
+            </td>
+            <td style="font-weight: 500;">
+                <input type="hidden" class="gen-desc" value="${item.desc}">
+                ${item.desc}
+            </td>
+            <td style="text-align: center;">
+                <input type="number" class="catalogo-input gen-qty" min="0" step="0.1" placeholder="0">
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    // Botón para añadir material manual
+    const trBoton = document.createElement('tr');
+    trBoton.innerHTML = `
+        <td colspan="3" style="text-align: center; padding: 16px;">
+            <button type="button" class="btn btn-info" onclick="agregarLineaManualGenerador()">➕ Añadir Material Manual (Fuera de Catálogo)</button>
+        </td>
     `;
-    container.insertAdjacentHTML('beforeend', html);
-}
-window.agregarCableAlbaran = agregarCableAlbaran;
+    tbody.appendChild(trBoton);
 
-function agregarSubconductoAlbaran() {
-    const container = document.getElementById('albaranSubconductosContainer');
-    const index = container.children.length + 1;
-    const html = `
-        <div class="bobina-item" data-sub-albaran="${index}" style="padding: 12px; margin-bottom: 8px; border-color: var(--system-orange);">
-            <div class="bobina-header" style="margin-bottom: 8px; padding-bottom: 8px;">
-                <div class="bobina-title" style="font-size: 14px; color: var(--system-orange);">Subconducto Esperado ${index}</div>
-                <button type="button" class="btn-eliminar-bobina" style="background:var(--system-orange);" onclick="this.closest('.bobina-item').remove()">X</button>
-            </div>
-            <div class="form-group" style="margin-bottom: 8px;">
-                <label style="font-size: 12px;">Tipo Subconducto</label>
-                <select name="albaranTipoSub_${index}" style="padding: 10px;">${SUBCONDUCTO_OPTIONS_HTML}</select>
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 12px;">Metros Esperados</label>
-                <input type="number" step="0.1" name="albaranMetrosSub_${index}" style="padding: 10px;">
-            </div>
-        </div>
+    document.getElementById('modalGenerarAlbaran').classList.add('active');
+    
+    const inputFecha = document.getElementById('genFecha');
+    if(!inputFecha.value) inputFecha.value = new Date().toISOString().split('T')[0];
+}
+window.abrirModalNuevoAlbaranGenerador = abrirModalNuevoAlbaranGenerador;
+
+function agregarLineaManualGenerador() {
+    const tbody = document.getElementById('catalogoTablaCuerpo');
+    const trBoton = tbody.lastElementChild; 
+    
+    const trManual = document.createElement('tr');
+    trManual.className = 'catalogo-fila'; 
+    trManual.innerHTML = `
+        <td style="padding: 8px;">
+            <input type="text" class="gen-cod" placeholder="CÓDIGO" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </td>
+        <td style="padding: 8px;">
+            <input type="text" class="gen-desc" placeholder="Descripción del material..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+        </td>
+        <td style="text-align: center; padding: 8px;">
+            <input type="number" class="catalogo-input gen-qty" min="0.1" step="0.1" placeholder="0" required>
+        </td>
     `;
-    container.insertAdjacentHTML('beforeend', html);
+    
+    tbody.insertBefore(trManual, trBoton);
 }
-window.agregarSubconductoAlbaran = agregarSubconductoAlbaran;
+window.agregarLineaManualGenerador = agregarLineaManualGenerador;
 
-function abrirModalEditarAlbaran(id) {
-    const albaran = albaranes.find(a => a.id === id);
-    if(!albaran) return;
+async function generarExcelYRegistrar(e) {
+    e.preventDefault();
+    mostrarToast('⏳ Generando Excel y guardando Albarán...');
+    
+    const empresa = document.getElementById('genEmpresa').value;
+    const contrata = document.getElementById('genContrata').value.toUpperCase();
+    const idObra = document.getElementById('genIdObra').value.toUpperCase();
+    const crLateral = document.getElementById('genCR').value.toUpperCase();
+    const poblacion = document.getElementById('genPoblacion').value.toUpperCase();
+    
+    const rawFecha = document.getElementById('genFecha').value;
+    const partesFecha = rawFecha.split('-');
+    const fechaExcel = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`;
 
-    document.getElementById('editIdAlbaran').value = albaran.id;
-    document.getElementById('editEmpresa').value = albaran.empresa || 'Elecnor';
-    document.getElementById('editIdObra').value = albaran.idObra;
-    document.getElementById('editFecha').value = albaran.fecha;
-    document.getElementById('editCuentaCargo').value = albaran.cuentaCargo || '';
-    document.getElementById('editTipoInstalacion').value = albaran.tipoInstalacion || '';
-    document.getElementById('editJefeObra').value = albaran.jefeObra || '';
-    document.getElementById('editObservaciones').value = albaran.observaciones || '';
+    const encargado = document.getElementById('genEncargado').value.toUpperCase();
+    const nAlbaran = document.getElementById('genNAlbaran').value;
+    const cuentaCargo = document.getElementById('genCuentaCargo').value;
+    const tipoInstalacion = document.getElementById('genTipoInstalacion').value;
+    const observaciones = document.getElementById('genObservaciones').value;
 
-    const containerCables = document.getElementById('editAlbaranCablesContainer');
-    containerCables.innerHTML = '';
-    const cablesVinculados = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
-    cablesVinculados.forEach((c) => { agregarCableAlbaranEdit(c.tipoCable, c.metros); });
+    const lineas = [];
+    
+    const filas = document.querySelectorAll('.catalogo-fila');
+    filas.forEach(row => {
+        const qtyInput = row.querySelector('.gen-qty').value;
+        const qty = parseFloat(qtyInput);
+        if (!isNaN(qty) && qty > 0) {
+            const desc = row.querySelector('.gen-desc').value;
+            const cod = row.querySelector('.gen-cod').value || "S/N";
+            
+            const match = DICCIONARIO_CODIGOS.find(c => c.cod === cod || c.desc.toLowerCase() === desc.toLowerCase());
+            
+            let tipo = "material";
+            if(match) tipo = match.tipo;
+            else if(desc.toLowerCase().includes("cable")) tipo = "cable";
+            else if(desc.toLowerCase().includes("subconducto") || desc.toLowerCase().includes("tubo")) tipo = "subconducto";
 
-    const containerSub = document.getElementById('editAlbaranSubconductosContainer');
-    containerSub.innerHTML = '';
-    const subsVinculados = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
-    subsVinculados.forEach((s) => { agregarSubconductoAlbaranEdit(s.tipoSubconducto, s.metros); });
+            lineas.push({
+                codigo: cod,
+                descripcion: desc.toUpperCase(),
+                cantidad: qty,
+                tipo_interno: tipo 
+            });
+        }
+    });
 
-    document.getElementById('modalEditarAlbaran').classList.add('active');
+    if (lineas.length === 0) return mostrarToast('❌ Debes indicar la cantidad de al menos un material.');
+
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('ALBARAN');
+
+        // Configurar Ancho de Columnas igual a tu plantilla
+        sheet.columns = [
+            { width: 25 }, // A
+            { width: 35 }, // B
+            { width: 20 }, // C
+            { width: 35 }, // D
+            { width: 12 }  // E
+        ];
+
+        const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+        const borderOuter = { top: {style:'medium'}, left: {style:'medium'}, bottom: {style:'medium'}, right: {style:'medium'} };
+        const fontTitle = { name: 'Arial', size: 14, bold: true, underline: true };
+        const fontHeader = { name: 'Arial', size: 10, bold: true };
+        const fontData = { name: 'Arial', size: 10 };
+        const alignCenter = { vertical: 'middle', horizontal: 'center' };
+        const alignLeft = { vertical: 'middle', horizontal: 'left' };
+        
+        // Color Gris para la cabecera de la tabla
+        const fillGris = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB0B0B0' } };
+
+        // === INSERTAR LOGOS SEGÚN EMPRESA ===
+        sheet.getRow(1).height = 40; 
+        try {
+            if (empresa === 'Elecnor') {
+                const b64_O = await urlToBase64('O+.jpg');
+                const b64_Elec = await urlToBase64('ELECNOR.jpg');
+                if (b64_O) {
+                    const imgId1 = workbook.addImage({ base64: b64_O, extension: 'jpeg' });
+                    sheet.addImage(imgId1, { tl: { col: 1, row: 0 }, ext: { width: 150, height: 40 } });
+                }
+                if (b64_Elec) {
+                    const imgId2 = workbook.addImage({ base64: b64_Elec, extension: 'jpeg' });
+                    sheet.addImage(imgId2, { tl: { col: 3, row: 0 }, ext: { width: 150, height: 40 } });
+                }
+            } else if (empresa === 'Zener') {
+                const b64_Zen = await urlToBase64('ZENER.jpg');
+                if (b64_Zen) {
+                    const imgId = workbook.addImage({ base64: b64_Zen, extension: 'jpeg' });
+                    sheet.addImage(imgId, { tl: { col: 2, row: 0 }, ext: { width: 200, height: 40 } });
+                }
+            }
+        } catch (imgError) {
+            console.warn("No se pudieron cargar los logos locales. Se generará sin imágenes.");
+        }
+
+        // Título Principal
+        sheet.mergeCells('A4:D4');
+        const titleCell = sheet.getCell('A4');
+        titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA';
+        titleCell.font = fontTitle;
+        titleCell.alignment = alignCenter;
+        
+        sheet.getCell('E3').value = '134º'; sheet.getCell('E3').font = fontHeader; sheet.getCell('E3').alignment = alignCenter; sheet.getCell('E3').border = borderAll;
+        sheet.getCell('E4').value = 'V15'; sheet.getCell('E4').font = {name:'Arial', size:10, bold:true, underline:true}; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderAll;
+        
+        // Cabeceras de Obra
+        const cabecerasInfo = [
+            ['A5', 'ID OBRA', 'B5', idObra, 'C5', 'CR Y LATERAL:', 'D5', crLateral],
+            ['A6', 'POBLACION', 'B6', poblacion, 'C6', 'FECHA:', 'D6', fechaExcel],
+            ['A7', 'ENCARGADO', 'B7', encargado, 'C7', 'N ALBARAN', 'D7', nAlbaran],
+            ['A8', 'CONTRATA', 'B8', contrata, 'C8', 'CUENTA DE CARGO', 'D8', cuentaCargo]
+        ];
+
+        cabecerasInfo.forEach(row => {
+            let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderAll;
+            let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = fontData; c2.alignment = alignLeft; c2.border = borderAll;
+            let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderAll;
+            let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontData; c4.alignment = alignCenter; c4.border = borderAll;
+        });
+
+        // Títulos de la tabla (GRIS)
+        sheet.getCell('A10').value = 'CODIGO'; sheet.getCell('A10').font = fontHeader; sheet.getCell('A10').alignment = alignLeft; sheet.getCell('A10').fill = fillGris; sheet.getCell('A10').border = borderAll;
+        sheet.mergeCells('B10:D10'); 
+        sheet.getCell('B10').value = 'DESCRIPCION'; sheet.getCell('B10').font = fontHeader; sheet.getCell('B10').alignment = alignLeft; sheet.getCell('B10').fill = fillGris; sheet.getCell('B10').border = borderAll;
+        sheet.getCell('E10').value = 'Uds/mts'; sheet.getCell('E10').font = fontHeader; sheet.getCell('E10').alignment = alignCenter; sheet.getCell('E10').fill = fillGris; sheet.getCell('E10').border = borderAll;
+
+        let currentRow = 11;
+        let tablaHtmlStr = '<table class="table-preview" style="width:100%; border-collapse:collapse; font-size:12px;"><tr><th style="background:#B0B0B0; border:1px solid #ccc; text-align:left; color:black;">CODIGO</th><th style="background:#B0B0B0; border:1px solid #ccc; text-align:left; color:black;">DESCRIPCION</th><th style="background:#B0B0B0; border:1px solid #ccc; text-align:center; color:black;">Uds/mts</th></tr>';
+
+        lineas.forEach(lin => {
+            sheet.getCell(`A${currentRow}`).value = lin.codigo; 
+            sheet.getCell(`A${currentRow}`).font = fontData;
+            sheet.getCell(`A${currentRow}`).border = borderAll;
+            
+            sheet.mergeCells(`B${currentRow}:D${currentRow}`);
+            sheet.getCell(`B${currentRow}`).value = lin.descripcion; 
+            sheet.getCell(`B${currentRow}`).font = fontData;
+            sheet.getCell(`B${currentRow}`).border = borderAll;
+            
+            sheet.getCell(`E${currentRow}`).value = lin.cantidad; 
+            sheet.getCell(`E${currentRow}`).font = fontData; 
+            sheet.getCell(`E${currentRow}`).alignment = alignCenter;
+            sheet.getCell(`E${currentRow}`).border = borderAll;
+            
+            tablaHtmlStr += `<tr><td style="padding:4px; border:1px solid #ccc;">${lin.codigo}</td><td style="padding:4px; border:1px solid #ccc;">${lin.descripcion}</td><td style="padding:4px; border:1px solid #ccc; text-align:center; font-weight:bold;">${lin.cantidad}</td></tr>`;
+            
+            currentRow++;
+        });
+        tablaHtmlStr += '</table>';
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        const fileNameExcel = `ALBARAN_SALIDAS_${empresa}_${idObra}.xlsx`;
+        saveAs(blob, fileNameExcel);
+
+        const albaranId = `ALB-${Date.now().toString().slice(-6)}`;
+        
+        lineas.forEach((lin, idx) => {
+            const matId = `GEN-${Date.now().toString().slice(-6)}-${idx}`;
+            if (lin.tipo_interno === 'cable') {
+                cables.push({ id: matId, empresa: empresa, tipoMaterial: 'cable', idObra: idObra, tipoCable: lin.descripcion, metros: lin.cantidad, accion: 'pendiente_recepcion', fecha: rawFecha, observaciones: `Creado automático. Alb: ${albaranId}`, idAlbaranAsociado: albaranId });
+            } else if (lin.tipo_interno === 'subconducto') {
+                subconductos.push({ id: matId, empresa: empresa, tipoMaterial: 'subconducto', idObra: idObra, tipoSubconducto: lin.descripcion, metros: lin.cantidad, accion: 'pendiente_recepcion', fecha: rawFecha, observaciones: `Creado automático. Alb: ${albaranId}`, idAlbaranAsociado: albaranId, solicitado: false });
+            } else {
+                materialesGenerales.push({ id: matId, empresa: empresa, tipoMaterial: 'general', idObra: idObra, descripcion: lin.descripcion, cantidad: lin.cantidad, accion: 'pendiente_recepcion', fecha: rawFecha, observaciones: `Creado automático. Alb: ${albaranId}`, idAlbaranAsociado: albaranId });
+            }
+        });
+
+        const archivoInfo = {
+            nombre: fileNameExcel,
+            tipo: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            tamaño: buffer.byteLength,
+            tablaHtml: tablaHtmlStr, 
+            base64: null 
+        };
+
+        albaranes.push({
+            id: albaranId, empresa: empresa, idObra: idObra, fecha: rawFecha,
+            cuentaCargo: cuentaCargo, tipoInstalacion: tipoInstalacion,
+            jefeObra: encargado, observaciones: observaciones || 'Generado desde App',
+            estado: 'pendiente', materialFaltante: null, archivo: archivoInfo, isBackorder: false
+        });
+
+        guardarTodosLosDatos(); 
+        cerrarTodosLosModales(); 
+        mostrarToast(`✅ Albarán ${albaranId} Registrado en Pendientes y Descargado.`);
+
+    } catch (error) {
+        console.error(error);
+        mostrarToast('❌ Error generando el Archivo Excel.');
+    }
 }
-window.abrirModalEditarAlbaran = abrirModalEditarAlbaran;
+window.generarExcelYRegistrar = generarExcelYRegistrar;
 
-function agregarCableAlbaranEdit(tipoCable = '', metros = '') {
-    const container = document.getElementById('editAlbaranCablesContainer');
-    const index = container.children.length + 1;
-    let opcionesConSeleccion = CABLE_OPTIONS_HTML;
-    if (tipoCable) opcionesConSeleccion = opcionesConSeleccion.replace(`value="${tipoCable}"`, `value="${tipoCable}" selected`);
+// ============================================================================
+// ===== RESTO DEL CÓDIGO INTACTO =============================================
+// ============================================================================
 
-    const html = `
-        <div class="bobina-item" data-cable-albaran="${index}" style="padding: 12px; margin-bottom: 8px;">
-            <div class="bobina-header" style="margin-bottom: 8px; padding-bottom: 8px;">
-                <div class="bobina-title" style="font-size: 14px; color: var(--system-blue);">Cable Esperado ${index}</div>
-                <button type="button" class="btn-eliminar-bobina" onclick="this.closest('.bobina-item').remove()">X</button>
-            </div>
-            <div class="form-group" style="margin-bottom: 8px;">
-                <label style="font-size: 12px;">Tipo Cable</label>
-                <select name="editAlbaranTipoCable_${index}" style="padding: 10px;">${opcionesConSeleccion}</select>
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 12px;">Metros Esperados</label>
-                <input type="number" step="0.1" name="editAlbaranMetrosCable_${index}" value="${metros}" style="padding: 10px;">
-            </div>
-        </div>
-    `;
-    container.insertAdjacentHTML('beforeend', html);
+function guardarEdicionAlbaran(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const idAlbaran = formData.get('idAlbaran');
+    const albaran = albaranes.find(a => a.id === idAlbaran);
+    if (!albaran) return;
+
+    const archivoInput = document.getElementById('editArchivoAlbaran')?.files[0];
+    
+    if (archivoInput) {
+        const isExcel = archivoInput.name.toLowerCase().match(/\.(xlsx|xls)$/i);
+        const reader = new FileReader();
+
+        reader.onload = function(ev) {
+            const b64 = ev.target.result;
+            let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
+
+            if (isExcel) {
+                const extraccion = generarTablaHtmlYMaterialesDesdeBase64(b64);
+                archivoInfo.tablaHtml = extraccion.html;
+                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, extraccion.materiales);
+            } else {
+                if (archivoInput.size > 1536000) { return mostrarToast('❌ El PDF es muy pesado (Max 1.5MB).'); }
+                archivoInfo.base64 = b64;
+                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, []);
+            }
+        };
+        reader.readAsDataURL(archivoInput);
+    } else {
+        finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo, []);
+    }
 }
-window.agregarCableAlbaranEdit = agregarCableAlbaranEdit;
+window.guardarEdicionAlbaran = guardarEdicionAlbaran;
 
-function agregarSubconductoAlbaranEdit(tipoSub = '', metros = '') {
-    const container = document.getElementById('editAlbaranSubconductosContainer');
-    const index = container.children.length + 1;
-    let opcionesConSeleccion = SUBCONDUCTO_OPTIONS_HTML;
-    if (tipoSub) opcionesConSeleccion = opcionesConSeleccion.replace(`value="${tipoSub}"`, `value="${tipoSub}" selected`);
-
-    const html = `
-        <div class="bobina-item" data-sub-albaran="${index}" style="padding: 12px; margin-bottom: 8px; border-color: var(--system-orange);">
-            <div class="bobina-header" style="margin-bottom: 8px; padding-bottom: 8px;">
-                <div class="bobina-title" style="font-size: 14px; color: var(--system-orange);">Subconducto Esperado ${index}</div>
-                <button type="button" class="btn-eliminar-bobina" style="background:var(--system-orange);" onclick="this.closest('.bobina-item').remove()">X</button>
-            </div>
-            <div class="form-group" style="margin-bottom: 8px;">
-                <label style="font-size: 12px;">Tipo Subconducto</label>
-                <select name="editAlbaranTipoSub_${index}" style="padding: 10px;">${opcionesConSeleccion}</select>
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 12px;">Metros Esperados</label>
-                <input type="number" step="0.1" name="editAlbaranMetrosSub_${index}" value="${metros}" style="padding: 10px;">
-            </div>
-        </div>
-    `;
-    container.insertAdjacentHTML('beforeend', html);
-}
-window.agregarSubconductoAlbaranEdit = agregarSubconductoAlbaranEdit;
-
-// ===== EXTRACCIÓN INTELIGENTE (ESTRICTA) =====
 function generarTablaHtmlYMaterialesDesdeBase64(b64) {
     try {
         const wb = XLSX.read(b64.split(',')[1], { type: 'base64' });
@@ -338,7 +675,6 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
 
         let headerRowIdx = -1; let qtyColIdx = -1; let descColIdx = -1;
 
-        // Búsqueda estricta
         for (let i = 0; i < Math.min(20, jsonData.length); i++) {
             let tempQtyIdx = -1;
             let tempDescIdx = -1;
@@ -397,120 +733,6 @@ function generarTablaHtmlYMaterialesDesdeBase64(b64) {
         return { html: html, materiales: materialesExtraidos };
     } catch(e) {
         return { html: '<p style="color:var(--system-red);">❌ Error procesando el Excel.</p>', materiales: [] };
-    }
-}
-
-function crearAlbaran(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const archivoInput = document.getElementById('archivoAlbaran')?.files[0];
-    
-    if (archivoInput) {
-        const isExcel = archivoInput.name.toLowerCase().match(/\.(xlsx|xls)$/i);
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            const b64 = ev.target.result;
-            let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
-            if (isExcel) {
-                const extraccion = generarTablaHtmlYMaterialesDesdeBase64(b64);
-                archivoInfo.tablaHtml = extraccion.html;
-                finalizarCreacionAlbaran(formData, archivoInfo, extraccion.materiales);
-            } else {
-                if (archivoInput.size > 1536000) { return mostrarToast('❌ El PDF es muy pesado (Max 1.5MB).'); }
-                archivoInfo.base64 = b64;
-                finalizarCreacionAlbaran(formData, archivoInfo, []);
-            }
-        };
-        reader.readAsDataURL(archivoInput);
-    } else {
-        finalizarCreacionAlbaran(formData, null, []);
-    }
-}
-
-function finalizarCreacionAlbaran(formData, archivoInfo, materialesExtraidos = []) {
-    const albaranId = `ALB-${Date.now().toString().slice(-6)}`;
-    const emp = formData.get('empresa'); 
-    
-    const itemsCables = document.querySelectorAll('#albaranCablesContainer .bobina-item');
-    itemsCables.forEach(item => {
-        const idx = item.dataset.cableAlbaran;
-        const tipo = formData.get(`albaranTipoCable_${idx}`);
-        const metros = parseFloat(formData.get(`albaranMetrosCable_${idx}`));
-        if (tipo && metros > 0) {
-            cables.push({
-                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp,
-                tipoMaterial: 'cable', idObra: formData.get('idObra'), tipoCable: tipo, metros: metros,
-                accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
-                observaciones: `Esperando con Albarán: ${albaranId}`, idAlbaranAsociado: albaranId 
-            });
-        }
-    });
-
-    const itemsSub = document.querySelectorAll('#albaranSubconductosContainer .bobina-item');
-    itemsSub.forEach(item => {
-        const idx = item.dataset.subAlbaran;
-        const tipo = formData.get(`albaranTipoSub_${idx}`);
-        const metros = parseFloat(formData.get(`albaranMetrosSub_${idx}`));
-        if (tipo && metros > 0) {
-            subconductos.push({
-                id: `SUB-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp,
-                tipoMaterial: 'subconducto', idObra: formData.get('idObra'), tipoSubconducto: tipo, metros: metros,
-                accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
-                observaciones: `Esperando con Albarán: ${albaranId}`, idAlbaranAsociado: albaranId, solicitado: false
-            });
-        }
-    });
-
-    materialesExtraidos.forEach((mat, idx) => {
-        materialesGenerales.push({
-            id: `MAT-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp,
-            tipoMaterial: 'general', idObra: formData.get('idObra'),
-            descripcion: mat.descripcion, cantidad: mat.cantidad, accion: 'pendiente_recepcion',
-            fecha: formData.get('fecha'), observaciones: `Auto-extraído Albarán: ${albaranId}`, idAlbaranAsociado: albaranId
-        });
-    });
-
-    albaranes.push({
-        id: albaranId, empresa: emp, idObra: formData.get('idObra'), fecha: formData.get('fecha'),
-        cuentaCargo: formData.get('cuentaCargo'), tipoInstalacion: formData.get('tipoInstalacion'),
-        observaciones: formData.get('observaciones') || '',
-        estado: 'pendiente', materialFaltante: null, archivo: archivoInfo, isBackorder: false
-    });
-    
-    guardarTodosLosDatos(); cerrarTodosLosModales(); 
-    mostrarToast(materialesExtraidos.length > 0 ? `✅ Albarán creado y ${materialesExtraidos.length} materiales detectados` : '✅ Albarán creado con éxito');
-}
-
-function guardarEdicionAlbaran(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const idAlbaran = formData.get('idAlbaran');
-    const albaran = albaranes.find(a => a.id === idAlbaran);
-    if (!albaran) return;
-
-    const archivoInput = document.getElementById('editArchivoAlbaran')?.files[0];
-    
-    if (archivoInput) {
-        const isExcel = archivoInput.name.toLowerCase().match(/\.(xlsx|xls)$/i);
-        const reader = new FileReader();
-
-        reader.onload = function(ev) {
-            const b64 = ev.target.result;
-            let archivoInfo = { nombre: archivoInput.name, tipo: archivoInput.type, tamaño: archivoInput.size };
-
-            if (isExcel) {
-                const extraccion = generarTablaHtmlYMaterialesDesdeBase64(b64);
-                archivoInfo.tablaHtml = extraccion.html;
-                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, extraccion.materiales);
-            } else {
-                if (archivoInput.size > 1536000) { return mostrarToast('❌ El PDF es muy pesado (Max 1.5MB).'); }
-                archivoInfo.base64 = b64;
-                finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, []);
-            }
-        };
-        reader.readAsDataURL(archivoInput);
-    } else {
-        finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo, []);
     }
 }
 
@@ -591,14 +813,12 @@ function mostrarAlbaranes() {
         const estadoText = a.estado === 'pendiente' ? 'Pendiente' : (esFaltante ? 'Faltante' : 'Recibido');
         
         let actions = `<div class="albaran-actions">`;
-        
-        // Muestra el botón de Ver Material incluso si no tiene archivo PERO es un backorder
         if ((a.archivo && (a.archivo.tablaHtml || a.archivo.base64)) || a.isBackorder || esFaltante) {
             actions += `<button class="btn btn-info" onclick="verArchivoAlbaran('${a.id}')">📄 Ver Material</button>`;
         }
         
         if (a.estado === 'pendiente') {
-            actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar</button>`;
+            actions += `<button class="btn btn-warning" onclick="abrirModalEditarAlbaran('${a.id}')">✏️ Editar (Antiguo)</button>`;
             actions += `<button class="btn btn-success" onclick="abrirModalRecepcion('${a.id}')">✅ Marcar Recibido</button>`;
         } else if (esFaltante) {
             actions += `<button class="btn btn-info w-100" onclick="resolicitarFaltante('${a.id}')">🔄 Re-solicitar Faltante</button>`;
@@ -632,7 +852,6 @@ function mostrarAlbaranes() {
     }).join('');
 }
 
-// ===== RECEPCION CON CHECKBOXES =====
 function abrirModalRecepcion(id) {
     albaranSeleccionado = albaranes.find(a => a.id === id);
     document.getElementById('modalRecepcion').classList.add('active');
@@ -678,6 +897,7 @@ function abrirModalRecepcion(id) {
     listaItems.innerHTML = html;
     toggleDetalleFaltante();
 }
+window.abrirModalRecepcion = abrirModalRecepcion;
 
 function toggleDetalleFaltante() {
     const val = document.querySelector('input[name="estadoRecepcion"]:checked').value;
@@ -685,6 +905,7 @@ function toggleDetalleFaltante() {
     document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
     document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
 }
+window.toggleDetalleFaltante = toggleDetalleFaltante;
 
 function confirmarRecepcion() {
     if(!albaranSeleccionado) return;
@@ -748,8 +969,8 @@ function confirmarRecepcion() {
     mostrarToast('✅ Recepción completada');
     if (itemsIngresados > 0) setTimeout(() => mostrarToast(`📦 ${itemsIngresados} artículos han entrado al stock disponible`), 1000);
 }
+window.confirmarRecepcion = confirmarRecepcion;
 
-// ===== RE-SOLICITAR FALTANTE (BACKORDER) =====
 function resolicitarFaltante(id) {
     if(!confirm('¿Crear un nuevo Albarán en PENDIENTES con este material para recibirlo en el futuro?')) return;
     
@@ -759,7 +980,6 @@ function resolicitarFaltante(id) {
     const nuevoId = albOriginal.id + '-RE';
     let materialMovido = 0;
 
-    // Pasamos lo que estaba en el limbo al nuevo Albarán Hijo
     cables.forEach(c => {
         if (c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion') { 
             c.idAlbaranAsociado = nuevoId; materialMovido++; c.observaciones = 'Re-solicitado (Backorder)';
@@ -779,7 +999,6 @@ function resolicitarFaltante(id) {
     const textoFaltanteOriginal = albOriginal.materialFaltante || 'Material pendiente de recepción';
     albOriginal.materialFaltante = null;
 
-    // SIEMPRE creamos el nuevo albarán (incluso si era solo una nota sin items físicos vinculados)
     albaranes.push({
         id: nuevoId, 
         empresa: albOriginal.empresa, 
@@ -791,8 +1010,8 @@ function resolicitarFaltante(id) {
         observaciones: `⚠️ BACKORDER (Faltante de: ${albOriginal.id}). Nota original: ${textoFaltanteOriginal}`,
         estado: 'pendiente', 
         materialFaltante: null, 
-        isBackorder: true, // ETIQUETA CLAVE
-        archivo: null // Quitamos el excel original para que no confunda
+        isBackorder: true, 
+        archivo: null 
     });
 
     guardarTodosLosDatos(); 
@@ -810,10 +1029,13 @@ function eliminarAlbaran(id) {
         guardarTodosLosDatos(); 
     }
 }
+window.eliminarAlbaran = eliminarAlbaran;
 
 // ===== MATERIALES GENERALES =====
 function abrirModalEntradaMaterial() { document.getElementById('modalEntradaMaterial').classList.add('active'); establecerFechaActual(); }
 function abrirModalSalidaMaterial() { document.getElementById('modalSalidaMaterial').classList.add('active'); establecerFechaActual(); }
+window.abrirModalEntradaMaterial = abrirModalEntradaMaterial;
+window.abrirModalSalidaMaterial = abrirModalSalidaMaterial;
 
 function agregarMaterialGeneral(form, accion) {
     const cantidad = parseFloat(form.get('cantidad'));
@@ -1217,11 +1439,13 @@ function agregarBobina() {
         toggleCamposMaterial(index);
     });
 }
+window.agregarBobina = agregarBobina;
 
 function eliminarBobina(idx) {
     const item = document.querySelector(`[data-bobina="${idx}"]`);
     if(item) item.remove();
 }
+window.eliminarBobina = eliminarBobina;
 
 function toggleCamposMaterial(idx) {
     const tipo = document.getElementById(`tipoMaterial_${idx}`).value;
@@ -1233,6 +1457,7 @@ function toggleCamposMaterial(idx) {
     if(tipo === 'bobina_vacia') document.getElementById(`camposBobinaVacia_${idx}`).style.display = 'flex';
     if(tipo === 'otro') document.getElementById(`camposOtroMaterial_${idx}`).style.display = 'block';
 }
+window.toggleCamposMaterial = toggleCamposMaterial;
 
 function crearDevolucion(e) {
     e.preventDefault();
@@ -1339,14 +1564,12 @@ function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
     if(!a) return mostrarToast('❌ El albarán no está disponible.');
     
-    // Obtenemos los materiales que están actualmente vinculados a este albaran EN EL LIMBO (Pendiente de recibir)
     const pendingCables = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
     const pendingSub = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
     const pendingMat = materialesGenerales.filter(m => m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion');
 
     let contenido = '';
     
-    // SI ES UN BACKORDER O UN FALTANTE: Mostramos la lista viva de lo que falta
     if (a.isBackorder || (a.materialFaltante && String(a.materialFaltante).trim() !== "")) {
         let htmlResumen = '<table class="table-preview" style="margin-bottom:0;"><tr><th style="background:rgba(255,149,0,0.1); color:var(--system-orange);">Tipo de Material / Artículo</th><th style="background:rgba(255,149,0,0.1); color:var(--system-orange);">Cantidad</th></tr>';
         
@@ -1369,7 +1592,6 @@ function verArchivoAlbaran(id) {
             </div>` : ''}
         </div>`;
 
-        // Si existe un archivo original (porque es Faltante y no Backorder), le damos el botón gris para verlo
         if (a.archivo && (a.archivo.tablaHtml || a.archivo.base64)) {
             let originalContent = a.archivo.tablaHtml ? `<div class="excel-preview">${a.archivo.tablaHtml}</div>` : `<embed src="${a.archivo.base64}" type="application/pdf" width="100%" height="400px">`;
             contenido += `
@@ -1379,7 +1601,6 @@ function verArchivoAlbaran(id) {
             </div>`;
         }
     } 
-    // SI ES NORMAL Y CORRIENTE, MUESTRA EL ARCHIVO DIRECTAMENTE
     else {
         if (a.archivo && a.archivo.tablaHtml) {
             contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
@@ -1697,7 +1918,6 @@ function configurarEventListeners() {
     document.getElementById('btnBuscar').addEventListener('click', abrirBuscador);
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarTab(btn.dataset.tab)));
     
-    document.getElementById('formNuevoAlbaran').addEventListener('submit', crearAlbaran);
     document.getElementById('formEditarAlbaran').addEventListener('submit', guardarEdicionAlbaran);
     
     document.getElementById('btnEntradaCable').addEventListener('click', () => { document.getElementById('modalEntradaCable').classList.add('active'); establecerFechaActual(); });
