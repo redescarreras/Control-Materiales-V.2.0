@@ -28,54 +28,13 @@
     
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Estilos específicos para la tabla del catálogo en el Generador */
-        .catalogo-table-container {
-            max-height: 450px;
-            overflow-y: auto;
-            border: 1px solid var(--bg-system);
-            border-radius: var(--radius-md);
-            background: #FFF;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .catalogo-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .catalogo-table th {
-            position: sticky;
-            top: 0;
-            background: #F2F2F7;
-            color: var(--text-primary);
-            font-weight: bold;
-            padding: 12px;
-            text-align: left;
-            border-bottom: 2px solid #E5E5EA;
-            z-index: 10;
-        }
-        .catalogo-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #F2F2F7;
-            vertical-align: middle;
-        }
-        .catalogo-table tr:hover {
-            background-color: #FAFAFA;
-        }
-        .catalogo-input {
-            width: 80px;
-            padding: 8px;
-            border: 1px solid #D1D1D6;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--system-blue);
-        }
-        .catalogo-input:focus {
-            outline: none;
-            border-color: var(--system-blue);
-            box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
-        }
+        .catalogo-table-container { max-height: 450px; overflow-y: auto; border: 1px solid var(--bg-system); border-radius: var(--radius-md); background: #FFF; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        .catalogo-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .catalogo-table th { position: sticky; top: 0; background: #F2F2F7; color: var(--text-primary); font-weight: bold; padding: 12px; text-align: left; border-bottom: 2px solid #E5E5EA; z-index: 10; }
+        .catalogo-table td { padding: 10px 12px; border-bottom: 1px solid #F2F2F7; vertical-align: middle; }
+        .catalogo-table tr:hover { background-color: #FAFAFA; }
+        .catalogo-input { width: 80px; padding: 8px; border: 1px solid #D1D1D6; border-radius: 6px; text-align: center; font-size: 14px; font-weight: 600; color: var(--system-blue); }
+        .catalogo-input:focus { outline: none; border-color: var(--system-blue); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
     </style>
 </head>
 <body>
@@ -96,15 +55,10 @@
                     <option value="Zener">Zener</option>
                     <option value="Magtel">Magtel</option>
                 </select>
-
                 <button id="btnBuscar" class="btn btn-icon btn-glass" title="Buscar">🔍</button>
                 <button id="btnExportar" class="btn btn-icon btn-glass" title="Exportar Backup Local" onclick="exportarDatos()">📤</button>
                 <button id="btnImportar" class="btn btn-icon btn-glass" title="Importar Backup" onclick="abrirImportar()">📥</button>
-                
-                <button id="btnInstalarApp" class="btn btn-secondary" style="display: none; background-color: var(--text-primary); color: white;">
-                    📲 <span class="hide-mobile">Instalar</span>
-                </button>
-
+                <button id="btnInstalarApp" class="btn btn-secondary" style="display: none; background-color: var(--text-primary); color: white;">📲 <span class="hide-mobile">Instalar</span></button>
                 <button id="btnNuevoAlbaran" class="btn btn-primary" onclick="abrirModalNuevoAlbaranGenerador()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span class="hide-mobile">Nuevo Albarán</span>
@@ -129,83 +83,40 @@
             </div>
 
             <div id="tab-content">
-                <div id="tab-pendientes" class="tab-content active">
-                    <div class="tab-header"><h2>Pendientes de Recibir</h2><p class="tab-description" id="desc-pendientes">Albaranes esperando confirmación de entrega.</p></div>
-                    <div id="lista-pendientes" class="albaranes-grid"></div>
-                </div>
-
-                <div id="tab-recibidos" class="tab-content">
-                    <div class="tab-header"><h2>Albaranes Recibidos</h2><p class="tab-description" id="desc-recibidos">Historial de entregas completadas con éxito.</p></div>
-                    <div id="lista-recibidos" class="albaranes-grid"></div>
-                </div>
-
-                <div id="tab-faltantes" class="tab-content">
-                    <div class="tab-header"><h2>Material Faltante</h2><p class="tab-description" id="desc-faltantes">Albaranes registrados con incidencias de material.</p></div>
-                    <div id="lista-faltantes" class="albaranes-grid"></div>
-                </div>
-
+                <div id="tab-pendientes" class="tab-content active"><div class="tab-header"><h2>Pendientes de Recibir</h2><p class="tab-description" id="desc-pendientes">Albaranes esperando confirmación.</p></div><div id="lista-pendientes" class="albaranes-grid"></div></div>
+                <div id="tab-recibidos" class="tab-content"><div class="tab-header"><h2>Albaranes Recibidos</h2><p class="tab-description" id="desc-recibidos">Historial de entregas.</p></div><div id="lista-recibidos" class="albaranes-grid"></div></div>
+                <div id="tab-faltantes" class="tab-content"><div class="tab-header"><h2>Material Faltante</h2><p class="tab-description" id="desc-faltantes">Incidencias registradas.</p></div><div id="lista-faltantes" class="albaranes-grid"></div></div>
+                
                 <div id="tab-materiales" class="tab-content">
                     <div class="tab-header">
-                        <h2>Control de Materiales</h2>
-                        <p class="tab-description" id="desc-materiales" style="margin-bottom:12px;">Stock extraído de los excels de Albaranes.</p>
-                        <div class="tab-actions">
-                            <button class="btn btn-success" onclick="abrirModalEntradaMaterial()">+ Entrada (Manual)</button>
-                            <button class="btn btn-warning" onclick="abrirModalSalidaMaterial()">+ Instalado (Salida)</button>
-                        </div>
-                    </div>
-                    <div id="lista-materiales" class="albaranes-grid"></div>
+                        <h2>Control de Materiales</h2><p class="tab-description" id="desc-materiales" style="margin-bottom:12px;">Stock extraído de los excels.</p>
+                        <div class="tab-actions"><button class="btn btn-success" onclick="abrirModalEntradaMaterial()">+ Entrada (Manual)</button><button class="btn btn-warning" onclick="abrirModalSalidaMaterial()">+ Instalado (Salida)</button></div>
+                    </div><div id="lista-materiales" class="albaranes-grid"></div>
                 </div>
 
                 <div id="tab-cables" class="tab-content">
-                    <div class="tab-header">
-                        <h2>Control de Cable</h2>
-                        <div class="tab-actions">
-                            <button id="btnEntradaCable" class="btn btn-success">+ Entrada (Manual)</button>
-                            <button id="btnNuevoCableInstalacion" class="btn btn-warning">+ Instalado (Salida)</button>
-                            <button id="btnMermaCable" class="btn btn-secondary" style="background: #8E8E93; color: white;">🗑️ Merma / Retal</button>
-                        </div>
-                    </div>
+                    <div class="tab-header"><h2>Control de Cable</h2><div class="tab-actions"><button id="btnEntradaCable" class="btn btn-success">+ Entrada (Manual)</button><button id="btnNuevoCableInstalacion" class="btn btn-warning">+ Instalado (Salida)</button><button id="btnMermaCable" class="btn btn-secondary" style="background: #8E8E93; color: white;">🗑️ Merma / Retal</button></div></div>
                     <div class="stock-grid">
                         <div class="stock-card" style="border: 1px solid var(--system-blue); background: #F0F8FF;"><div class="stock-icon" style="background: rgba(0, 122, 255, 0.1);">⏳</div><div class="stock-info"><span class="stock-label" style="color: var(--system-blue);">Pend. Recibir</span><span class="stock-number" id="cable-pendiente-recibir" style="color: var(--system-blue);">0</span></div></div>
                         <div class="stock-card"><div class="stock-icon">📥</div><div class="stock-info"><span class="stock-label">Recibidos</span><span class="stock-number" id="cable-recibido">0</span></div></div>
                         <div class="stock-card"><div class="stock-icon" style="color: var(--system-red); background: rgba(255, 59, 48, 0.1);">🔧</div><div class="stock-info"><span class="stock-label">Instalados</span><span class="stock-number" id="cable-instalado" style="color: var(--system-red);">0</span></div></div>
                         <div class="stock-card stock-card-highlight"><div class="stock-icon">✅</div><div class="stock-info"><span class="stock-label">Disponibles</span><span class="stock-number" id="cable-disponible">0</span></div></div>
-                    </div>
-                    <div id="lista-cables" class="albaranes-grid"></div>
+                    </div><div id="lista-cables" class="albaranes-grid"></div>
                 </div>
 
                 <div id="tab-subconductos" class="tab-content">
-                    <div class="tab-header">
-                        <h2>Control de Subconducto</h2>
-                        <div class="tab-actions">
-                            <button id="btnEntradaSubconducto" class="btn btn-success">+ Entrada (Recibido)</button>
-                            <button id="btnNuevoSubconductoInstalacion" class="btn btn-warning">+ Instalado (Salida)</button>
-                        </div>
-                    </div>
+                    <div class="tab-header"><h2>Control de Subconducto</h2><div class="tab-actions"><button id="btnEntradaSubconducto" class="btn btn-success">+ Entrada (Recibido)</button><button id="btnNuevoSubconductoInstalacion" class="btn btn-warning">+ Instalado (Salida)</button></div></div>
                     <div class="stock-grid">
                         <div class="stock-card"><div class="stock-icon">📥</div><div class="stock-info"><span class="stock-label">Recibidos</span><span class="stock-number" id="subconducto-recibido">0</span></div></div>
                         <div class="stock-card"><div class="stock-icon" style="color: var(--system-red); background: rgba(255, 59, 48, 0.1);">🔧</div><div class="stock-info"><span class="stock-label">Instalados</span><span class="stock-number" id="subconducto-instalado" style="color: var(--system-red);">0</span></div></div>
                         <div class="stock-card" style="border: 1px solid var(--system-orange); background: #FFF9F2;"><div class="stock-icon" style="background: rgba(255, 149, 0, 0.1);">⏳</div><div class="stock-info"><span class="stock-label" style="color: var(--system-orange);">Pend. Solicitar</span><span class="stock-number" id="subconducto-pendiente-solicitar" style="color: var(--system-orange);">0</span></div></div>
                         <div class="stock-card stock-card-highlight"><div class="stock-icon">✅</div><div class="stock-info"><span class="stock-label">Disponibles</span><span class="stock-number" id="subconducto-disponible">0</span></div></div>
-                    </div>
-                    <div id="lista-subconductos" class="albaranes-grid"></div>
+                    </div><div id="lista-subconductos" class="albaranes-grid"></div>
                 </div>
 
-                <div id="tab-devoluciones" class="tab-content">
-                    <div class="tab-header">
-                        <h2>Control de Devoluciones</h2>
-                        <div class="tab-actions">
-                            <button id="btnNuevaDevolucion" class="btn btn-primary">+ Nueva Devolución</button>
-                        </div>
-                    </div>
-                    <div id="lista-devoluciones" class="albaranes-grid"></div>
-                </div>
-
+                <div id="tab-devoluciones" class="tab-content"><div class="tab-header"><h2>Control de Devoluciones</h2><div class="tab-actions"><button id="btnNuevaDevolucion" class="btn btn-primary">+ Nueva Devolución</button></div></div><div id="lista-devoluciones" class="albaranes-grid"></div></div>
                 <div id="tab-reportes" class="tab-content">
-                    <div class="tab-header">
-                        <h2>Reportes y Exportación</h2>
-                        <p class="tab-description">Genera documentos PDF listos para compartir.</p>
-                    </div>
+                    <div class="tab-header"><h2>Reportes y Exportación</h2></div>
                     <div class="reportes-grid">
                         <div class="reporte-card"><div class="reporte-icon">📋</div><h3>Pendientes</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('pendientes')">Generar PDF</button></div>
                         <div class="reporte-card"><div class="reporte-icon">✅</div><h3>Recibidos</h3><button class="btn btn-primary w-100" onclick="abrirModalReportes('recibidos')">Generar PDF</button></div>
@@ -239,6 +150,8 @@
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:0;"><label>Contrata *</label><input type="text" id="genContrata" name="contrata" value="REDES CARRERAS S.L." required></div>
+                    <div class="form-group" style="margin-bottom:0;"><label>ID Empresa (Nº) *</label><input type="text" id="genIdEmpresa" name="idEmpresa" value="134º" required></div>
+                    
                     <div class="form-group" style="margin-bottom:0;"><label>ID de Obra *</label><input type="text" id="genIdObra" name="idObra" required></div>
                     <div class="form-group" style="margin-bottom:0;"><label>CR y Lateral</label><input type="text" id="genCR" name="cr_lateral"></div>
                     <div class="form-group" style="margin-bottom:0;"><label>Población *</label><input type="text" id="genPoblacion" name="poblacion" required></div>
@@ -247,38 +160,16 @@
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Encargado</label>
                         <input type="text" id="genEncargado" name="encargado" list="opcionesEncargados" autocomplete="off" placeholder="Ej: EDUARDO AGUILAR">
-                        <datalist id="opcionesEncargados">
-                            <option value="FRANCISCO GUIJARRO">
-                            <option value="EDUARDO AGUILAR">
-                            <option value="JORGE VEGAS">
-                            <option value="OSCAR HERNANDEZ">
-                            <option value="JUAN ANTONIO SANCHEZ">
-                        </datalist>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Nº Albarán</label>
                         <select id="genNAlbaran" name="n_albaran">
-                            <option value="1º">1º</option>
-                            <option value="2º">2º</option>
-                            <option value="3º">3º</option>
-                            <option value="4º">4º</option>
-                            <option value="5º">5º</option>
-                            <option value="6º">6º</option>
-                            <option value="7º">7º</option>
-                            <option value="8º">8º</option>
-                            <option value="9º">9º</option>
-                            <option value="10º">10º</option>
+                            <option value="1º">1º</option><option value="2º">2º</option><option value="3º">3º</option><option value="4º">4º</option><option value="5º">5º</option><option value="6º">6º</option><option value="7º">7º</option><option value="8º">8º</option><option value="9º">9º</option><option value="10º">10º</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Cuenta de Cargo *</label>
                         <input type="text" id="genCuentaCargo" name="cuentaCargo" list="opcionesCuentaCargo" required autocomplete="off" placeholder="Ej: 509/81900">
-                        <datalist id="opcionesCuentaCargo">
-                            <option value="509/54500">
-                            <option value="509/86200">
-                            <option value="509/81900">
-                            <option value="509/71700">
-                        </datalist>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Tipo de Instalación *</label>
@@ -288,9 +179,8 @@
                     </div>
                 </div>
                 
-                <h3 style="font-size: 15px; color: var(--primary-600); margin-bottom: 8px;">📦 Catálogo de Material (Indica solo la cantidad en lo que necesites)</h3>
+                <h3 style="font-size: 15px; color: var(--primary-600); margin-bottom: 8px;">📦 Catálogo de Material</h3>
                 
-                <!-- TABLA DE CATÁLOGO COMPLETO SCROLLABLE -->
                 <div class="catalogo-table-container">
                     <table class="catalogo-table">
                         <thead>
@@ -300,13 +190,11 @@
                                 <th style="width: 15%; text-align: center;">Cantidad</th>
                             </tr>
                         </thead>
-                        <tbody id="catalogoTablaCuerpo">
-                            <!-- Inyectado por JavaScript -->
-                        </tbody>
+                        <tbody id="catalogoTablaCuerpo"></tbody>
                     </table>
                 </div>
 
-                <div class="form-group" style="margin-top: 16px;"><label>Observaciones Internas (No salen en Excel)</label><textarea id="genObservaciones" name="observaciones" rows="2"></textarea></div>
+                <div class="form-group" style="margin-top: 16px;"><label>Observaciones Internas</label><textarea id="genObservaciones" name="observaciones" rows="2"></textarea></div>
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -316,7 +204,7 @@
         </div>
     </div>
 
-    <!-- Modal Editar Albarán (Mantenemos el antiguo para albaranes subidos manuales) -->
+    <!-- Modal Editar Albarán Manual -->
     <div id="modalEditarAlbaran" class="modal">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header"><h2>Editar Albarán</h2><button class="modal-close" onclick="cerrarModal()">&times;</button></div>
@@ -327,7 +215,6 @@
                 <div class="form-group"><label>Fecha *</label><input type="date" id="editFecha" name="fecha" required></div>
                 <div class="form-group"><label>Cuenta de Cargo *</label><input type="text" id="editCuentaCargo" name="cuentaCargo" required></div>
                 <div class="form-group"><label>Tipo de Instalación *</label><select id="editTipoInstalacion" name="tipoInstalacion" required><option value="">Seleccionar...</option><option value="FTTH">FTTH</option><option value="FTTN">FTTN</option><option value="TESA">TESA</option><option value="Lyntia">Lyntia</option></select></div>
-                
                 <div class="form-group"><label>Jefe de Obra</label><input type="text" id="editJefeObra" name="jefeObra"></div>
                 <div class="form-group"><label>Observaciones</label><textarea id="editObservaciones" name="observaciones" rows="2"></textarea></div>
                 <div class="form-group" style="border-top: 1px solid var(--bg-system); padding-top: 16px;"><label>Reemplazar Archivo (Excel/PDF) - Opcional</label><input type="file" id="editArchivoAlbaran" name="archivoAlbaran" accept=".pdf,.xlsx,.xls"></div>
@@ -336,51 +223,40 @@
         </div>
     </div>
 
-    <!-- Modal Recepción MEJORADO -->
+    <!-- Modal Recepción -->
     <div id="modalRecepcion" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Confirmar Recepción</h2>
-                <button class="modal-close" onclick="cerrarModalRecepcion()">&times;</button>
-            </div>
+            <div class="modal-header"><h2>Confirmar Recepción</h2><button class="modal-close" onclick="cerrarModalRecepcion()">&times;</button></div>
             <div class="modal-body">
-                <p style="margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">
-                    Al marcar como entregado correcto, <b>todo el material que esté esperando este albarán se añadirá automáticamente a tu stock disponible</b>.
-                </p>
+                <p style="margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">Al marcar como entregado correcto, <b>todo el material que esté esperando este albarán se añadirá automáticamente a tu stock disponible</b>.</p>
                 <div class="recepcion-options">
-                    <label class="radio-option selected" id="lbl-completo">
-                        <input type="radio" name="estadoRecepcion" value="completo" checked onchange="toggleDetalleFaltante()">
-                        <div class="radio-content"><div style="font-size: 28px; margin-bottom: 8px;">✅</div><strong>Entregado Correcto</strong></div>
-                    </label>
-                    <label class="radio-option" id="lbl-incompleto">
-                        <input type="radio" name="estadoRecepcion" value="incompleto" onchange="toggleDetalleFaltante()">
-                        <div class="radio-content"><div style="font-size: 28px; margin-bottom: 8px;">⚠️</div><strong>Faltó Material</strong></div>
-                    </label>
+                    <label class="radio-option selected" id="lbl-completo"><input type="radio" name="estadoRecepcion" value="completo" checked onchange="toggleDetalleFaltante()"><div class="radio-content"><div style="font-size: 28px; margin-bottom: 8px;">✅</div><strong>Entregado Correcto</strong></div></label>
+                    <label class="radio-option" id="lbl-incompleto"><input type="radio" name="estadoRecepcion" value="incompleto" onchange="toggleDetalleFaltante()"><div class="radio-content"><div style="font-size: 28px; margin-bottom: 8px;">⚠️</div><strong>Faltó Material</strong></div></label>
                 </div>
-                
                 <div id="detalleFaltante" style="display: none; margin-top: 20px; animation: fadeIn 0.3s ease;">
                     <h4 style="margin-bottom: 12px; color: var(--system-red); font-size: 14px;">Selecciona el material que NO HA LLEGADO:</h4>
                     <div id="listaItemsFaltantes" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 250px; overflow-y: auto; background: #FAFAFA; border: 1px solid var(--bg-system); padding: 12px; border-radius: 8px;"></div>
                     <div class="form-group" style="margin-bottom: 0;"><label>Nota Adicional (Opcional)</label><textarea id="materialFaltante" rows="2" placeholder="Ej: Las 2 bobinas faltantes llegarán mañana..."></textarea></div>
                 </div>
-                
-                <div class="form-actions" style="margin-top: 24px;">
-                    <button type="button" class="btn btn-secondary" onclick="cerrarModalRecepcion()">Cancelar</button>
-                    <button type="button" class="btn btn-success" onclick="confirmarRecepcion()">Confirmar Estado</button>
-                </div>
+                <div class="form-actions" style="margin-top: 24px;"><button type="button" class="btn btn-secondary" onclick="cerrarModalRecepcion()">Cancelar</button><button type="button" class="btn btn-success" onclick="confirmarRecepcion()">Confirmar Estado</button></div>
             </div>
         </div>
     </div>
 
-    <!-- Modales Restantes -->
+    <!-- Modales de Materiales -->
     <div id="modalEntradaMaterial" class="modal"><div class="modal-content"><div class="modal-header"><h2>Registrar Entrada de Material</h2><button class="modal-close" onclick="cerrarModal()">&times;</button></div><form id="formEntradaMaterial" class="modal-body"><div class="form-group"><label>Empresa *</label><select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select></div><div class="form-group"><label>ID de Obra / Origen</label><input type="text" name="idObra" placeholder="Ej: Almacén o Albarán N°" required></div><div class="form-group"><label>Descripción del Material *</label><input type="text" name="descripcion" list="opcionesMaterialGral" autocomplete="off" required placeholder="Ej: BRIDA 300X4,8"></div><div class="form-group"><label>Cantidad (Uds/Mts) *</label><input type="number" name="cantidad" required min="0.1" step="0.1"></div><div class="form-group"><label>Fecha</label><input type="date" id="fechaEntradaMaterial" name="fecha"></div><div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2"></textarea></div><div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button><button type="submit" class="btn btn-success">Registrar Entrada</button></div></form></div></div>
     <div id="modalSalidaMaterial" class="modal"><div class="modal-content"><div class="modal-header"><h2>Registrar Salida / Instalado</h2><button class="modal-close" onclick="cerrarModal()">&times;</button></div><form id="formSalidaMaterial" class="modal-body"><div class="form-group"><label>Empresa *</label><select name="empresa" required onchange="actualizarOpcionesMaterialesGral(this.value)"><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select></div><div class="form-group"><label>ID de Obra / Destino *</label><input type="text" name="idObra" required></div><div class="form-group"><label>Descripción del Material *</label><select id="selectMaterialSalida" name="descripcion" required></select></div><div class="form-group"><label>Cantidad Instalada *</label><input type="number" name="cantidad" required min="0.1" step="0.1"></div><div class="form-group"><label>Fecha</label><input type="date" id="fechaSalidaMaterial" name="fecha"></div><div class="form-group"><label>Técnico / Observaciones</label><textarea name="observaciones" rows="2"></textarea></div><div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button><button type="submit" class="btn btn-warning">Registrar Salida</button></div></form></div></div>
+    
     <div id="modalNuevoCable" class="modal"><div class="modal-content"><div class="modal-header"><h2>Registrar Cable Instalado</h2><button class="modal-close" onclick="cerrarModalCable()">&times;</button></div><form id="formNuevoCable" class="modal-body"><div class="form-group"><label>Empresa *</label><select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select></div><div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div><div class="form-group"><label>Tipo de Cable *</label><select id="tipoCableInstalacion" name="tipoCable" required></select></div><div class="form-group"><label>Metros *</label><input type="number" name="metros" required min="0.1" step="0.1"></div><div class="form-group"><label>Fecha</label><input type="date" id="fechaCable" name="fecha"></div><div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2"></textarea></div><div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalCable()">Cancelar</button><button type="submit" class="btn btn-warning">Registrar Instalado</button></div></form></div></div>
     <div id="modalMermaCable" class="modal"><div class="modal-content"><div class="modal-header"><h2>Registrar Merma / Retal</h2><button class="modal-close" onclick="cerrarModalCable()">&times;</button></div><form id="formMermaCable" class="modal-body"><div class="form-group"><label>Empresa *</label><select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select></div><div class="form-group"><label>Tipo de Cable *</label><select id="tipoCableMerma" name="tipoCable" required></select></div><div class="form-group"><label>Metros Desechados *</label><input type="number" name="metros" required min="0.1" step="0.1"></div><div class="form-group"><label>Fecha</label><input type="date" id="fechaMerma" name="fecha"></div><div class="form-group"><label>Motivo / Observaciones</label><textarea name="observaciones" rows="2" required></textarea></div><div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalCable()">Cancelar</button><button type="submit" class="btn btn-secondary" style="background:#8E8E93; color:white;">Dar de Baja</button></div></form></div></div>
     <div id="modalEntradaCable" class="modal"><div class="modal-content"><div class="modal-header"><h2>Registrar Entrada de Cable</h2><button class="modal-close" onclick="cerrarModalEntradaCable()">&times;</button></div><form id="formEntradaCable" class="modal-body"><div class="form-group"><label>Empresa *</label><select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select></div><div class="form-group"><label>ID de Obra / Origen *</label><input type="text" name="idObra" required></div><div class="form-group"><label>Tipo de Cable *</label><select id="tipoCableEntrada" name="tipoCable" required></select></div><div class="form-group"><label>Metros *</label><input type="number" name="metros" required min="0.1" step="0.1"></div><div class="form-group"><label>Fecha</label><input type="date" id="fechaCableEntrada" name="fecha"></div><div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2"></textarea></div><div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalEntradaCable()">Cancelar</button><button type="submit" class="btn btn-success">Registrar Entrada</button></div></form></div></div>
+    
     <div id="modalNuevoSubconducto" class="modal"><div class="modal-content"><div class="modal-header"><h2>Registrar Subconducto Instalado</h2><button class="modal-close" onclick="cerrarModalSubconducto()">&times;</button></div><form id="formNuevoSubconducto" class="modal-body"><div class="form-group"><label>Empresa *</label><select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select></div><div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div><div class="form-group"><label>Tipo de Subconducto *</label><select name="tipoSubconducto" required><option value="">Seleccionar...</option><option value="Subconducto 32mm">Subconducto 32mm</option><option value="Subconducto 40mm">Subconducto 40mm</option><option value="Subconducto 63mm">Subconducto 63mm</option></select></div><div class="form-group" style="background: #FAFAFA; border: 1px solid var(--bg-system); padding: 12px; border-radius: 8px;"><label style="margin-bottom: 8px; color: var(--text-primary);">📐 Calculadora de Conductos (Opcional)</label><div style="display: flex; gap: 8px; margin-bottom: 4px;"><div style="flex:1"><small style="display:block; text-align:center;">x1</small><input type="number" id="sub_x1" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div><div style="flex:1"><small style="display:block; text-align:center;">x2</small><input type="number" id="sub_x2" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div><div style="flex:1"><small style="display:block; text-align:center;">x3</small><input type="number" id="sub_x3" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div><div style="flex:1"><small style="display:block; text-align:center;">x4</small><input type="number" id="sub_x4" placeholder="Mts" min="0" step="0.1" oninput="calcularTotalSubconducto()" style="padding:8px; text-align:center;"></div></div><small style="color: var(--text-secondary); font-size: 11px;">Ej: 100 mts tirados en tubo x2 suman 200m en total.</small></div><div class="form-group"><label>Metros Totales Instalados *</label><input type="number" id="sub_metros_totales" name="metros" required min="0.1" step="0.1"></div><div class="form-group"><label>Fecha</label><input type="date" id="fechaSubconducto" name="fecha"></div><div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2"></textarea></div><div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalSubconducto()">Cancelar</button><button type="submit" class="btn btn-warning">Registrar Instalado</button></div></form></div></div>
     <div id="modalEntradaSubconducto" class="modal"><div class="modal-content"><div class="modal-header"><h2>Registrar Entrada de Subconducto</h2><button class="modal-close" onclick="cerrarModalEntradaSubconducto()">&times;</button></div><form id="formEntradaSubconducto" class="modal-body"><div class="form-group"><label>Empresa *</label><select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select></div><div class="form-group"><label>ID de Obra / Origen *</label><input type="text" name="idObra" required></div><div class="form-group"><label>Tipo de Subconducto *</label><select name="tipoSubconducto" required><option value="">Seleccionar...</option><option value="Subconducto 32mm">Subconducto 32mm</option><option value="Subconducto 40mm">Subconducto 40mm</option><option value="Subconducto 63mm">Subconducto 63mm</option></select></div><div class="form-group"><label>Metros *</label><input type="number" name="metros" required min="0.1" step="0.1"></div><div class="form-group"><label>Fecha</label><input type="date" id="fechaSubconductoEntrada" name="fecha"></div><div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="2"></textarea></div><div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalEntradaSubconducto()">Cancelar</button><button type="submit" class="btn btn-success">Registrar Entrada</button></div></form></div></div>
+    
     <div id="modalNuevaDevolucion" class="modal"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h2>Registrar Devolución</h2><button class="modal-close" onclick="cerrarModalDevolucion()">&times;</button></div><form id="formNuevaDevolucion" class="modal-body"><div class="form-group"><label>Empresa *</label><select name="empresa" required><option value="Elecnor">Elecnor</option><option value="Circet">Circet</option><option value="Zener">Zener</option><option value="Magtel">Magtel</option></select></div><div class="form-group"><label>ID de Obra *</label><input type="text" name="idObra" required></div><div class="form-group"><label>Fecha de Entrega *</label><input type="date" id="fechaDevolucion" name="fecha" required></div><div class="form-group"><label>Tipo de Instalación *</label><select name="tipoInstalacion" required><option value="">Seleccionar...</option><option value="FTTH">FTTH</option><option value="FTTN">FTTN</option><option value="TESA">TESA</option><option value="Lyntia">Lyntia</option></select></div><div class="bobinas-container" id="bobinasContainer"></div><div class="form-group"><button type="button" class="btn btn-secondary" onclick="agregarBobina()">+ Añadir otra bobina</button></div><div class="form-group"><label>Observaciones</label><textarea name="observaciones" rows="3"></textarea></div><div class="form-actions"><button type="button" class="btn btn-secondary" onclick="cerrarModalDevolucion()">Cancelar</button><button type="submit" class="btn btn-primary">Registrar Devolución</button></div></form></div></div>
+
+    <datalist id="opcionesCable"></datalist><datalist id="opcionesMaterialGral"></datalist> 
 
     <!-- Buscador y Reportes -->
     <div id="modalBuscador" class="modal"><div class="modal-content"><div class="modal-header"><h2>🔍 Buscar</h2><button class="modal-close" onclick="cerrarModalBuscador()">&times;</button></div><div class="modal-body"><div class="form-group"><input type="text" id="buscarObra" placeholder="Ingresa ID de obra, albarán o material..." oninput="buscarEnTiempoReal()" autocomplete="off"></div><div id="resultados-busqueda" style="max-height: 50vh; overflow-y: auto;"><div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div></div></div></div></div>
@@ -388,41 +264,13 @@
 
     <div id="toast-container" class="toast-container"></div>
     <script src="app.js"></script>
-    
     <script>
         let eventoInstalacion = null;
         const btnInstalar = document.getElementById('btnInstalarApp');
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('sw.js').then(function(reg) {
-                    console.log('Service Worker Registrado!');
-                }).catch(function(err) {
-                    console.log('Fallo el Service Worker:', err);
-                });
-            });
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); 
-            eventoInstalacion = e; 
-            btnInstalar.style.display = 'inline-flex'; 
-        });
-
-        btnInstalar.addEventListener('click', async () => {
-            if (eventoInstalacion) {
-                eventoInstalacion.prompt(); 
-                const { outcome } = await eventoInstalacion.userChoice;
-                if (outcome === 'accepted') {
-                    btnInstalar.style.display = 'none'; 
-                }
-                eventoInstalacion = null;
-            }
-        });
-
-        window.addEventListener('appinstalled', () => {
-            btnInstalar.style.display = 'none';
-        });
+        if ('serviceWorker' in navigator) { window.addEventListener('load', function() { navigator.serviceWorker.register('sw.js').then(function(reg) { console.log('Service Worker Registrado!'); }).catch(function(err) { console.log('Fallo SW:', err); }); }); }
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); eventoInstalacion = e; btnInstalar.style.display = 'inline-flex'; });
+        btnInstalar.addEventListener('click', async () => { if (eventoInstalacion) { eventoInstalacion.prompt(); const { outcome } = await eventoInstalacion.userChoice; if (outcome === 'accepted') { btnInstalar.style.display = 'none'; } eventoInstalacion = null; } });
+        window.addEventListener('appinstalled', () => { btnInstalar.style.display = 'none'; });
     </script>
 </body>
 </html>

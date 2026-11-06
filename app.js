@@ -7,19 +7,16 @@ const firebaseConfig = {
     storageBucket: "stock-material-28674.firebasestorage.app",
     messagingSenderId: "994809951058",
     appId: "1:994809951058:web:31d0cd19f4dcf49b84408b"
-  };
-  
+};
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // ===== VARIABLES GLOBALES =====
 let albaranes = []; let albaranSeleccionado = null;
 let cables = []; let subconductos = []; let devoluciones = []; 
-let materialesGenerales = []; 
-let reporteActual = '';
-let empresaActiva = 'Todas';
+let materialesGenerales = []; let reporteActual = ''; let empresaActiva = 'Todas';
 
-// CATÁLOGO COMPLETO EXTRAÍDO DIRECTAMENTE DEL EXCEL (196 ITEMS)
+// CATÁLOGO COMPLETO EXTRAÍDO DIRECTAMENTE DEL EXCEL (198 ITEMS)
 const DICCIONARIO_CODIGOS = [
     { cod: "101001J", desc: "Cable de f.o. de exterior PKP holgado de 8 fo.", tipo: "cable" },
     { cod: "101003J", desc: "Cable de f.o. de exterior PKP holgado de 16 fo.", tipo: "cable" },
@@ -62,7 +59,7 @@ const DICCIONARIO_CODIGOS = [
     { cod: "101049J", desc: "Cable de f.o. de exterior KP holgado de 128 fo.", tipo: "cable" },
     { cod: "101051J", desc: "Cable de f.o. de exterior riser de 16 fo.", tipo: "cable" },
     { cod: "101052J", desc: "Cable de f.o. de exterior riser de 32 fo.", tipo: "cable" },
-    { cod: "102001JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 64 fusiones Tyco", tipo: "material" },
+    { cod: "102001JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 64 fusiones  Tyco", tipo: "material" },
     { cod: "102002JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 128 fusiones Tyco", tipo: "material" },
     { cod: "102003JT", desc: "Caja de empalme TE FIST-GCO2-BD8, con bandejas de empalme 5SE para 128 (160) fusiones Tyco", tipo: "material" },
     { cod: "102003JM", desc: "Caja de empalme RA BPEO-2/128 3M", tipo: "material" },
@@ -85,14 +82,14 @@ const DICCIONARIO_CODIGOS = [
     { cod: "102026JT", desc: "Splitter 1:16 premontado en bandeja de empalme para caja UCAx o similar Tyco", tipo: "material" },
     { cod: "102028JT", desc: "Módulo de operador TE MOBI, o similar, marcado ORANGE Tyco", tipo: "material" },
     { cod: "102029JT", desc: "Módulo de cliente TE MOBI, o similar, con 16 adaptadores SC/APC y 16 pig-tails G.657A2 SC/APC \"low loss\" Tyco", tipo: "material" },
-    { cod: "102030JT", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\" Tyco", tipo: "material" },
-    { cod: "102032JT", desc: "Suministro de 16 adaptadores SC/APC y 1 splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\" Tyco", tipo: "material" },
-    { cod: "102034J", desc: "Caja terminal multipuerto con 4 puertos Optitap® y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102035J", desc: "Caja terminal multipuerto con 4 puertos Optitap® y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102036J", desc: "Caja terminal multipuerto con 4 puertos Optitap® y rabillo de 150 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102037J", desc: "Caja terminal multipuerto con 8 puertos Optitap® y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102038J", desc: "Caja terminal multipuerto con 8 puertos Optitap® y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
-    { cod: "102039J", desc: "Caja terminal multipuerto con 8 puertos Optitap® y rabillo de 150 m marcado ORANGE Corning", tipo: "material" },
+    { cod: "102030JT", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\"  Tyco", tipo: "material" },
+    { cod: "102032JT", desc: "Suministro de 16 adaptadores SC/APC y 1 splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\"  Tyco", tipo: "material" },
+    { cod: "102034J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102035J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102036J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 150 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102037J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 50 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102038J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 100 m marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102039J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 150 m marcado ORANGE Corning", tipo: "material" },
     { cod: "102040J", desc: "Caja de derivación óptica TE IFDB-M, o similar Tyco", tipo: "material" },
     { cod: "102045JT", desc: "Suministro de splitter 1:4 fuera de bandeja", tipo: "material" },
     { cod: "102047J", desc: "SPLITTER 1:16 FUERA DE BANDEJA (GENERICO)(SUSTITUYE A 102060J)", tipo: "material" },
@@ -216,7 +213,9 @@ const DICCIONARIO_CODIGOS = [
     { cod: "D08160050007", desc: "TUBO PG16 de SIN ACERO", tipo: "subconducto" },
     { cod: "D08160050008", desc: "TUBO PG21 de SIN ACERO", tipo: "subconducto" },
     { cod: "D07060040024", desc: "TUBO PLASTICO 40MM PARA SALIDA LATERAL(KIT CON PIE Y CONO)", tipo: "subconducto" },
-    { cod: "D15180010001", desc: "ABRAZADERA PARA TUBO DE SALIDA LATERAL", tipo: "subconducto" }
+    { cod: "D15180010001", desc: "ABRAZADERA PARA TUBO DE SALIDA LATERAL", tipo: "subconducto" },
+    { cod: "NOMBRE/FIRMA/DNI", desc: "nan", tipo: "material" },
+    { cod: "FIRMA AUTORIZADO POR ENCARGADO", desc: "nan", tipo: "material" }
 ];
 
 const CABLE_OPTIONS_HTML = DICCIONARIO_CODIGOS.filter(c => c.tipo === 'cable').map(c => `<option value="${c.desc}">${c.desc}</option>`).join('');
@@ -264,7 +263,6 @@ function cambiarEmpresaActiva() {
     actualizarUI();
     mostrarToast(`🏢 Mostrando datos de: ${empresaActiva}`);
 }
-window.cambiarEmpresaActiva = cambiarEmpresaActiva;
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
@@ -365,11 +363,15 @@ function irAElemento(tab, id) {
 // ===== NUEVO SISTEMA: GENERADOR DE PLANTILLA EXCELJS EN VIVO ================
 // ============================================================================
 
+// ============================================================================
+// ===== NUEVO SISTEMA: GENERADOR DE PLANTILLA EXCELJS EN VIVO ================
+// ============================================================================
+
 function abrirModalNuevoAlbaranGenerador() {
     const tbody = document.getElementById('catalogoTablaCuerpo');
     tbody.innerHTML = '';
     
-    DICCIONARIO_CODIGOS.forEach((item, index) => {
+    DICCIONARIO_CODIGOS.forEach((item) => {
         const tr = document.createElement('tr');
         tr.className = 'catalogo-fila'; 
         tr.innerHTML = `
@@ -431,6 +433,7 @@ async function generarExcelYRegistrar(e) {
     
     const empresa = document.getElementById('genEmpresa').value;
     const contrata = document.getElementById('genContrata').value.toUpperCase();
+    const idEmpresa = document.getElementById('genIdEmpresa').value.toUpperCase() || '134º';
     const idObra = document.getElementById('genIdObra').value.toUpperCase();
     const crLateral = document.getElementById('genCR').value.toUpperCase();
     const poblacion = document.getElementById('genPoblacion').value.toUpperCase();
@@ -523,7 +526,7 @@ async function generarExcelYRegistrar(e) {
         titleCell.font = fontTitle;
         titleCell.alignment = alignCenter;
         
-        sheet.getCell('E3').value = '134º'; sheet.getCell('E3').font = fontHeader; sheet.getCell('E3').alignment = alignCenter; sheet.getCell('E3').border = borderAll;
+        sheet.getCell('E3').value = idEmpresa; sheet.getCell('E3').font = fontHeader; sheet.getCell('E3').alignment = alignCenter; sheet.getCell('E3').border = borderAll;
         sheet.getCell('E4').value = 'V15'; sheet.getCell('E4').font = {name:'Arial', size:10, bold:true, underline:true}; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderAll;
         
         const cabecerasInfo = [
@@ -650,7 +653,6 @@ function guardarEdicionAlbaran(e) {
         finalizarEdicionAlbaran(formData, idAlbaran, albaran, albaran.archivo, []);
     }
 }
-window.guardarEdicionAlbaran = guardarEdicionAlbaran;
 
 function generarTablaHtmlYMaterialesDesdeBase64(b64) {
     try {
@@ -822,6 +824,7 @@ function mostrarAlbaranes() {
         if (subAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(255,149,0,0.1); color:var(--system-orange); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🛡️ ${subAsociados} subcond.</b>`;
         if (matAsociados > 0) etiquetas += `<b style="font-size:11px; background:rgba(0,122,255,0.1); color:var(--system-blue); padding: 2px 6px; border-radius: 6px; margin-left: 8px;">🛒 ${matAsociados} acc.</b>`;
 
+        // AQUÍ ESTABA EL ERROR: Decía ${m.observaciones} en vez de ${a.observaciones}
         return `
         <div class="albaran-card" id="card-${a.id}">
             <div class="albaran-header">
@@ -884,7 +887,6 @@ function abrirModalRecepcion(id) {
     listaItems.innerHTML = html;
     toggleDetalleFaltante();
 }
-window.abrirModalRecepcion = abrirModalRecepcion;
 
 function toggleDetalleFaltante() {
     const val = document.querySelector('input[name="estadoRecepcion"]:checked').value;
@@ -892,7 +894,6 @@ function toggleDetalleFaltante() {
     document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
     document.querySelector(`input[name="estadoRecepcion"]:checked`).closest('.radio-option').classList.add('selected');
 }
-window.toggleDetalleFaltante = toggleDetalleFaltante;
 
 function confirmarRecepcion() {
     if(!albaranSeleccionado) return;
@@ -956,7 +957,6 @@ function confirmarRecepcion() {
     mostrarToast('✅ Recepción completada');
     if (itemsIngresados > 0) setTimeout(() => mostrarToast(`📦 ${itemsIngresados} artículos han entrado al stock disponible`), 1000);
 }
-window.confirmarRecepcion = confirmarRecepcion;
 
 function resolicitarFaltante(id) {
     if(!confirm('¿Crear un nuevo Albarán en PENDIENTES con este material para recibirlo en el futuro?')) return;
@@ -1005,7 +1005,6 @@ function resolicitarFaltante(id) {
     actualizarUI();
     mostrarToast(`✅ Re-solicitud creada con ${materialMovido} artículo(s). Albarán enviado a Pendientes.`);
 }
-window.resolicitarFaltante = resolicitarFaltante;
 
 function eliminarAlbaran(id) {
     if(confirm('¿Eliminar albarán permanentemente?')) { 
@@ -1016,13 +1015,10 @@ function eliminarAlbaran(id) {
         guardarTodosLosDatos(); 
     }
 }
-window.eliminarAlbaran = eliminarAlbaran;
 
 // ===== MATERIALES GENERALES =====
 function abrirModalEntradaMaterial() { document.getElementById('modalEntradaMaterial').classList.add('active'); establecerFechaActual(); }
 function abrirModalSalidaMaterial() { document.getElementById('modalSalidaMaterial').classList.add('active'); establecerFechaActual(); }
-window.abrirModalEntradaMaterial = abrirModalEntradaMaterial;
-window.abrirModalSalidaMaterial = abrirModalSalidaMaterial;
 
 function agregarMaterialGeneral(form, accion) {
     const cantidad = parseFloat(form.get('cantidad'));
@@ -1057,7 +1053,6 @@ function actualizarOpcionesMaterialesGral(empresaFiltro = null) {
     const select = document.getElementById('selectMaterialSalida');
     if (select) select.innerHTML = '<option value="">Selecciona qué has gastado...</option>' + html;
 }
-window.actualizarOpcionesMaterialesGral = actualizarOpcionesMaterialesGral;
 
 function mostrarMaterialesGenerales() {
     const cont = document.getElementById('lista-materiales');
@@ -1168,7 +1163,6 @@ function calcularTotalSubconducto() {
         metrosInput.value = total.toFixed(1);
     }
 }
-window.calcularTotalSubconducto = calcularTotalSubconducto;
 
 function marcarSubconductoSolicitado(id) {
     const material = subconductos.find(s => s.id === id);
@@ -1179,7 +1173,6 @@ function marcarSubconductoSolicitado(id) {
         mostrarToast('✅ Subconducto marcado como solicitado');
     }
 }
-window.marcarSubconductoSolicitado = marcarSubconductoSolicitado;
 
 function calcularStock(tipo) {
     const arr = filtrarPorEmpresa(tipo === 'cable' ? cables : subconductos);
@@ -1367,7 +1360,6 @@ function eliminarMaterial(tipo, id) {
         guardarTodosLosDatos(); 
     }
 }
-window.eliminarMaterial = eliminarMaterial;
 
 // ===== GESTION DE DEVOLUCIONES =====
 function inicializarBobinas() {
@@ -1426,13 +1418,11 @@ function agregarBobina() {
         toggleCamposMaterial(index);
     });
 }
-window.agregarBobina = agregarBobina;
 
 function eliminarBobina(idx) {
     const item = document.querySelector(`[data-bobina="${idx}"]`);
     if(item) item.remove();
 }
-window.eliminarBobina = eliminarBobina;
 
 function toggleCamposMaterial(idx) {
     const tipo = document.getElementById(`tipoMaterial_${idx}`).value;
@@ -1444,7 +1434,6 @@ function toggleCamposMaterial(idx) {
     if(tipo === 'bobina_vacia') document.getElementById(`camposBobinaVacia_${idx}`).style.display = 'flex';
     if(tipo === 'otro') document.getElementById(`camposOtroMaterial_${idx}`).style.display = 'block';
 }
-window.toggleCamposMaterial = toggleCamposMaterial;
 
 function crearDevolucion(e) {
     e.preventDefault();
@@ -1543,22 +1532,18 @@ function mostrarDevoluciones() {
 function eliminarDevolucion(id) {
     if(confirm('¿Eliminar devolución?')) { devoluciones = devoluciones.filter(d=>d.id!==id); guardarTodosLosDatos(); }
 }
-window.eliminarDevolucion = eliminarDevolucion;
-
 
 // ===== EXCEL PREVIEW INTELIGENTE (BACKORDERS Y FALTANTES) =====
 function verArchivoAlbaran(id) {
     const a = albaranes.find(x => x.id === id);
     if(!a) return mostrarToast('❌ El albarán no está disponible.');
     
-    // Obtenemos los materiales que están actualmente vinculados a este albaran EN EL LIMBO (Pendiente de recibir)
     const pendingCables = cables.filter(c => c.idAlbaranAsociado === id && c.accion === 'pendiente_recepcion');
     const pendingSub = subconductos.filter(s => s.idAlbaranAsociado === id && s.accion === 'pendiente_recepcion');
     const pendingMat = materialesGenerales.filter(m => m.idAlbaranAsociado === id && m.accion === 'pendiente_recepcion');
 
     let contenido = '';
     
-    // SI ES UN BACKORDER O UN FALTANTE: Mostramos la lista viva de lo que falta
     if (a.isBackorder || (a.materialFaltante && String(a.materialFaltante).trim() !== "")) {
         let htmlResumen = '<table class="table-preview" style="margin-bottom:0;"><tr><th style="background:rgba(255,149,0,0.1); color:var(--system-orange);">Tipo de Material / Artículo</th><th style="background:rgba(255,149,0,0.1); color:var(--system-orange);">Cantidad</th></tr>';
         
@@ -1591,7 +1576,6 @@ function verArchivoAlbaran(id) {
             </div>`;
         }
     } 
-    // SI ES NORMAL Y CORRIENTE, MUESTRA EL ARCHIVO DIRECTAMENTE
     else {
         if (a.archivo && a.archivo.tablaHtml) {
             contenido = `<div class="excel-preview">${a.archivo.tablaHtml}</div>`;
@@ -1616,7 +1600,6 @@ function verArchivoAlbaran(id) {
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
-window.verArchivoAlbaran = verArchivoAlbaran;
 
 // ===== BUSCADOR EN TIEMPO REAL =====
 function abrirBuscador() {
@@ -1625,7 +1608,6 @@ function abrirBuscador() {
     document.getElementById('resultados-busqueda').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">💡 Escribe para buscar...</div>';
     setTimeout(() => document.getElementById('buscarObra').focus(), 100);
 }
-window.abrirBuscador = abrirBuscador;
 
 function buscarEnTiempoReal() {
     const termino = document.getElementById('buscarObra').value.trim().toLowerCase();
@@ -1666,7 +1648,6 @@ function buscarEnTiempoReal() {
     }
     container.innerHTML = html;
 }
-window.buscarEnTiempoReal = buscarEnTiempoReal;
 
 // ===== EXPORTAR / IMPORTAR DATOS =====
 function exportarDatos() {
@@ -1679,7 +1660,6 @@ function exportarDatos() {
         mostrarToast('✅ Backup descargado con éxito');
     } catch(e) { mostrarToast('❌ Error exportando'); }
 }
-window.exportarDatos = exportarDatos;
 
 function abrirImportar() {
     const input = document.createElement('input'); 
@@ -1723,14 +1703,12 @@ function abrirImportar() {
     };
     input.click();
 }
-window.abrirImportar = abrirImportar;
 
 // ===== REPORTES PDF =====
 function abrirModalReportes(tipo) {
     reporteActual = tipo;
     document.getElementById('modalReportes').classList.add('active');
 }
-window.abrirModalReportes = abrirModalReportes;
 
 function iniciarGeneracionReporte() {
     cerrarTodosLosModales();
@@ -1902,14 +1880,13 @@ function iniciarGeneracionReporte() {
         mostrarToast('✅ PDF Generado con éxito');
     }, 100);
 }
-window.iniciarGeneracionReporte = iniciarGeneracionReporte;
 
 // ===== EVENT LISTENERS Y CERRADO DE MODALES =====
 function configurarEventListeners() {
     document.getElementById('btnBuscar').addEventListener('click', abrirBuscador);
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => cambiarTab(btn.dataset.tab)));
     
-    // --> CONEXIÓN DEL FORMULARIO DE GENERACIÓN EXCEL <--
+    // CONEXIÓN DEL FORMULARIO DE GENERACIÓN EXCEL
     document.getElementById('formGenerarAlbaran').addEventListener('submit', generarExcelYRegistrar);
     
     document.getElementById('formEditarAlbaran').addEventListener('submit', guardarEdicionAlbaran);
@@ -1939,10 +1916,41 @@ function configurarEventListeners() {
     });
 }
 
+// ============================================================================
+// EXPORTACIONES GLOBALES AL FINAL EXACTAMENTE COMO LAS TIENES
+// ============================================================================
+
+window.abrirModalNuevoAlbaranGenerador = abrirModalNuevoAlbaranGenerador;
+window.agregarLineaManualGenerador = agregarLineaManualGenerador;
+window.generarExcelYRegistrar = generarExcelYRegistrar;
+window.guardarEdicionAlbaran = guardarEdicionAlbaran;
+window.abrirModalRecepcion = abrirModalRecepcion;
+window.toggleDetalleFaltante = toggleDetalleFaltante;
+window.confirmarRecepcion = confirmarRecepcion;
+window.resolicitarFaltante = resolicitarFaltante;
+window.eliminarAlbaran = eliminarAlbaran;
+window.actualizarOpcionesMaterialesGral = actualizarOpcionesMaterialesGral;
+window.calcularTotalSubconducto = calcularTotalSubconducto;
+window.marcarSubconductoSolicitado = marcarSubconductoSolicitado;
+window.eliminarMaterial = eliminarMaterial;
+window.agregarBobina = agregarBobina;
+window.eliminarBobina = eliminarBobina;
+window.toggleCamposMaterial = toggleCamposMaterial;
+window.eliminarDevolucion = eliminarDevolucion;
+window.verArchivoAlbaran = verArchivoAlbaran;
+window.abrirBuscador = abrirBuscador;
+window.buscarEnTiempoReal = buscarEnTiempoReal;
+window.exportarDatos = exportarDatos;
+window.abrirImportar = abrirImportar;
+window.abrirModalReportes = abrirModalReportes;
+window.iniciarGeneracionReporte = iniciarGeneracionReporte;
+window.cambiarEmpresaActiva = cambiarEmpresaActiva;
+
 function cerrarTodosLosModales() { 
     document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); 
     document.querySelectorAll('form').forEach(f => f.reset());
 }
+
 window.cerrarModal = cerrarTodosLosModales;
 window.cerrarModalCable = cerrarTodosLosModales;
 window.cerrarModalEntradaCable = cerrarTodosLosModales;
