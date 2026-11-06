@@ -207,7 +207,7 @@ const DICCIONARIO_CODIGOS = [
     { cod: "D15120120100", desc: "TORNILLO ROSCA MADERA 6*60(CAJA 100UNI)", tipo: "material" },
     { cod: "D07060030039", desc: "TUBO CORRUGADO VERDE 63 mm", tipo: "subconducto" },
     { cod: "D07060030040", desc: "TUBO CORRUGADO VERDE 110 mm", tipo: "subconducto" },
-    { cod: "D04060170013", desc: "TUBO FO 45MM PARA FUSIONES(PROTECTOR EMPALME)(BOLSA DE 100 UNIDADES)", tipo: "subconducto" },
+    { cod: "D04060170013", desc: "TUBO FO 45MM PARA FUSIONES(PROTECTOR EMPALME)(BOLSA DE 100 UNIDADES)", tipo: "general" },
     { cod: "D08160050005", desc: "TUBO PG16 de ACEROFLEX", tipo: "subconducto" },
     { cod: "D08160050006", desc: "TUBO PG21 de ACEROFLEX", tipo: "subconducto" },
     { cod: "D08160050007", desc: "TUBO PG16 de SIN ACERO", tipo: "subconducto" },
@@ -460,10 +460,14 @@ async function generarExcelYRegistrar(e) {
             
             const match = DICCIONARIO_CODIGOS.find(c => c.cod === cod || c.desc.toLowerCase() === desc.toLowerCase());
             
-            let tipo = "material";
-            if(match) tipo = match.tipo;
-            else if(desc.toLowerCase().includes("cable")) tipo = "cable";
-            else if(desc.toLowerCase().includes("subconducto") || desc.toLowerCase().includes("tubo")) tipo = "subconducto";
+            let tipo = "general";
+            if(match) {
+                tipo = match.tipo;
+            } else {
+                const d = desc.toLowerCase();
+                if(d.includes("cable") && !d.includes("acero")) tipo = "cable";
+                else if(d.includes("subconducto") || d.includes("monotubo") || (d.includes("tubo") && !d.includes("fusiones") && !d.includes("plastico") && !d.includes("aceroflex"))) tipo = "subconducto";
+            }
 
             lineas.push({
                 codigo: cod,
