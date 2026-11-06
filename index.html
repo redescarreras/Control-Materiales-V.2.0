@@ -160,6 +160,13 @@
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Encargado</label>
                         <input type="text" id="genEncargado" name="encargado" list="opcionesEncargados" autocomplete="off" placeholder="Ej: EDUARDO AGUILAR">
+                        <datalist id="opcionesEncargados">
+                            <option value="FRANCISCO GUIJARRO">
+                            <option value="EDUARDO AGUILAR">
+                            <option value="JORGE VEGAS">
+                            <option value="OSCAR HERNANDEZ">
+                            <option value="JUAN ANTONIO SANCHEZ">
+                        </datalist>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Nº Albarán</label>
@@ -170,6 +177,12 @@
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Cuenta de Cargo *</label>
                         <input type="text" id="genCuentaCargo" name="cuentaCargo" list="opcionesCuentaCargo" required autocomplete="off" placeholder="Ej: 509/81900">
+                        <datalist id="opcionesCuentaCargo">
+                            <option value="509/54500">
+                            <option value="509/86200">
+                            <option value="509/81900">
+                            <option value="509/71700">
+                        </datalist>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Tipo de Instalación *</label>
@@ -179,7 +192,7 @@
                     </div>
                 </div>
                 
-                <h3 style="font-size: 15px; color: var(--primary-600); margin-bottom: 8px;">📦 Catálogo de Material</h3>
+                <h3 style="font-size: 15px; color: var(--primary-600); margin-bottom: 8px;">📦 Catálogo de Material (Indica solo la cantidad en lo que necesites)</h3>
                 
                 <div class="catalogo-table-container">
                     <table class="catalogo-table">
@@ -190,11 +203,13 @@
                                 <th style="width: 15%; text-align: center;">Cantidad</th>
                             </tr>
                         </thead>
-                        <tbody id="catalogoTablaCuerpo"></tbody>
+                        <tbody id="catalogoTablaCuerpo">
+                            <!-- Inyectado por JavaScript -->
+                        </tbody>
                     </table>
                 </div>
 
-                <div class="form-group" style="margin-top: 16px;"><label>Observaciones Internas</label><textarea id="genObservaciones" name="observaciones" rows="2"></textarea></div>
+                <div class="form-group" style="margin-top: 16px;"><label>Observaciones Internas (No salen en Excel)</label><textarea id="genObservaciones" name="observaciones" rows="2"></textarea></div>
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>

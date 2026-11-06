@@ -572,6 +572,60 @@ async function generarExcelYRegistrar(e) {
         });
         tablaHtmlStr += '</table>';
 
+        // --- AÑADIDO: BLOQUE DE FIRMAS FINALES (Idéntico a la imagen) ---
+        
+        // Fila 1: NOMBRE/FIRMA/DNI
+        sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI';
+        sheet.getCell(`A${currentRow}`).font = fontHeader;
+        sheet.getCell(`A${currentRow}`).border = borderAll;
+        sheet.getCell(`A${currentRow}`).alignment = alignLeft;
+        
+        sheet.mergeCells(`B${currentRow}:D${currentRow}`);
+        sheet.getCell(`B${currentRow}`).border = borderAll;
+        
+        sheet.getCell(`E${currentRow}`).value = '.';
+        sheet.getCell(`E${currentRow}`).alignment = alignCenter;
+        sheet.getCell(`E${currentRow}`).border = borderAll;
+        currentRow++;
+
+        // Fila 2: Cabeceras de Firmas
+        sheet.mergeCells(`A${currentRow}:B${currentRow}`);
+        sheet.getCell(`A${currentRow}`).value = 'FIRMA AUTORIZADO POR ENCARGADO';
+        sheet.getCell(`A${currentRow}`).font = fontHeader;
+        sheet.getCell(`A${currentRow}`).alignment = alignCenter;
+        sheet.getCell(`A${currentRow}`).border = borderAll;
+
+        sheet.getCell(`C${currentRow}`).value = 'FIRMA ALMACEN Y FECHA';
+        sheet.getCell(`C${currentRow}`).font = fontHeader;
+        sheet.getCell(`C${currentRow}`).alignment = alignCenter;
+        sheet.getCell(`C${currentRow}`).border = borderAll;
+
+        sheet.getCell(`D${currentRow}`).value = 'FIRMA Y NOMBRE RECEPTOR';
+        sheet.getCell(`D${currentRow}`).font = fontHeader;
+        sheet.getCell(`D${currentRow}`).alignment = alignCenter;
+        sheet.getCell(`D${currentRow}`).border = borderAll;
+
+        sheet.getCell(`E${currentRow}`).value = '.';
+        sheet.getCell(`E${currentRow}`).alignment = alignCenter;
+        sheet.getCell(`E${currentRow}`).border = borderAll;
+        currentRow++;
+
+        // Fila 3: Cajas grandes para firmar
+        sheet.getRow(currentRow).height = 60; // Da espacio vertical para firmar a boli
+        
+        sheet.mergeCells(`A${currentRow}:B${currentRow}`);
+        sheet.getCell(`A${currentRow}`).border = borderAll;
+        
+        sheet.getCell(`C${currentRow}`).border = borderAll;
+        
+        sheet.getCell(`D${currentRow}`).border = borderAll;
+        
+        sheet.getCell(`E${currentRow}`).value = '.';
+        sheet.getCell(`E${currentRow}`).alignment = alignCenter;
+        sheet.getCell(`E${currentRow}`).border = borderAll;
+
+        // --- FIN BLOQUE DE FIRMAS ---
+
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         
@@ -620,6 +674,85 @@ window.generarExcelYRegistrar = generarExcelYRegistrar;
 // ============================================================================
 // ===== RESTO DEL CÓDIGO INTACTO =============================================
 // ============================================================================
+
+function abrirModalEditarAlbaran(id) {
+    albaranSeleccionado = albaranes.find(a => a.id === id);
+    if (!albaranSeleccionado) return;
+    
+    document.getElementById('editIdAlbaran').value = albaranSeleccionado.id;
+    document.getElementById('editEmpresa').value = albaranSeleccionado.empresa || '';
+    document.getElementById('editIdObra').value = albaranSeleccionado.idObra || '';
+    document.getElementById('editFecha').value = albaranSeleccionado.fecha || '';
+    document.getElementById('editCuentaCargo').value = albaranSeleccionado.cuentaCargo || '';
+    document.getElementById('editTipoInstalacion').value = albaranSeleccionado.tipoInstalacion || '';
+    document.getElementById('editJefeObra').value = albaranSeleccionado.jefeObra || '';
+    document.getElementById('editObservaciones').value = albaranSeleccionado.observaciones || '';
+    
+    let container = document.getElementById('descargarDeNuevoContainer');
+    if(!container) {
+        container = document.createElement('div');
+        container.id = 'descargarDeNuevoContainer';
+        container.style.marginTop = "16px";
+        const formBody = document.getElementById('formEditarAlbaran');
+        formBody.insertBefore(container, formBody.querySelector('.form-actions'));
+    }
+    container.innerHTML = `<button type="button" class="btn btn-info w-100" onclick="reGenerarExcelAlbaran('${id}')">⬇️ Volver a Descargar Excel Original</button>`;
+    
+    document.getElementById('modalEditarAlbaran').classList.add('active');
+}
+window.abrirModalEditarAlbaran = abrirModalEditarAlbaran;
+
+async function reGenerarExcelAlbaran(id) {
+    const alb = albaranes.find(a => a.id === id);
+    if(!alb) return;
+    
+    mostrarToast('⏳ Descargando Excel...');
+    const lineas = [];
+    const mats = materialesGenerales.filter(m => m.idAlbaranAsociado === id);
+    const cabs = cables.filter(c => c.idAlbaranAsociado === id);
+    const subs = subconductos.filter(s => s.idAlbaranAsociado === id);
+    
+    mats.forEach(m => { let match = DICCIONARIO_CODIGOS.find(d => d.desc.toLowerCase() === m.descripcion.toLowerCase()); lineas.push({ codigo: match ? match.cod : 'S/N', descripcion: m.descripcion, cantidad: m.cantidad }); });
+    cabs.forEach(c => { let match = DICCIONARIO_CODIGOS.find(d => d.desc.toLowerCase() === c.tipoCable.toLowerCase()); lineas.push({ codigo: match ? match.cod : 'S/N', descripcion: c.tipoCable, cantidad: c.metros }); });
+    subs.forEach(s => { let match = DICCIONARIO_CODIGOS.find(d => d.desc.toLowerCase() === s.tipoSubconducto.toLowerCase()); lineas.push({ codigo: match ? match.cod : 'S/N', descripcion: s.tipoSubconducto, cantidad: s.metros }); });
+    
+    if(lineas.length === 0) return mostrarToast('❌ No hay materiales en la base de datos para re-generar el Excel.');
+    
+    try {
+        const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet('ALBARAN');
+        sheet.columns = [{ width: 25 }, { width: 35 }, { width: 20 }, { width: 35 }, { width: 12 }];
+        const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; const fontTitle = { name: 'Arial', size: 14, bold: true, underline: true }; const fontHeader = { name: 'Arial', size: 10, bold: true }; const fontData = { name: 'Arial', size: 10 }; const alignCenter = { vertical: 'middle', horizontal: 'center' }; const alignLeft = { vertical: 'middle', horizontal: 'left' }; const fillGris = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB0B0B0' } };
+
+        sheet.getRow(1).height = 40; 
+        try {
+            if (alb.empresa === 'Elecnor') { const b64_O = await urlToBase64('O+.jpg'); const b64_Elec = await urlToBase64('ELECNOR.jpg'); if (b64_O) { const imgId1 = workbook.addImage({ base64: b64_O, extension: 'jpeg' }); sheet.addImage(imgId1, { tl: { col: 1, row: 0 }, ext: { width: 150, height: 40 } }); } if (b64_Elec) { const imgId2 = workbook.addImage({ base64: b64_Elec, extension: 'jpeg' }); sheet.addImage(imgId2, { tl: { col: 3, row: 0 }, ext: { width: 150, height: 40 } }); } }
+            else if (alb.empresa === 'Zener') { const b64_Zen = await urlToBase64('ZENER.jpg'); if (b64_Zen) { const imgId = workbook.addImage({ base64: b64_Zen, extension: 'jpeg' }); sheet.addImage(imgId, { tl: { col: 2, row: 0 }, ext: { width: 200, height: 40 } }); } }
+        } catch (e) {}
+
+        sheet.mergeCells('A4:D4'); const titleCell = sheet.getCell('A4'); titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA'; titleCell.font = fontTitle; titleCell.alignment = alignCenter;
+        sheet.getCell('E3').value = '134º'; sheet.getCell('E3').font = fontHeader; sheet.getCell('E3').alignment = alignCenter; sheet.getCell('E3').border = borderAll;
+        sheet.getCell('E4').value = 'V15'; sheet.getCell('E4').font = {name:'Arial', size:10, bold:true, underline:true}; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderAll;
+        
+        let fechaExcel = alb.fecha; if(alb.fecha.includes('-')) { const p = alb.fecha.split('-'); fechaExcel = `${p[2]}/${p[1]}/${p[0]}`; }
+        const cabecerasInfo = [['A5', 'ID OBRA', 'B5', alb.idObra, 'C5', 'CR Y LATERAL:', 'D5', ''], ['A6', 'POBLACION', 'B6', '', 'C6', 'FECHA:', 'D6', fechaExcel], ['A7', 'ENCARGADO', 'B7', alb.jefeObra, 'C7', 'N ALBARAN', 'D7', ''], ['A8', 'CONTRATA', 'B8', 'REDES CARRERAS S.L.', 'C8', 'CUENTA DE CARGO', 'D8', alb.cuentaCargo]];
+        cabecerasInfo.forEach(row => { let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderAll; let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = fontData; c2.alignment = alignLeft; c2.border = borderAll; let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderAll; let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontData; c4.alignment = alignCenter; c4.border = borderAll; });
+
+        sheet.getCell('A10').value = 'CODIGO'; sheet.getCell('A10').font = fontHeader; sheet.getCell('A10').alignment = alignLeft; sheet.getCell('A10').fill = fillGris; sheet.getCell('A10').border = borderAll;
+        sheet.mergeCells('B10:D10'); sheet.getCell('B10').value = 'DESCRIPCION'; sheet.getCell('B10').font = fontHeader; sheet.getCell('B10').alignment = alignLeft; sheet.getCell('B10').fill = fillGris; sheet.getCell('B10').border = borderAll;
+        sheet.getCell('E10').value = 'Uds/mts'; sheet.getCell('E10').font = fontHeader; sheet.getCell('E10').alignment = alignCenter; sheet.getCell('E10').fill = fillGris; sheet.getCell('E10').border = borderAll;
+
+        let currentRow = 11;
+        lineas.forEach(lin => { sheet.getCell(`A${currentRow}`).value = lin.codigo; sheet.getCell(`A${currentRow}`).font = fontData; sheet.getCell(`A${currentRow}`).border = borderAll; sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).value = lin.descripcion; sheet.getCell(`B${currentRow}`).font = fontData; sheet.getCell(`B${currentRow}`).border = borderAll; sheet.getCell(`E${currentRow}`).value = lin.cantidad; sheet.getCell(`E${currentRow}`).font = fontData; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; currentRow++; });
+
+        sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI'; sheet.getCell(`A${currentRow}`).font = fontHeader; sheet.getCell(`A${currentRow}`).border = borderAll; sheet.getCell(`A${currentRow}`).alignment = alignLeft; sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).border = borderAll; sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; currentRow++;
+        sheet.mergeCells(`A${currentRow}:B${currentRow}`); sheet.getCell(`A${currentRow}`).value = 'FIRMA AUTORIZADO POR ENCARGADO'; sheet.getCell(`A${currentRow}`).font = fontHeader; sheet.getCell(`A${currentRow}`).alignment = alignCenter; sheet.getCell(`A${currentRow}`).border = borderAll; sheet.getCell(`C${currentRow}`).value = 'FIRMA ALMACEN Y FECHA'; sheet.getCell(`C${currentRow}`).font = fontHeader; sheet.getCell(`C${currentRow}`).alignment = alignCenter; sheet.getCell(`C${currentRow}`).border = borderAll; sheet.getCell(`D${currentRow}`).value = 'FIRMA Y NOMBRE RECEPTOR'; sheet.getCell(`D${currentRow}`).font = fontHeader; sheet.getCell(`D${currentRow}`).alignment = alignCenter; sheet.getCell(`D${currentRow}`).border = borderAll; sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; currentRow++;
+        sheet.getRow(currentRow).height = 60; sheet.mergeCells(`A${currentRow}:B${currentRow}`); sheet.getCell(`A${currentRow}`).border = borderAll; sheet.getCell(`C${currentRow}`).border = borderAll; sheet.getCell(`D${currentRow}`).border = borderAll; sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll;
+
+        const buffer = await workbook.xlsx.writeBuffer(); const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); saveAs(blob, `ALBARAN_SALIDAS_${alb.empresa}_${alb.idObra}_REDESCARGADO.xlsx`);
+        mostrarToast('✅ Excel re-descargado exitosamente');
+    } catch(e) { mostrarToast('❌ Error re-generando Excel.'); }
+}
+window.reGenerarExcelAlbaran = reGenerarExcelAlbaran;
 
 function guardarEdicionAlbaran(e) {
     e.preventDefault();
@@ -730,45 +863,19 @@ function finalizarEdicionAlbaran(formData, idAlbaran, albaran, archivoInfo, mate
     albaran.empresa = emp; albaran.idObra = formData.get('idObra'); albaran.fecha = formData.get('fecha');
     albaran.cuentaCargo = formData.get('cuentaCargo'); albaran.tipoInstalacion = formData.get('tipoInstalacion');
     albaran.jefeObra = formData.get('jefeObra'); albaran.observaciones = formData.get('observaciones') || '';
-    albaran.archivo = archivoInfo;
+    if(archivoInfo) albaran.archivo = archivoInfo;
 
-    cables = cables.filter(c => !(c.idAlbaranAsociado === idAlbaran && c.accion === 'pendiente_recepcion'));
-    const itemsCables = document.querySelectorAll('#editAlbaranCablesContainer .bobina-item');
-    itemsCables.forEach(item => {
-        const idx = item.dataset.cableAlbaran;
-        const tipo = formData.get(`editAlbaranTipoCable_${idx}`);
-        const metros = parseFloat(formData.get(`editAlbaranMetrosCable_${idx}`));
-        if (tipo && metros > 0) {
-            cables.push({
-                id: `CAB-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp, tipoMaterial: 'cable', idObra: formData.get('idObra'),
-                tipoCable: tipo, metros: metros, accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
-                observaciones: `Esperando con Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran 
-            });
-        }
-    });
-
-    subconductos = subconductos.filter(s => !(s.idAlbaranAsociado === idAlbaran && s.accion === 'pendiente_recepcion'));
-    const itemsSub = document.querySelectorAll('#editAlbaranSubconductosContainer .bobina-item');
-    itemsSub.forEach(item => {
-        const idx = item.dataset.subAlbaran;
-        const tipo = formData.get(`editAlbaranTipoSub_${idx}`);
-        const metros = parseFloat(formData.get(`editAlbaranMetrosSub_${idx}`));
-        if (tipo && metros > 0) {
-            subconductos.push({
-                id: `SUB-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp, tipoMaterial: 'subconducto', idObra: formData.get('idObra'),
-                tipoSubconducto: tipo, metros: metros, accion: 'pendiente_recepcion', fecha: formData.get('fecha'),
-                observaciones: `Esperando con Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran, solicitado: false
-            });
-        }
-    });
+    cables.forEach(c => { if(c.idAlbaranAsociado === idAlbaran) { c.idObra = albaran.idObra; c.empresa = emp; c.fecha = albaran.fecha; } });
+    subconductos.forEach(s => { if(s.idAlbaranAsociado === idAlbaran) { s.idObra = albaran.idObra; s.empresa = emp; s.fecha = albaran.fecha; } });
+    materialesGenerales.forEach(m => { if(m.idAlbaranAsociado === idAlbaran) { m.idObra = albaran.idObra; m.empresa = emp; m.fecha = albaran.fecha; } });
 
     if (materialesExtraidos.length > 0) {
         materialesGenerales = materialesGenerales.filter(m => !(m.idAlbaranAsociado === idAlbaran && m.accion === 'pendiente_recepcion'));
         materialesExtraidos.forEach((mat, idx) => {
             materialesGenerales.push({
-                id: `MAT-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp, tipoMaterial: 'general', idObra: formData.get('idObra'),
+                id: `MAT-${Date.now().toString().slice(-6)}-${idx}`, empresa: emp, tipoMaterial: 'general', idObra: albaran.idObra,
                 descripcion: mat.descripcion, cantidad: mat.cantidad, accion: 'pendiente_recepcion',
-                fecha: formData.get('fecha'), observaciones: `Auto-extraído Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran
+                fecha: albaran.fecha, observaciones: `Auto-extraído Albarán: ${idAlbaran}`, idAlbaranAsociado: idAlbaran
             });
         });
     }
