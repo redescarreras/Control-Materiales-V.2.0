@@ -477,7 +477,7 @@ async function generarExcelYRegistrar(e) {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('ALBARAN');
 
-        // Configuración exacta para Impresión (B/N, 1 página A4)
+        // Configuración exacta para Impresión (B/N, 1 página A4, Centrado Horizontal)
         sheet.pageSetup = {
             paperSize: 9,
             orientation: 'portrait',
@@ -516,11 +516,11 @@ async function generarExcelYRegistrar(e) {
                 const b64_Elec = await urlToBase64('ELECNOR.jpg');
                 if (b64_O) {
                     const imgId1 = workbook.addImage({ base64: b64_O, extension: 'jpeg' });
-                    sheet.addImage(imgId1, { tl: { col: 1, row: 0 }, ext: { width: 150, height: 40 } });
+                    sheet.addImage(imgId1, { tl: { col: 2, row: 0 }, ext: { width: 120, height: 35 } });
                 }
                 if (b64_Elec) {
                     const imgId2 = workbook.addImage({ base64: b64_Elec, extension: 'jpeg' });
-                    sheet.addImage(imgId2, { tl: { col: 3, row: 0 }, ext: { width: 150, height: 40 } });
+                    sheet.addImage(imgId2, { tl: { col: 3, row: 0 }, ext: { width: 120, height: 35 } });
                 }
             } else if (empresa === 'Zener') {
                 const b64_Zen = await urlToBase64('ZENER.jpg');
@@ -614,17 +614,17 @@ async function generarExcelYRegistrar(e) {
         });
         tablaHtmlStr += '</table>';
 
-        // --- BLOQUE DE FIRMAS FINALES (EXACTO A LA IMAGEN) ---
+        // --- BLOQUE DE FIRMAS FINALES (LÍNEAS GRUESAS Y NEGRITA) ---
         currentRow += 1; 
 
         sheet.getRow(currentRow).height = 24.0;
         sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI';
         sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true };
-        sheet.getCell(`A${currentRow}`).border = borderAll;
+        sheet.getCell(`A${currentRow}`).border = borderOuter;
         sheet.getCell(`A${currentRow}`).alignment = alignLeft;
         
         sheet.mergeCells(`B${currentRow}:D${currentRow}`);
-        sheet.getCell(`B${currentRow}`).border = borderAll;
+        sheet.getCell(`B${currentRow}`).border = borderOuter;
         
         sheet.getCell(`E${currentRow}`).value = '.';
         sheet.getCell(`E${currentRow}`).alignment = alignCenter;
@@ -636,17 +636,17 @@ async function generarExcelYRegistrar(e) {
         sheet.getCell(`A${currentRow}`).value = 'FIRMA AUTORIZADO POR ENCARGADO';
         sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true };
         sheet.getCell(`A${currentRow}`).alignment = alignCenter;
-        sheet.getCell(`A${currentRow}`).border = borderAll;
+        sheet.getCell(`A${currentRow}`).border = borderOuter;
 
         sheet.getCell(`C${currentRow}`).value = 'FIRMA ALMACEN Y FECHA';
         sheet.getCell(`C${currentRow}`).font = { name: 'Arial', size: 10, bold: true };
         sheet.getCell(`C${currentRow}`).alignment = alignCenter;
-        sheet.getCell(`C${currentRow}`).border = borderAll;
+        sheet.getCell(`C${currentRow}`).border = borderOuter;
 
-        sheet.getCell(`D${currentRow}`).value = '                    FIRMA Y NOMBRE RECEPTOR';
+        sheet.getCell(`D${currentRow}`).value = 'FIRMA Y NOMBRE RECEPTOR';
         sheet.getCell(`D${currentRow}`).font = { name: 'Arial', size: 10, bold: true };
         sheet.getCell(`D${currentRow}`).alignment = alignCenter;
-        sheet.getCell(`D${currentRow}`).border = borderAll;
+        sheet.getCell(`D${currentRow}`).border = borderOuter;
 
         sheet.getCell(`E${currentRow}`).value = '.';
         sheet.getCell(`E${currentRow}`).alignment = alignCenter;
@@ -656,9 +656,9 @@ async function generarExcelYRegistrar(e) {
         sheet.getRow(currentRow).height = 57.75;
         
         sheet.mergeCells(`A${currentRow}:B${currentRow}`);
-        sheet.getCell(`A${currentRow}`).border = borderAll;
-        sheet.getCell(`C${currentRow}`).border = borderAll;
-        sheet.getCell(`D${currentRow}`).border = borderAll;
+        sheet.getCell(`A${currentRow}`).border = borderOuter;
+        sheet.getCell(`C${currentRow}`).border = borderOuter;
+        sheet.getCell(`D${currentRow}`).border = borderOuter;
         
         sheet.getCell(`E${currentRow}`).value = '.';
         sheet.getCell(`E${currentRow}`).alignment = alignCenter;
@@ -708,6 +708,100 @@ async function generarExcelYRegistrar(e) {
     }
 }
 window.generarExcelYRegistrar = generarExcelYRegistrar;
+
+async function reGenerarExcelAlbaran(id) {
+    const alb = albaranes.find(a => a.id === id);
+    if(!alb) return;
+    
+    mostrarToast('⏳ Descargando Excel...');
+    const lineas = [];
+    const mats = materialesGenerales.filter(m => m.idAlbaranAsociado === id);
+    const cabs = cables.filter(c => c.idAlbaranAsociado === id);
+    const subs = subconductos.filter(s => s.idAlbaranAsociado === id);
+    
+    mats.forEach(m => { let match = DICCIONARIO_CODIGOS.find(d => d.desc.toLowerCase() === m.descripcion.toLowerCase()); lineas.push({ codigo: match ? match.cod : 'S/N', descripcion: m.descripcion, cantidad: m.cantidad }); });
+    cabs.forEach(c => { let match = DICCIONARIO_CODIGOS.find(d => d.desc.toLowerCase() === c.tipoCable.toLowerCase()); lineas.push({ codigo: match ? match.cod : 'S/N', descripcion: c.tipoCable, cantidad: c.metros }); });
+    subs.forEach(s => { let match = DICCIONARIO_CODIGOS.find(d => d.desc.toLowerCase() === s.tipoSubconducto.toLowerCase()); lineas.push({ codigo: match ? match.cod : 'S/N', descripcion: s.tipoSubconducto, cantidad: s.metros }); });
+    
+    if(lineas.length === 0) return mostrarToast('❌ No hay materiales en la base de datos para re-generar el Excel.');
+    
+    try {
+        const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet('ALBARAN');
+        
+        // Configuración exacta para Impresión (B/N, 1 página A4, Centrado Horizontal)
+        sheet.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1, blackAndWhite: true, horizontalCentered: true, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
+        
+        sheet.columns = [{ width: 19.14 }, { width: 24.71 }, { width: 25.00 }, { width: 66.43 }, { width: 10.14 }];
+        const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; 
+        const borderOuter = { top: {style:'medium'}, left: {style:'medium'}, bottom: {style:'medium'}, right: {style:'medium'} };
+        const fontTitle = { name: 'Arial', size: 20, bold: true, underline: 'single' }; 
+        const fontHeader = { name: 'Times New Roman', size: 10, bold: true }; 
+        const fontHeaderB6 = { name: 'Times New Roman', size: 12, bold: true };
+        const fontData = { name: 'Arial', size: 10 }; 
+        const fontTableHeader = { name: 'Times New Roman', size: 12, bold: true };
+        const alignCenter = { vertical: 'center', horizontal: 'center' }; 
+        const alignLeft = { vertical: 'center', horizontal: 'left' }; 
+        const fillGris = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA6A6A6' } };
+
+        sheet.getRow(1).height = 40; 
+        try {
+            if (alb.empresa === 'Elecnor') { const b64_O = await urlToBase64('O+.jpg'); const b64_Elec = await urlToBase64('ELECNOR.jpg'); if (b64_O) { const imgId1 = workbook.addImage({ base64: b64_O, extension: 'jpeg' }); sheet.addImage(imgId1, { tl: { col: 2, row: 0 }, ext: { width: 120, height: 35 } }); } if (b64_Elec) { const imgId2 = workbook.addImage({ base64: b64_Elec, extension: 'jpeg' }); sheet.addImage(imgId2, { tl: { col: 3, row: 0 }, ext: { width: 120, height: 35 } }); } }
+            else if (alb.empresa === 'Zener') { const b64_Zen = await urlToBase64('ZENER.jpg'); if (b64_Zen) { const imgId = workbook.addImage({ base64: b64_Zen, extension: 'jpeg' }); sheet.addImage(imgId, { tl: { col: 2, row: 0 }, ext: { width: 200, height: 40 } }); } }
+        } catch (e) {}
+
+        sheet.getRow(4).height = 13.5;
+        sheet.getRow(5).height = 36.75;
+        
+        sheet.mergeCells('A5:D5'); const titleCell = sheet.getCell('A5'); titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA'; titleCell.font = fontTitle; titleCell.alignment = alignCenter; titleCell.border = borderOuter;
+        sheet.getCell('E4').value = '134º'; sheet.getCell('E4').font = { name: 'Arial', size: 10, bold: true }; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderOuter;
+        sheet.getCell('E5').value = 'V15'; sheet.getCell('E5').font = { name: 'Arial', size: 10, bold: true, underline: 'single' }; sheet.getCell('E5').alignment = alignCenter; sheet.getCell('E5').border = borderOuter;
+        
+        sheet.getRow(6).height = 21.75; sheet.getRow(7).height = 20.25; sheet.getRow(8).height = 20.25; sheet.getRow(9).height = 20.45;
+        sheet.mergeCells('D6:E6'); sheet.mergeCells('D7:E7'); sheet.mergeCells('D8:E8'); sheet.mergeCells('D9:E9');
+
+        let fechaExcel = alb.fecha; if(alb.fecha.includes('-')) { const p = alb.fecha.split('-'); fechaExcel = `${p[2]}/${p[1]}/${p[0]}`; }
+        
+        const cabecerasInfo = [['A6', 'ID OBRA', 'B6', alb.idObra, 'C6', 'CR Y LATERAL:', 'D6', ''], ['A7', 'POBLACION', 'B7', '', 'C7', 'FECHA:', 'D7', fechaExcel], ['A8', 'ENCARGADO', 'B8', alb.jefeObra, 'C8', 'N ALBARAN', 'D8', ''], ['A9', 'CONTRATA', 'B9', 'REDES CARRERAS S.L.', 'C9', 'CUENTA DE CARGO', 'D9', alb.cuentaCargo]];
+        cabecerasInfo.forEach(row => { let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderOuter; let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = row[0] === 'A6' ? fontHeaderB6 : fontHeader; c2.alignment = alignLeft; c2.border = borderOuter; let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderOuter; let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontHeader; c4.alignment = alignCenter; c4.border = borderOuter; });
+
+        sheet.getRow(10).height = 10;
+
+        sheet.getRow(11).height = 15.75;
+        sheet.getCell('A11').value = 'CODIGO'; sheet.getCell('A11').font = fontTableHeader; sheet.getCell('A11').alignment = alignLeft; sheet.getCell('A11').fill = fillGris; sheet.getCell('A11').border = borderAll;
+        sheet.mergeCells('B11:D11'); sheet.getCell('B11').value = 'DESCRIPCION'; sheet.getCell('B11').font = fontTableHeader; sheet.getCell('B11').alignment = alignLeft; sheet.getCell('B11').fill = fillGris; sheet.getCell('B11').border = borderAll;
+        sheet.getCell('E11').value = 'Uds/mts'; sheet.getCell('E11').font = fontTableHeader; sheet.getCell('E11').alignment = alignCenter; sheet.getCell('E11').fill = fillGris; sheet.getCell('E11').border = borderAll;
+
+        let currentRow = 12;
+        lineas.forEach(lin => { 
+            sheet.getRow(currentRow).height = 20.1;
+            sheet.getCell(`A${currentRow}`).value = lin.codigo; sheet.getCell(`A${currentRow}`).font = fontData; sheet.getCell(`A${currentRow}`).alignment = alignLeft; sheet.getCell(`A${currentRow}`).border = borderAll; 
+            sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).value = lin.descripcion; sheet.getCell(`B${currentRow}`).font = fontData; sheet.getCell(`B${currentRow}`).alignment = alignLeft; sheet.getCell(`B${currentRow}`).border = borderAll; 
+            sheet.getCell(`E${currentRow}`).value = lin.cantidad; sheet.getCell(`E${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; 
+            currentRow++; 
+        });
+
+        // --- FIRMAS FINALES (LÍNEAS GRUESAS Y NEGRITA) ---
+        currentRow += 1; 
+        sheet.getRow(currentRow).height = 24.0;
+        sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI'; sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`A${currentRow}`).border = borderOuter; sheet.getCell(`A${currentRow}`).alignment = alignLeft;
+        sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).border = borderOuter;
+        sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; currentRow++;
+        
+        sheet.getRow(currentRow).height = 16.9;
+        sheet.mergeCells(`A${currentRow}:B${currentRow}`); sheet.getCell(`A${currentRow}`).value = 'FIRMA AUTORIZADO POR ENCARGADO'; sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`A${currentRow}`).alignment = alignCenter; sheet.getCell(`A${currentRow}`).border = borderOuter;
+        sheet.getCell(`C${currentRow}`).value = 'FIRMA ALMACEN Y FECHA'; sheet.getCell(`C${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`C${currentRow}`).alignment = alignCenter; sheet.getCell(`C${currentRow}`).border = borderOuter;
+        sheet.getCell(`D${currentRow}`).value = 'FIRMA Y NOMBRE RECEPTOR'; sheet.getCell(`D${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`D${currentRow}`).alignment = alignCenter; sheet.getCell(`D${currentRow}`).border = borderOuter;
+        sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; currentRow++;
+        
+        sheet.getRow(currentRow).height = 57.75;
+        sheet.mergeCells(`A${currentRow}:B${currentRow}`); sheet.getCell(`A${currentRow}`).border = borderOuter; sheet.getCell(`C${currentRow}`).border = borderOuter; sheet.getCell(`D${currentRow}`).border = borderOuter;
+        sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll;
+
+        const buffer = await workbook.xlsx.writeBuffer(); const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); saveAs(blob, `ALBARAN_SALIDAS_${alb.empresa}_${alb.idObra}_REDESCARGADO.xlsx`);
+        mostrarToast('✅ Excel re-descargado exitosamente');
+    } catch(e) { mostrarToast('❌ Error re-generando Excel.'); }
+}
+window.reGenerarExcelAlbaran = reGenerarExcelAlbaran;
 
 async function reGenerarExcelAlbaran(id) {
     const alb = albaranes.find(a => a.id === id);
