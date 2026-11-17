@@ -467,12 +467,7 @@ async function generarExcelYRegistrar(e) {
                 else if(d.includes("subconducto") || d.includes("monotubo") || (d.includes("tubo") && !d.includes("fusiones") && !d.includes("plastico") && !d.includes("aceroflex"))) tipo = "subconducto";
             }
 
-            lineas.push({
-                codigo: cod,
-                descripcion: desc.toUpperCase(),
-                cantidad: qty,
-                tipo_interno: tipo 
-            });
+            lineas.push({ codigo: cod, descripcion: desc.toUpperCase(), cantidad: qty, tipo_interno: tipo });
         }
     });
 
@@ -482,14 +477,15 @@ async function generarExcelYRegistrar(e) {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('ALBARAN');
 
-        // Configuración estricta de Impresión (A4, 1 página, Blanco y Negro)
+        // Configuración exacta para Impresión (B/N, 1 página A4)
         sheet.pageSetup = {
-            paperSize: 9, 
+            paperSize: 9,
             orientation: 'portrait',
             fitToPage: true,
             fitToWidth: 1,
             fitToHeight: 1,
             blackAndWhite: true,
+            horizontalCentered: true,
             margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }
         };
 
@@ -505,14 +501,14 @@ async function generarExcelYRegistrar(e) {
         const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
         const borderOuter = { top: {style:'medium'}, left: {style:'medium'}, bottom: {style:'medium'}, right: {style:'medium'} };
         const fontTitle = { name: 'Arial', size: 20, bold: true, underline: 'single' };
-        const fontHeader = { name: 'Arial', size: 10, bold: false };
+        const fontHeader = { name: 'Times New Roman', size: 10, bold: true };
+        const fontHeaderB6 = { name: 'Times New Roman', size: 12, bold: true };
         const fontData = { name: 'Arial', size: 10 };
         const fontTableHeader = { name: 'Times New Roman', size: 12, bold: true };
         const alignCenter = { vertical: 'center', horizontal: 'center' };
         const alignLeft = { vertical: 'center', horizontal: 'left' };
         const fillGris = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA6A6A6' } };
 
-        // Cabecera Logos
         sheet.getRow(1).height = 40; 
         try {
             if (empresa === 'Elecnor') {
@@ -537,7 +533,6 @@ async function generarExcelYRegistrar(e) {
             console.warn("No se pudieron cargar los logos locales.");
         }
 
-        // Título y Versión
         sheet.getRow(4).height = 13.5;
         sheet.getRow(5).height = 36.75;
         
@@ -546,25 +541,23 @@ async function generarExcelYRegistrar(e) {
         titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA';
         titleCell.font = fontTitle;
         titleCell.alignment = alignCenter;
+        titleCell.border = borderOuter;
         
-        // El ID de empresa va encima de V16, justo en la celda derecha (pero el V16 está en E5 en el Excel original, y E4 el 134º no aparece fijo ahí, pero lo situamos donde lo pediste)
         sheet.getCell('E4').value = idEmpresa; 
         sheet.getCell('E4').font = { name: 'Arial', size: 10, bold: true }; 
         sheet.getCell('E4').alignment = alignCenter; 
-        sheet.getCell('E4').border = borderAll;
+        sheet.getCell('E4').border = borderOuter;
 
-        sheet.getCell('E5').value = 'V16'; 
+        sheet.getCell('E5').value = 'V15'; 
         sheet.getCell('E5').font = { name: 'Arial', size: 10, bold: true, underline: 'single' }; 
         sheet.getCell('E5').alignment = alignCenter; 
-        sheet.getCell('E5').border = borderAll;
+        sheet.getCell('E5').border = borderOuter;
         
-        // Bloque de datos de obra
         sheet.getRow(6).height = 21.75;
         sheet.getRow(7).height = 20.25;
         sheet.getRow(8).height = 20.25;
         sheet.getRow(9).height = 20.45;
 
-        // Combinar celdas de la columna derecha
         sheet.mergeCells('D6:E6');
         sheet.mergeCells('D7:E7');
         sheet.mergeCells('D8:E8');
@@ -578,11 +571,14 @@ async function generarExcelYRegistrar(e) {
         ];
 
         cabecerasInfo.forEach(row => {
-            let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderAll;
-            let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = fontData; c2.alignment = alignLeft; c2.border = borderAll;
-            let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderAll;
-            let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontData; c4.alignment = alignCenter; c4.border = borderAll;
+            let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderOuter;
+            let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = row[0] === 'A6' ? fontHeaderB6 : fontHeader; c2.alignment = alignLeft; c2.border = borderOuter;
+            let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderOuter;
+            let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontHeader; c4.alignment = alignCenter; c4.border = borderOuter;
         });
+
+        // Separador vacío
+        sheet.getRow(10).height = 10;
 
         // Tabla de Materiales
         sheet.getRow(11).height = 15.75;
@@ -619,10 +615,8 @@ async function generarExcelYRegistrar(e) {
         tablaHtmlStr += '</table>';
 
         // --- BLOQUE DE FIRMAS FINALES (EXACTO A LA IMAGEN) ---
-        // Nos aseguramos de saltar un par de líneas en blanco como en tu Excel
-        currentRow += 2; 
+        currentRow += 1; 
 
-        // Fila 1: NOMBRE/FIRMA/DNI
         sheet.getRow(currentRow).height = 24.0;
         sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI';
         sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true };
@@ -637,7 +631,6 @@ async function generarExcelYRegistrar(e) {
         sheet.getCell(`E${currentRow}`).border = borderAll;
         currentRow++;
 
-        // Fila 2: Cabeceras de Firmas
         sheet.getRow(currentRow).height = 16.9;
         sheet.mergeCells(`A${currentRow}:B${currentRow}`);
         sheet.getCell(`A${currentRow}`).value = 'FIRMA AUTORIZADO POR ENCARGADO';
@@ -660,7 +653,6 @@ async function generarExcelYRegistrar(e) {
         sheet.getCell(`E${currentRow}`).border = borderAll;
         currentRow++;
 
-        // Fila 3: Cajas grandes para firmar
         sheet.getRow(currentRow).height = 57.75;
         
         sheet.mergeCells(`A${currentRow}:B${currentRow}`);
@@ -671,8 +663,6 @@ async function generarExcelYRegistrar(e) {
         sheet.getCell(`E${currentRow}`).value = '.';
         sheet.getCell(`E${currentRow}`).alignment = alignCenter;
         sheet.getCell(`E${currentRow}`).border = borderAll;
-
-        // --- FIN DEL BLOQUE DE FIRMAS ---
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -738,13 +728,15 @@ async function reGenerarExcelAlbaran(id) {
     try {
         const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet('ALBARAN');
         
-        // Configuración estricta de Impresión (A4, 1 página, Blanco y Negro)
-        sheet.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1, blackAndWhite: true, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
+        // Configuración exacta para Impresión (B/N, 1 página A4)
+        sheet.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1, blackAndWhite: true, horizontalCentered: true, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
         
         sheet.columns = [{ width: 19.14 }, { width: 24.71 }, { width: 25.00 }, { width: 66.43 }, { width: 10.14 }];
         const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; 
+        const borderOuter = { top: {style:'medium'}, left: {style:'medium'}, bottom: {style:'medium'}, right: {style:'medium'} };
         const fontTitle = { name: 'Arial', size: 20, bold: true, underline: 'single' }; 
-        const fontHeader = { name: 'Arial', size: 10, bold: false }; 
+        const fontHeader = { name: 'Times New Roman', size: 10, bold: true }; 
+        const fontHeaderB6 = { name: 'Times New Roman', size: 12, bold: true };
         const fontData = { name: 'Arial', size: 10 }; 
         const fontTableHeader = { name: 'Times New Roman', size: 12, bold: true };
         const alignCenter = { vertical: 'center', horizontal: 'center' }; 
@@ -760,9 +752,9 @@ async function reGenerarExcelAlbaran(id) {
         sheet.getRow(4).height = 13.5;
         sheet.getRow(5).height = 36.75;
         
-        sheet.mergeCells('A5:D5'); const titleCell = sheet.getCell('A5'); titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA'; titleCell.font = fontTitle; titleCell.alignment = alignCenter;
-        sheet.getCell('E4').value = '134º'; sheet.getCell('E4').font = { name: 'Arial', size: 10, bold: true }; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderAll;
-        sheet.getCell('E5').value = 'V16'; sheet.getCell('E5').font = { name: 'Arial', size: 10, bold: true, underline: 'single' }; sheet.getCell('E5').alignment = alignCenter; sheet.getCell('E5').border = borderAll;
+        sheet.mergeCells('A5:D5'); const titleCell = sheet.getCell('A5'); titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA'; titleCell.font = fontTitle; titleCell.alignment = alignCenter; titleCell.border = borderOuter;
+        sheet.getCell('E4').value = '134º'; sheet.getCell('E4').font = { name: 'Arial', size: 10, bold: true }; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderOuter;
+        sheet.getCell('E5').value = 'V15'; sheet.getCell('E5').font = { name: 'Arial', size: 10, bold: true, underline: 'single' }; sheet.getCell('E5').alignment = alignCenter; sheet.getCell('E5').border = borderOuter;
         
         sheet.getRow(6).height = 21.75; sheet.getRow(7).height = 20.25; sheet.getRow(8).height = 20.25; sheet.getRow(9).height = 20.45;
         sheet.mergeCells('D6:E6'); sheet.mergeCells('D7:E7'); sheet.mergeCells('D8:E8'); sheet.mergeCells('D9:E9');
@@ -770,7 +762,9 @@ async function reGenerarExcelAlbaran(id) {
         let fechaExcel = alb.fecha; if(alb.fecha.includes('-')) { const p = alb.fecha.split('-'); fechaExcel = `${p[2]}/${p[1]}/${p[0]}`; }
         
         const cabecerasInfo = [['A6', 'ID OBRA', 'B6', alb.idObra, 'C6', 'CR Y LATERAL:', 'D6', ''], ['A7', 'POBLACION', 'B7', '', 'C7', 'FECHA:', 'D7', fechaExcel], ['A8', 'ENCARGADO', 'B8', alb.jefeObra, 'C8', 'N ALBARAN', 'D8', ''], ['A9', 'CONTRATA', 'B9', 'REDES CARRERAS S.L.', 'C9', 'CUENTA DE CARGO', 'D9', alb.cuentaCargo]];
-        cabecerasInfo.forEach(row => { let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderAll; let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = fontData; c2.alignment = alignLeft; c2.border = borderAll; let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderAll; let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontData; c4.alignment = alignCenter; c4.border = borderAll; });
+        cabecerasInfo.forEach(row => { let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderOuter; let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = row[0] === 'A6' ? fontHeaderB6 : fontHeader; c2.alignment = alignLeft; c2.border = borderOuter; let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderOuter; let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontHeader; c4.alignment = alignCenter; c4.border = borderOuter; });
+
+        sheet.getRow(10).height = 10;
 
         sheet.getRow(11).height = 15.75;
         sheet.getCell('A11').value = 'CODIGO'; sheet.getCell('A11').font = fontTableHeader; sheet.getCell('A11').alignment = alignLeft; sheet.getCell('A11').fill = fillGris; sheet.getCell('A11').border = borderAll;
@@ -787,7 +781,7 @@ async function reGenerarExcelAlbaran(id) {
         });
 
         // --- FIRMAS FINALES ---
-        currentRow += 2; 
+        currentRow += 1; 
         sheet.getRow(currentRow).height = 24.0;
         sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI'; sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`A${currentRow}`).border = borderAll; sheet.getCell(`A${currentRow}`).alignment = alignLeft;
         sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).border = borderAll;
