@@ -477,7 +477,7 @@ async function generarExcelYRegistrar(e) {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('ALBARAN');
 
-        // Configuración exacta para Impresión (B/N, 1 página A4, Centrado Horizontal)
+        // Configuración exacta para Impresión (B/N, 1 página A4, Centrado Horizontal y Vertical)
         sheet.pageSetup = {
             paperSize: 9,
             orientation: 'portrait',
@@ -486,6 +486,7 @@ async function generarExcelYRegistrar(e) {
             fitToHeight: 1,
             blackAndWhite: true,
             horizontalCentered: true,
+            verticalCentered: true,
             margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }
         };
 
@@ -508,30 +509,28 @@ async function generarExcelYRegistrar(e) {
         const alignLeft = { vertical: 'center', horizontal: 'left' };
         const fillGris = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA6A6A6' } };
 
-        // Fila 1 y 2 (Logos juntos en el centro)
-        sheet.getRow(1).height = 40; 
+        sheet.getRow(1).height = 45; 
         try {
             if (empresa === 'Elecnor') {
                 const b64_O = await urlToBase64('O+.jpg');
                 const b64_Elec = await urlToBase64('ELECNOR.jpg');
                 if (b64_O) {
                     const imgId1 = workbook.addImage({ base64: b64_O, extension: 'jpeg' });
-                    sheet.addImage(imgId1, { tl: { col: 1, row: 0 }, ext: { width: 120, height: 35 } }); // Se dibuja sobre la B
+                    sheet.addImage(imgId1, { tl: { col: 1.2, row: 0.1 }, ext: { width: 150, height: 40 } });
                 }
                 if (b64_Elec) {
                     const imgId2 = workbook.addImage({ base64: b64_Elec, extension: 'jpeg' });
-                    sheet.addImage(imgId2, { tl: { col: 2, row: 0 }, ext: { width: 150, height: 40 } }); // Se dibuja sobre la C, pegado al O+
+                    sheet.addImage(imgId2, { tl: { col: 2.5, row: 0 }, ext: { width: 220, height: 60 } });
                 }
             } else if (empresa === 'Zener') {
                 const b64_Zen = await urlToBase64('ZENER.jpg');
                 if (b64_Zen) {
                     const imgId = workbook.addImage({ base64: b64_Zen, extension: 'jpeg' });
-                    sheet.addImage(imgId, { tl: { col: 2, row: 0 }, ext: { width: 200, height: 40 } });
+                    sheet.addImage(imgId, { tl: { col: 2, row: 0 }, ext: { width: 250, height: 50 } });
                 }
             }
         } catch (imgError) {}
 
-        // Fila 3: Titulo y V15
         sheet.getRow(3).height = 36.75;
         
         sheet.mergeCells('A3:D3');
@@ -547,12 +546,10 @@ async function generarExcelYRegistrar(e) {
         sheet.getCell('E2').border = borderOuter;
 
         sheet.getCell('E3').value = 'V15'; 
-        // V15 en Times New Roman, tamaño 14, Negrita y Subrayado
         sheet.getCell('E3').font = { name: 'Times New Roman', size: 14, bold: true, underline: 'single' }; 
         sheet.getCell('E3').alignment = alignCenter; 
         sheet.getCell('E3').border = borderOuter;
         
-        // Filas 4, 5, 6 y 7: Datos
         sheet.getRow(4).height = 21.75;
         sheet.getRow(5).height = 20.25;
         sheet.getRow(6).height = 20.25;
@@ -577,7 +574,6 @@ async function generarExcelYRegistrar(e) {
             let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontHeader; c4.alignment = alignCenter; c4.border = borderOuter;
         });
 
-        // Tabla de Materiales
         sheet.getRow(9).height = 15.75;
         sheet.getCell('A9').value = 'CODIGO'; sheet.getCell('A9').font = fontTableHeader; sheet.getCell('A9').alignment = alignLeft; sheet.getCell('A9').fill = fillGris; sheet.getCell('A9').border = borderAll;
         sheet.mergeCells('B9:D9'); 
@@ -611,7 +607,6 @@ async function generarExcelYRegistrar(e) {
         });
         tablaHtmlStr += '</table>';
 
-        // --- FIRMAS FINALES ---
         currentRow += 1; 
 
         sheet.getRow(currentRow).height = 24.0;
@@ -725,7 +720,8 @@ async function reGenerarExcelAlbaran(id) {
     try {
         const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet('ALBARAN');
         
-        sheet.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1, blackAndWhite: true, horizontalCentered: true, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
+        // Centrado Vertical y Horizontal al Imprimir
+        sheet.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1, blackAndWhite: true, horizontalCentered: true, verticalCentered: true, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
         
         sheet.columns = [{ width: 19.14 }, { width: 24.71 }, { width: 25.00 }, { width: 66.43 }, { width: 10.14 }];
         const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; 
@@ -739,10 +735,10 @@ async function reGenerarExcelAlbaran(id) {
         const alignLeft = { vertical: 'center', horizontal: 'left' }; 
         const fillGris = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA6A6A6' } };
 
-        sheet.getRow(1).height = 40; 
+        sheet.getRow(1).height = 45; 
         try {
-            if (alb.empresa === 'Elecnor') { const b64_O = await urlToBase64('O+.jpg'); const b64_Elec = await urlToBase64('ELECNOR.jpg'); if (b64_O) { const imgId1 = workbook.addImage({ base64: b64_O, extension: 'jpeg' }); sheet.addImage(imgId1, { tl: { col: 1, row: 0 }, ext: { width: 120, height: 35 } }); } if (b64_Elec) { const imgId2 = workbook.addImage({ base64: b64_Elec, extension: 'jpeg' }); sheet.addImage(imgId2, { tl: { col: 2, row: 0 }, ext: { width: 150, height: 40 } }); } }
-            else if (alb.empresa === 'Zener') { const b64_Zen = await urlToBase64('ZENER.jpg'); if (b64_Zen) { const imgId = workbook.addImage({ base64: b64_Zen, extension: 'jpeg' }); sheet.addImage(imgId, { tl: { col: 2, row: 0 }, ext: { width: 200, height: 40 } }); } }
+            if (alb.empresa === 'Elecnor') { const b64_O = await urlToBase64('O+.jpg'); const b64_Elec = await urlToBase64('ELECNOR.jpg'); if (b64_O) { const imgId1 = workbook.addImage({ base64: b64_O, extension: 'jpeg' }); sheet.addImage(imgId1, { tl: { col: 1.2, row: 0.1 }, ext: { width: 150, height: 40 } }); } if (b64_Elec) { const imgId2 = workbook.addImage({ base64: b64_Elec, extension: 'jpeg' }); sheet.addImage(imgId2, { tl: { col: 2.5, row: 0 }, ext: { width: 220, height: 60 } }); } }
+            else if (alb.empresa === 'Zener') { const b64_Zen = await urlToBase64('ZENER.jpg'); if (b64_Zen) { const imgId = workbook.addImage({ base64: b64_Zen, extension: 'jpeg' }); sheet.addImage(imgId, { tl: { col: 2, row: 0 }, ext: { width: 250, height: 50 } }); } }
         } catch (e) {}
 
         sheet.getRow(3).height = 36.75;
@@ -773,7 +769,7 @@ async function reGenerarExcelAlbaran(id) {
             currentRow++; 
         });
 
-        // --- FIRMAS FINALES ---
+        // --- FIRMAS FINALES (LÍNEAS GRUESAS Y NEGRITA) ---
         currentRow += 1; 
         sheet.getRow(currentRow).height = 24.0;
         sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI'; sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`A${currentRow}`).border = borderOuter; sheet.getCell(`A${currentRow}`).alignment = alignLeft;
