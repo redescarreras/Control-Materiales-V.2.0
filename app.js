@@ -482,6 +482,17 @@ async function generarExcelYRegistrar(e) {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('ALBARAN');
 
+        // Configuración estricta de Impresión (A4, 1 página, Blanco y Negro)
+        sheet.pageSetup = {
+            paperSize: 9, 
+            orientation: 'portrait',
+            fitToPage: true,
+            fitToWidth: 1,
+            fitToHeight: 1,
+            blackAndWhite: true,
+            margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }
+        };
+
         // Anchos de columna IDÉNTICOS al Excel original
         sheet.columns = [
             { width: 19.14 }, // A
@@ -726,6 +737,9 @@ async function reGenerarExcelAlbaran(id) {
     
     try {
         const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet('ALBARAN');
+        
+        // Configuración estricta de Impresión (A4, 1 página, Blanco y Negro)
+        sheet.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1, blackAndWhite: true, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
         
         sheet.columns = [{ width: 19.14 }, { width: 24.71 }, { width: 25.00 }, { width: 66.43 }, { width: 10.14 }];
         const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; 
