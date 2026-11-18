@@ -152,7 +152,6 @@ const DICCIONARIO_CODIGOS = [
     { cod: "D15160010022", desc: "BRIDA 300X4,8(BOLSA DE 100 UNIDADES)", tipo: "material" },
     { cod: "D15160010023", desc: "BRIDA 370X7,6(BOLSA DE 100 UNIDADES)", tipo: "material" },
     { cod: "D15160010025", desc: "BRIDA/CINTILLO REUTILIZABLE KIT(INCLUYE 75 CABEZAS)", tipo: "material" },
-    { cod: "D15160010025", desc: "CABEZA PARA BRIDA/CINTILLO REUTILIZABLE(SOLO CABEZA, BOLSA DE 75 UNIDADES)", tipo: "material" },
     { cod: "D06020040001", desc: "CABLE DE ACERO 1,6(CON CUBIERTA PLASTIFICADA)", tipo: "cable" },
     { cod: "D15120060001", desc: "CHUPETA M16(TUERCA CANCAMO)", tipo: "material" },
     { cod: "D02180260004", desc: "CINTA AISLANTE NARANJA", tipo: "material" },
@@ -167,11 +166,9 @@ const DICCIONARIO_CODIGOS = [
     { cod: "D08140430361", desc: "CONJUNTO RETENCION ANCLAJE F.O. ᴓ 18 MM ROJO 500283", tipo: "material" },
     { cod: "D08140430362", desc: "CONJUNTO RETENCION SUSPENSION F.O. ᴓ 18 MM ROJO 500291", tipo: "material" },
     { cod: "D15020020012", desc: "CUERDA NEGRA (200 METROS POR ROLLO)", tipo: "material" },
-    { cod: "D15020020012", desc: "CUERDA NEGRA (1300 METROS POR ROLLO)", tipo: "material" },
     { cod: "D19040050017", desc: "DIGITO 0-9 Y GUION 20MM", tipo: "material" },
     { cod: "D19040050014", desc: "DIGITO \"E\" DE ORANGE", tipo: "material" },
     { cod: "U61060110003", desc: "ESCUADRA ANCLAJE PARA RETENCION CABLES DE ACOMETIDA", tipo: "cable" },
-    { cod: "D19040050014", desc: "ETIQUETAS ORANGE 3M(JUEGO DE 100 CON 200 BRIDAS)", tipo: "material" },
     { cod: "D08140410009", desc: "GANCHO ACERO P.AISLADOR - RETENEDOR", tipo: "material" },
     { cod: "D08140120023", desc: "GRAPA DE PARED 00 (BOLSA DE 100 UNIDADES) (CAJA DE 1200 UNIDADES)", tipo: "material" },
     { cod: "D08140120020", desc: "GRAPA DE PARED 0 DE 12MM (BOLSA DE 100 UNIDADES) (CAJA DE 1200 UNIDADES)", tipo: "material" },
@@ -202,7 +199,6 @@ const DICCIONARIO_CODIGOS = [
     { cod: "D07080080144", desc: "TAPON LEVA PARA 40MM", tipo: "material" },
     { cod: "D07080080145", desc: "TAPON TRIPOLAR METAL 32MM(3-32)", tipo: "material" },
     { cod: "D07080080146", desc: "TAPON TRIPOLAR METAL 40MM(3-40)", tipo: "material" },
-    { cod: "D15060170015", desc: "TORNILLO EXPANSION M10 CON TACO", tipo: "material" },
     { cod: "D15120120039", desc: "TORNILLO ROSCA MADERA 6*30(CAJA 100UNI)", tipo: "material" },
     { cod: "D15120120100", desc: "TORNILLO ROSCA MADERA 6*60(CAJA 100UNI)", tipo: "material" },
     { cod: "D07060030039", desc: "TUBO CORRUGADO VERDE 63 mm", tipo: "subconducto" },
@@ -215,7 +211,61 @@ const DICCIONARIO_CODIGOS = [
     { cod: "D07060040024", desc: "TUBO PLASTICO 40MM PARA SALIDA LATERAL(KIT CON PIE Y CONO)", tipo: "subconducto" },
     { cod: "D15180010001", desc: "ABRAZADERA PARA TUBO DE SALIDA LATERAL", tipo: "subconducto" },
     { cod: "NOMBRE/FIRMA/DNI", desc: "nan", tipo: "material" },
-    { cod: "FIRMA AUTORIZADO POR ENCARGADO", desc: "nan", tipo: "material" }
+    { cod: "FIRMA AUTORIZADO POR ENCARGADO", desc: "nan", tipo: "material" },
+    { cod: "102001J", desc: "Caja de empalme TE FIST-GCO2-BC6, o similar, con bandejas de empalme 5SE para 64 fusiones  Tyco", tipo: "material" },
+    { cod: "102002J", desc: "Caja de empalme TE FIST-GCO2-BC6, o similar, con bandejas de empalme 5SE para 128 fusiones Tyco", tipo: "material" },
+    { cod: "102003J", desc: "Caja de empalme TE FIST-GCO2-BD6, con bandejas de empalme 5SE para 128 (160) fusiones Tyco", tipo: "material" },
+    { cod: "102004J", desc: "Caja de empalme TE FIST-GCO2-BC6, o similar, con bandejas de empalme 5SE para 256 fusiones Tyco", tipo: "material" },
+    { cod: "102005J", desc: "Caja de empalme TE FIST-GCO2-BD6, con bandejas de empalme 5SE para 256 (320) fusiones Tyco", tipo: "material" },
+    { cod: "102006J", desc: "Caja de empalme TE FIST-GCO2-BD6, o similar, con bandejas de empalme 5SE para 512 fusiones Tyco", tipo: "material" },
+    { cod: "102007J", desc: "Caja de empalme TE FIST-GCO2-BE6, con bandejas de empalme 5SE para 512 (560) fusiones Tyco", tipo: "material" },
+    { cod: "102010J", desc: "Bloque de 5 bandejas de empalme tipo 5SE", tipo: "material" },
+    { cod: "102011J", desc: "Kit de sellado termorretráctil para puerto circular en Caja de empalme tipo FIST o similar", tipo: "material" },
+    { cod: "102012J", desc: "Kit de sellado termorretráctil para puerto oval en Caja de empalme tipo FIST o similar", tipo: "material" },
+    { cod: "102022JC", desc: "Caja terminal UCA8 con 1 Splitter 1:16 y 8 puertos de salida conectorizados y premontados marcado Orange Corning", tipo: "material" },
+    { cod: "102023JC", desc: "Caja terminal UCA16 con 1 Splitter 1:16 y 16 puertos de salida conectorizados y premontados marcado Orange Corning", tipo: "material" },
+    { cod: "102028J", desc: "MOBI Módulo Operador marcado Orange", tipo: "material" },
+    { cod: "102028T", desc: "MOBI Módulo Operador marcado TESA", tipo: "material" },
+    { cod: "102029J", desc: "MOBI Módulo Cliente marcado Orange", tipo: "material" },
+    { cod: "102030J", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\"", tipo: "material" },
+    { cod: "102032J", desc: "16 adaptadores SC/APC y 1 Splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\"", tipo: "material" },
+    { cod: "102045J", desc: "Splitter 1:4 fuera de bandeja (genérico)", tipo: "material" },
+    { cod: "102050J", desc: "Caja de Empalme DiviCAU marcado Jazztel", tipo: "material" },
+    { cod: "102053J", desc: "Caja de Empalme CAU 128 marcado Orange", tipo: "material" },
+    { cod: "102072J", desc: "Caja de empalme TENIO B6 equipada para 16 acometidas de cliente", tipo: "material" },
+    { cod: "102074J", desc: "Soporte poste para nueva OTE2-16", tipo: "material" },
+    { cod: "102088J", desc: "Suministro de caja terminal CTO16 FastConnect con 1 Splitter 1:16 y 16 puertos de salida conectorizados y premontados marcado Orange", tipo: "material" },
+    { cod: "102090J", desc: "Suministro de caja terminal MiniCTO16 FastConnect con 1 Splitter 1:16 y 16 puertos de salida marcado Orange", tipo: "material" },
+    { cod: "102112J", desc: "Suministro de Splitter 1:16 planar preconectorizado", tipo: "material" },
+    { cod: "102125J", desc: "CTO retractable con DV4 SC/APC", tipo: "material" },
+    { cod: "102126J", desc: "kit decuperación fibra para CTO retractable", tipo: "material" },
+    { cod: "102128J", desc: "Bandeja Splitter 1:16 para caja FIST", tipo: "material" },
+    { cod: "102129J", desc: "Obt.Cre.XAGA-500-43/8-150-INT", tipo: "material" },
+    { cod: "102130J", desc: "Obt.Cre.XAGA-500-100/25-260-INT", tipo: "material" },
+    { cod: "102131J", desc: "Adptador LC/APC Duplex 8Âº para CTO MB2 interior.", tipo: "material" },
+    { cod: "102132J", desc: "Splitter 1:16 MB2 Operador + Cliente  FIST-FSASA2-116-1O-2-ES16", tipo: "material" },
+    { cod: "102133J", desc: "Splitter 1:16 MB2 Operador FIST-FSASA2-116-1O-3-ES07", tipo: "material" },
+    { cod: "102134J", desc: "Cassette WDM HD VAM OMX HDX3", tipo: "material" },
+    { cod: "102135J", desc: "Caja SEC Retractable", tipo: "material" },
+    { cod: "102136J", desc: "MST 4 puertos DV4 50mts", tipo: "material" },
+    { cod: "102137J", desc: 'MST 4 puertos DV4 100mts', tipo: "material" },
+    { cod: "102138J", desc: "MST 4 puertos DV4 150mts", tipo: "material" },
+    { cod: "102139J", desc: "Caja SCIL-A-S48 de 8 puertos funcionalidad CTO_C.Empalme", tipo: "material" },
+    { cod: "102140J", desc: "Cable IFC de 8 fibras para OMX de planta externa", tipo: "cable" },
+    { cod: "102142J", desc: "CTO sec prodigy 8 puertos +1dv16 gris", tipo: "material" },
+    { cod: "102143J", desc: "CTO satelite sec prodigy 8 puertos gris", tipo: "material" },
+    { cod: "102144J", desc: "CTO de exterior ip68 fastconect ssc2801-tm 8 p 1:8", tipo: "material" },
+    { cod: "102145J", desc: "CTO ext ip68 fastconect 16p sin Splitter", tipo: "material" },
+    { cod: "102146J", desc: "CTO de exterior ip68 fastconect 16 p ip68  1:8", tipo: "material" },
+    { cod: "102147J", desc: "CTO de exterior ip65/ip67 16 p coneCTOr  intemperio", tipo: "material" },
+    { cod: "102148J", desc: "CTO ext ip67 16 p conect Splitter 1:8", tipo: "material" },
+    { cod: "102149J", desc: "Mini CTO exterior 16 puert sin Splitter", tipo: "material" },
+    { cod: "102151J", desc: "Splitter 1:8 casset CTO in multi-oper", tipo: "material" },
+    { cod: "102152J", desc: "Splitter preconect 1:4 plc 900 micras", tipo: "material" },
+    { cod: "102153J", desc: "Splitter preconec  1:8 plc 900 micras", tipo: "material" },
+    { cod: "102154J", desc: "Splitter preconect 1:16 plc 900 micra", tipo: "material" },
+    { cod: "102155J", desc: "Splitter plc 1:8 (g657a2)", tipo: "material" },
+    { cod: "S/N", desc: "MATERIAL MENUDO", tipo: "material" }
 ];
 
 const CABLE_OPTIONS_HTML = DICCIONARIO_CODIGOS.filter(c => c.tipo === 'cable').map(c => `<option value="${c.desc}">${c.desc}</option>`).join('');
@@ -545,8 +595,8 @@ async function generarExcelYRegistrar(e) {
         sheet.getCell('E2').alignment = alignCenter; 
         sheet.getCell('E2').border = borderOuter;
 
-        sheet.getCell('E3').value = 'V15'; 
-        sheet.getCell('E3').font = { name: 'Times New Roman', size: 14, bold: true, underline: 'single' }; 
+        sheet.getCell('E3').value = 'V16'; 
+        sheet.getCell('E3').font = { name: 'Times New Roman', size: 14, bold: true, underline: 'single' };
         sheet.getCell('E3').alignment = alignCenter; 
         sheet.getCell('E3').border = borderOuter;
         
@@ -745,7 +795,7 @@ async function reGenerarExcelAlbaran(id) {
         
         sheet.mergeCells('A3:D3'); const titleCell = sheet.getCell('A3'); titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA'; titleCell.font = fontTitle; titleCell.alignment = alignCenter; titleCell.border = borderOuter;
         sheet.getCell('E2').value = '134º'; sheet.getCell('E2').font = { name: 'Arial', size: 10, bold: true }; sheet.getCell('E2').alignment = alignCenter; sheet.getCell('E2').border = borderOuter;
-        sheet.getCell('E3').value = 'V15'; sheet.getCell('E3').font = { name: 'Times New Roman', size: 14, bold: true, underline: 'single' }; sheet.getCell('E3').alignment = alignCenter; sheet.getCell('E3').border = borderOuter;
+        sheet.getCell('E3').value = 'V16'; sheet.getCell('E3').font = { name: 'Times New Roman', size: 14, bold: true, underline: 'single' }; sheet.getCell('E3').alignment = alignCenter; sheet.getCell('E3').border = borderOuter;
         
         sheet.getRow(4).height = 21.75; sheet.getRow(5).height = 20.25; sheet.getRow(6).height = 20.25; sheet.getRow(7).height = 20.45;
         sheet.mergeCells('D4:E4'); sheet.mergeCells('D5:E5'); sheet.mergeCells('D6:E6'); sheet.mergeCells('D7:E7');
