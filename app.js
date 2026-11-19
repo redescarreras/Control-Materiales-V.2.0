@@ -391,17 +391,21 @@ function abrirModalNuevoAlbaranGenerador() {
     DICCIONARIO_CODIGOS.forEach((item) => {
         const tr = document.createElement('tr');
         tr.className = 'catalogo-fila'; 
+        
+        // Protegemos las comillas dobles para que no rompan el HTML
+        const safeDesc = item.desc.replace(/"/g, '&quot;');
+        
         tr.innerHTML = `
             <td style="color: var(--text-secondary); font-family: monospace;">
                 <input type="hidden" class="gen-cod" value="${item.cod}">
                 ${item.cod}
             </td>
             <td style="font-weight: 500;">
-                <input type="hidden" class="gen-desc" value="${item.desc}">
+                <input type="hidden" class="gen-desc" value="${safeDesc}">
                 ${item.desc}
             </td>
             <td style="text-align: center;">
-                <input type="number" class="catalogo-input gen-qty" min="0" step="0.1" placeholder="0">
+                <input type="number" class="catalogo-input gen-qty" min="0" step="1" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             </td>
         `;
         tbody.appendChild(tr);
@@ -436,7 +440,7 @@ function agregarLineaManualGenerador() {
             <input type="text" class="gen-desc" placeholder="Descripción del material..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
         </td>
         <td style="text-align: center; padding: 8px;">
-            <input type="number" class="catalogo-input gen-qty" min="0.1" step="0.1" placeholder="0" required>
+            <input type="number" class="catalogo-input gen-qty" min="1" step="1" placeholder="0" required oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         </td>
     `;
     
@@ -556,13 +560,14 @@ async function generarExcelYRegistrar(e) {
                     lineasFirebase.push({ codigo: itemCatalogo.cod, descripcion: itemCatalogo.desc.toUpperCase(), cantidad: qty, tipo_interno: itemCatalogo.tipo });
                 }
 
-                // SI ES UNA FILA DE CABECERA (Como la 53 o la 158) LE PONEMOS EL FORMATO GRIS, NEGRITA Y LA DEJAMOS VISIBLE
+                // SI ES UNA FILA DE CABECERA (Como la 53 o la 158) LE PONEMOS EL FORMATO GRIS, ARIAL 10, NEGRITA Y SUBRAYADO
                 if (itemCatalogo.tipo === 'cabecera' || r === 53 || r === 158) {
-                    sheet.getCell(`A${r}`).value = cod; sheet.getCell(`A${r}`).font = fontTableHeader; sheet.getCell(`A${r}`).alignment = alignLeft; sheet.getCell(`A${r}`).fill = fillGris; sheet.getCell(`A${r}`).border = borderAll;
-                    sheet.mergeCells(`B${r}:D${r}`); sheet.getCell(`B${r}`).value = desc; sheet.getCell(`B${r}`).font = fontTableHeader; sheet.getCell(`B${r}`).alignment = alignLeft; sheet.getCell(`B${r}`).fill = fillGris; sheet.getCell(`B${r}`).border = borderAll;
-                    sheet.getCell(`E${r}`).value = '.'; sheet.getCell(`E${r}`).font = fontTableHeader; sheet.getCell(`E${r}`).alignment = alignCenter; sheet.getCell(`E${r}`).fill = fillGris; sheet.getCell(`E${r}`).border = borderAll;
+                    const fontCabecera = { name: 'Arial', size: 10, bold: true, underline: 'single' };
+                    sheet.getCell(`A${r}`).value = cod; sheet.getCell(`A${r}`).font = fontCabecera; sheet.getCell(`A${r}`).alignment = alignLeft; sheet.getCell(`A${r}`).fill = fillGris; sheet.getCell(`A${r}`).border = borderAll;
+                    sheet.mergeCells(`B${r}:D${r}`); sheet.getCell(`B${r}`).value = desc; sheet.getCell(`B${r}`).font = fontCabecera; sheet.getCell(`B${r}`).alignment = alignLeft; sheet.getCell(`B${r}`).fill = fillGris; sheet.getCell(`B${r}`).border = borderAll;
+                    sheet.getCell(`E${r}`).value = '.'; sheet.getCell(`E${r}`).font = fontCabecera; sheet.getCell(`E${r}`).alignment = alignCenter; sheet.getCell(`E${r}`).fill = fillGris; sheet.getCell(`E${r}`).border = borderAll;
                     rowEx.hidden = false; 
-                    continue; // Pasamos a la siguiente fila
+                    continue; 
                 }
             }
             
