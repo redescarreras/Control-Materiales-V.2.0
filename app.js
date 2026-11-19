@@ -2874,7 +2874,7 @@ function configurarEventListeners() {
     document.getElementById('formSalidaMaterial').addEventListener('submit', (e) => { e.preventDefault(); agregarMaterialGeneral(new FormData(e.target), 'instalacion'); });
 
     document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) { if (e.target === modal) cerrarTodosLosModales(); });
+        // modal.addEventListener('click', function(e) { if (e.target === modal) cerrarTodosLosModales(); });
     });
 }
 
