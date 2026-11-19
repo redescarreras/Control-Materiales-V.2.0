@@ -536,7 +536,7 @@ async function generarExcelYRegistrar(e) {
         sheet.getCell('E11').value = 'Uds/mts'; sheet.getCell('E11').font = fontTableHeader; sheet.getCell('E11').alignment = alignCenter; sheet.getCell('E11').fill = fillGris; sheet.getCell('E11').border = borderAll;
 
         // Generamos las filas EXACTAMENTE basándonos en el row id para mantener la estructura Excel original V16
-        for(let r = 12; r <= 240; r++) { // El Excel V16 original llega hasta la fila 231 antes de las firmas
+        for(let r = 12; r <= 226; r++) { // El Excel V16 original llega hasta la fila 231 antes de las firmas
             const rowEx = sheet.getRow(r);
             rowEx.height = 20.1;
 
@@ -706,7 +706,7 @@ async function reGenerarExcelAlbaran(id) {
         sheet.mergeCells('B11:D11'); sheet.getCell('B11').value = 'DESCRIPCION'; sheet.getCell('B11').font = fontTableHeader; sheet.getCell('B11').alignment = alignLeft; sheet.getCell('B11').fill = fillGris; sheet.getCell('B11').border = borderAll;
         sheet.getCell('E11').value = 'Uds/mts'; sheet.getCell('E11').font = fontTableHeader; sheet.getCell('E11').alignment = alignCenter; sheet.getCell('E11').fill = fillGris; sheet.getCell('E11').border = borderAll;
 
-        for(let r = 12; r <= 240; r++) { 
+        for(let r = 12; r <= 226; r++) {
             const rowEx = sheet.getRow(r);
             rowEx.height = 20.1;
 
