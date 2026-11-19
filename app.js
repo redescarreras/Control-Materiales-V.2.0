@@ -61,31 +61,21 @@ const DICCIONARIO_CODIGOS = [
     { cod: "101052J", desc: "Cable de f.o. de exterior riser de 32 fo.", tipo: "cable" },
     { cod: "S/N", desc: "2. REPARTIDORES ÓPTICOS, CAJAS DE EMPALME Y CAJAS DE TERMINACIÓN", tipo: "material" },
     { cod: "102001J", desc: "Caja de empalme TE FIST-GCO2-BC6, o similar, con bandejas de empalme 5SE para 64 fusiones  Tyco", tipo: "material" },
-    { cod: "102001JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 64 fusiones  Tyco", tipo: "material" },
     { cod: "102002J", desc: "Caja de empalme TE FIST-GCO2-BC6, o similar, con bandejas de empalme 5SE para 128 fusiones Tyco", tipo: "material" },
-    { cod: "102002JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 128 fusiones Tyco", tipo: "material" },
     { cod: "102003J", desc: "Caja de empalme TE FIST-GCO2-BD6, con bandejas de empalme 5SE para 128 (160) fusiones Tyco", tipo: "material" },
-    { cod: "102003JT", desc: "Caja de empalme TE FIST-GCO2-BD8, con bandejas de empalme 5SE para 128 (160) fusiones Tyco", tipo: "material" },
     { cod: "102003JM", desc: "Caja de empalme RA BPEO-2/128 3M", tipo: "material" },
     { cod: "102004J", desc: "Caja de empalme TE FIST-GCO2-BC6, o similar, con bandejas de empalme 5SE para 256 fusiones Tyco", tipo: "material" },
-    { cod: "102004JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 256 fusiones Tyco", tipo: "material" },
     { cod: "102005J", desc: "Caja de empalme TE FIST-GCO2-BD6, con bandejas de empalme 5SE para 256 (320) fusiones Tyco", tipo: "material" },
-    { cod: "102005JT", desc: "Caja de empalme TE FIST-GCO2-BD8, con bandejas de empalme 5SE para 256 (320) fusiones Tyco", tipo: "material" },
     { cod: "102005JM", desc: "Caja de empalme RA BPEO-2/256 3M", tipo: "material" },
     { cod: "102006J", desc: "Caja de empalme TE FIST-GCO2-BD6, o similar, con bandejas de empalme 5SE para 512 fusiones Tyco", tipo: "material" },
-    { cod: "102006JT", desc: "Caja de empalme TE FIST-GCO2-BD8, o similar, con bandejas de empalme 5SE para 512 fusiones Tyco", tipo: "material" },
     { cod: "102007J", desc: "Caja de empalme TE FIST-GCO2-BE6, con bandejas de empalme 5SE para 512 (560) fusiones Tyco", tipo: "material" },
-    { cod: "102007JT", desc: "Caja de empalme TE FIST-GCO2-BE8, con bandejas de empalme 5SE para 512 (560) fusiones Tyco", tipo: "material" },
     { cod: "102007JM", desc: "Caja de empalme RA BPEO-2/512 3M", tipo: "material" },
     { cod: "102010J", desc: "Bloque de 5 bandejas de empalme tipo 5SE", tipo: "material" },
     { cod: "102011J", desc: "Kit de sellado termorretráctil para puerto circular en Caja de empalme tipo FIST o similar", tipo: "material" },
-    { cod: "102011JT", desc: "Kit de sellado termorretráctil para puerto circular en caja de empalme tipo FIST o similar Tyco", tipo: "material" },
     { cod: "102011JM", desc: "kit de Sellado Circular 3M hasta 18 mm", tipo: "material" },
     { cod: "102012J", desc: "Kit de sellado termorretráctil para puerto oval en Caja de empalme tipo FIST o similar", tipo: "material" },
-    { cod: "102012JT", desc: "Kit de sellado termorretráctil para puerto oval en caja de empalme tipo FIST o similar Tyco", tipo: "material" },
     { cod: "102012JM", desc: "Kit de sellado puerto oval 3M 27 mm", tipo: "material" },
     { cod: "102013J", desc: "Splitter 1:4 FSASA2 premontado en bloque de 4UMS con 2 bandejas SC con las fibras preinstaladas para caja FIST Tyco", tipo: "material" },
-    { cod: "102013JT", desc: "Splitter 1:4 FSASA2 premontado en bloque de 4UMS con 2 bandejas SC con las fibras preinstaladas para caja FIST Tyco", tipo: "material" },
     { cod: "102018JC", desc: "Caja de empalme Corning UCA0 MFT7, o similar, con bandejas de empalme para hasta 168 fusiones marcado Orange Corning", tipo: "material" },
     { cod: "102018JT", desc: "Caja de empalme FOSC350C. Con bandejas de empalme para capacidad de hasta 168 fusiones. Incluye etiquetas de Orange.", tipo: "material" },
     { cod: "102022JC", desc: "Caja terminal UCA8 con 1 Splitter 1:16 y 8 puertos de salida conectorizados y premontados marcado Orange Corning", tipo: "material" },
@@ -96,13 +86,9 @@ const DICCIONARIO_CODIGOS = [
     { cod: "102026JT", desc: "Splitter 1:16 premontado en bandeja de empalme para caja OT8/16 Tyco (Compatible con 102022JT/102022TT/102023JT/102023TT)", tipo: "material" },
     { cod: "102028J", desc: "MOBI Módulo Operador marcado Orange", tipo: "material" },
     { cod: "102028T", desc: "MOBI Módulo Operador marcado TESA", tipo: "material" },
-    { cod: "102028JT", desc: "Módulo de operador TE MOBI, o similar, marcado ORANGE Tyco", tipo: "material" },
     { cod: "102029J", desc: "MOBI Módulo Cliente marcado Orange", tipo: "material" },
-    { cod: "102029JT", desc: "Módulo de cliente TE MOBI, o similar, con 16 adaptadores SC/APC y 16 pig-tails G.657A2 SC/APC \"low loss\" Tyco", tipo: "material" },
     { cod: "102030J", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\"", tipo: "material" },
-    { cod: "102030JT", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\"  Tyco", tipo: "material" },
     { cod: "102032J", desc: "16 adaptadores SC/APC y 1 Splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\"", tipo: "material" },
-    { cod: "102032JT", desc: "Suministro de 16 adaptadores SC/APC y 1 splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\"  Tyco", tipo: "material" },
     { cod: "102034J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 50 m marcado Orange", tipo: "material" },
     { cod: "102035J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 100 m marcado Orange", tipo: "material" },
     { cod: "102036J", desc: "Caja terminal multipuerto con 4 puertos Optitap®  y rabillo de 150 m marcado Orange", tipo: "material" },
@@ -110,18 +96,15 @@ const DICCIONARIO_CODIGOS = [
     { cod: "102038J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 100 m marcado Orange", tipo: "material" },
     { cod: "102039J", desc: "Caja terminal multipuerto con 8 puertos Optitap®  y rabillo de 150 m marcado Orange", tipo: "material" },
     { cod: "102040J", desc: "Caja de derivación óptica (IFDB)", tipo: "material" },
-    { cod: "102045JT", desc: "Suministro de splitter 1:4 fuera de bandeja", tipo: "material" },
     { cod: "102045J", desc: "Splitter 1:4 fuera de bandeja (genérico)", tipo: "material" },
     { cod: "102047J", desc: "Splitter 1:16 fuera de bandeja (genérico). [No confundir con Splitter 1:16 para MOBI (102032J)]", tipo: "material" },
     { cod: "102050J", desc: "Caja de Empalme DiviCAU marcado Jazztel", tipo: "material" },
-    { cod: "102050JT", desc: "Caja de empalme DiviCAU o similar marcado ORANGE Tyco", tipo: "material" },
     { cod: "102053J", desc: "Caja de Empalme CAU 128 marcado Orange", tipo: "material" },
-    { cod: "102053JE", desc: "CAJA DE EMPALME CAU HASTA 128 FUSIONES ORANGE", tipo: "material" },
     { cod: "102057J", desc: "Embellecedor para Caja de derivación óptica", tipo: "material" },
     { cod: "102058J", desc: "Retenedor para acometida en MOBI", tipo: "material" },
     { cod: "102060J", desc: "Splitter 1:16 para FOSC/Nueva OTE2-16", tipo: "material" },
-    { cod: "102061J", desc: "CAJA MB2 FUNCIONALIDAD \"OPERADOR+CLIENTE\" MARCADO ORANGE", tipo: "material" },
-    { cod: "102062J", desc: "CAJA MB2 FUNCIONALIDAD \"OPERADOR\"MARCADO ORANGE", tipo: "material" },
+    { cod: "102061J", desc: "Caja MB2 funcionalidad \"operador + cliente\" marcado Orange", tipo: "material" },
+    { cod: "102062J", desc: "Caja MB2 funcionalidad  operador marcado Orange", tipo: "material" },
     { cod: "102067J", desc: "Kit de sellado FOSC para 4 cables Ø7mm", tipo: "cable" },
     { cod: "102068J", desc: "Kit de sellado FOSC para 1 cable Ø20mm", tipo: "cable" },
     { cod: "102069J", desc: "Caja Terminal OTE16 o similar IP65 con Splitter 1:16 y 16 puertos de salida conectorizados", tipo: "material" },
@@ -168,19 +151,6 @@ const DICCIONARIO_CODIGOS = [
     { cod: "102139J", desc: "Caja SCIL-A-S48 de 8 puertos funcionalidad CTO_C.Empalme", tipo: "material" },
     { cod: "102140J", desc: "Cable IFC de 8 fibras para OMX de planta externa", tipo: "cable" },
     { cod: "102141J", desc: "Bandeja de 32 F.O 19' equipado con 2 Splitter 1:16", tipo: "material" },
-    { cod: "102142J", desc: "CTO sec prodigy 8 puertos +1dv16 gris", tipo: "material" },
-    { cod: "102143J", desc: "CTO satelite sec prodigy 8 puertos gris", tipo: "material" },
-    { cod: "102144J", desc: "CTO de exterior ip68 fastconect ssc2801-tm 8 p 1:8", tipo: "material" },
-    { cod: "102145J", desc: "CTO ext ip68 fastconect 16p sin Splitter", tipo: "material" },
-    { cod: "102146J", desc: "CTO de exterior ip68 fastconect 16 p ip68  1:8", tipo: "material" },
-    { cod: "102147J", desc: "CTO de exterior ip65/ip67 16 p coneCTOr  intemperio", tipo: "material" },
-    { cod: "102148J", desc: "CTO ext ip67 16 p conect Splitter 1:8", tipo: "material" },
-    { cod: "102149J", desc: "Mini CTO exterior 16 puert sin Splitter", tipo: "material" },
-    { cod: "102151J", desc: "Splitter 1:8 casset CTO in multi-oper", tipo: "material" },
-    { cod: "102152J", desc: "Splitter preconect 1:4 plc 900 micras", tipo: "material" },
-    { cod: "102153J", desc: "Splitter preconec  1:8 plc 900 micras", tipo: "material" },
-    { cod: "102154J", desc: "Splitter preconect 1:16 plc 900 micra", tipo: "material" },
-    { cod: "102155J", desc: "Splitter plc 1:8 (g657a2)", tipo: "material" },
     { cod: "206001J", desc: "MMELCTE-16P000 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE SIN SPLITTER", tipo: "material" },
     { cod: "206002J", desc: "MMHUCTE-16P000 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE SIN SPLITTER", tipo: "material" },
     { cod: "206003J", desc: "MMELCTE-16P108 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE EQUIPADA CON SPLITTER 1:8", tipo: "material" },
@@ -223,7 +193,6 @@ const DICCIONARIO_CODIGOS = [
     { cod: "D19040050017", desc: "DIGITO 0-9 Y GUION 20MM", tipo: "material" },
     { cod: "D19040050014", desc: "DIGITO \"E\" DE ORANGE", tipo: "material" },
     { cod: "U61060110003", desc: "ESCUADRA ANCLAJE PARA RETENCION CABLES DE ACOMETIDA", tipo: "cable" },
-    { cod: "D19040050014", desc: "ETIQUETAS ORANGE 3M(JUEGO DE 100 CON 200 BRIDAS)", tipo: "material" },
     { cod: "D08140410009", desc: "GANCHO ACERO P.AISLADOR - RETENEDOR", tipo: "material" },
     { cod: "D08140120023", desc: "GRAPA DE PARED 00 (BOLSA DE 100 UNIDADES) (CAJA DE 1200 UNIDADES)", tipo: "material" },
     { cod: "D08140120020", desc: "GRAPA DE PARED 0 DE 12MM (BOLSA DE 100 UNIDADES) (CAJA DE 1200 UNIDADES)", tipo: "material" },
@@ -261,7 +230,83 @@ const DICCIONARIO_CODIGOS = [
     { cod: "D08160050007", desc: "TUBO PG16 de SIN ACERO", tipo: "subconducto" },
     { cod: "D08160050008", desc: "TUBO PG21 de SIN ACERO", tipo: "subconducto" },
     { cod: "D07060040024", desc: "TUBO PLASTICO 40MM PARA SALIDA LATERAL(KIT CON PIE Y CONO)", tipo: "material" },
-    { cod: "D15180010001", desc: "ABRAZADERA PARA TUBO DE SALIDA LATERAL", tipo: "subconducto" }
+    { cod: "D15180010001", desc: "ABRAZADERA PARA TUBO DE SALIDA LATERAL", tipo: "subconducto" },
+    { cod: "102001JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 64 fusiones  Tyco", tipo: "material" },
+    { cod: "102002JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 128 fusiones Tyco", tipo: "material" },
+    { cod: "102003JT", desc: "Caja de empalme TE FIST-GCO2-BD8, con bandejas de empalme 5SE para 128 (160) fusiones Tyco", tipo: "material" },
+    { cod: "102004JT", desc: "Caja de empalme TE FIST-GCO2-BC8, o similar, con bandejas de empalme 5SE para 256 fusiones Tyco", tipo: "material" },
+    { cod: "102005JT", desc: "Caja de empalme TE FIST-GCO2-BD8, con bandejas de empalme 5SE para 256 (320) fusiones Tyco", tipo: "material" },
+    { cod: "102006JT", desc: "Caja de empalme TE FIST-GCO2-BD8, o similar, con bandejas de empalme 5SE para 512 fusiones Tyco", tipo: "material" },
+    { cod: "102007JT", desc: "Caja de empalme TE FIST-GCO2-BE8, con bandejas de empalme 5SE para 512 (560) fusiones Tyco", tipo: "material" },
+    { cod: "102011JT", desc: "Kit de sellado termorretráctil para puerto circular en caja de empalme tipo FIST o similar Tyco", tipo: "material" },
+    { cod: "102012JT", desc: "Kit de sellado termorretráctil para puerto oval en caja de empalme tipo FIST o similar Tyco", tipo: "material" },
+    { cod: "102013JT", desc: "Splitter 1:4 FSASA2 premontado en bloque de 4UMS con 2 bandejas SC con las fibras preinstaladas para caja FIST Tyco", tipo: "material" },
+    { cod: "102022JT", desc: "Caja terminal OT8 con 1 Splitter 1:16 y 8 puertos de salida conectorizados y premontados marcado Orange Tyco", tipo: "material" },
+    { cod: "102023JT", desc: "Caja terminal OT16 con 1 Splitter 1:16 y 16 puertos de salida conectorizados y premontados marcado Orange Tyco", tipo: "material" },
+    { cod: "102026JC", desc: "Splitter 1:16 premontado en bandeja de empalme para caja UCA0/8/16 Corning (Compatible con 102018JC/102018TC/102022JC/102022TC/102023JC/102023TC)", tipo: "material" },
+    { cod: "102026JT", desc: "Splitter 1:16 premontado en bandeja de empalme para caja OT8/16 Tyco (Compatible con 102022JT/102022TT/102023JT/102023TT)", tipo: "material" },
+    { cod: "102028JT", desc: "Módulo de operador TE MOBI, o similar, marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102029JT", desc: "Módulo de cliente TE MOBI, o similar, con 16 adaptadores SC/APC y 16 pig-tails G.657A2 SC/APC \"low loss\" Tyco", tipo: "material" },
+    { cod: "102030JT", desc: "Kit de ampliación de 4 adaptadores SC/APC y 4 pig-tails G.657A2 SC/APC \"low loss\"  Tyco", tipo: "material" },
+    { cod: "102032JT", desc: "Suministro de 16 adaptadores SC/APC y 1 splitter 1:16 para caja MOBI, o similar, con salidas G.657A2 conectorizadas en conectores SC/APC \"low loss\"  Tyco", tipo: "material" },
+    { cod: "102045JT", desc: "Suministro de splitter 1:4 fuera de bandeja", tipo: "material" },
+    { cod: "102050JT", desc: "Caja de empalme DiviCAU o similar marcado ORANGE Tyco", tipo: "material" },
+    { cod: "102053JE", desc: "CAJA DE EMPALME CAU HASTA 128 FUSIONES ORANGE", tipo: "material" },
+    { cod: "102057J", desc: "EMBELLECEDOR PARA CAJA DE DERIVACION", tipo: "material" },
+    { cod: "102058J", desc: "RETENEDOR PARA ACOMETIDA DIRECTA EN CTO MULTIOPRERADOR DE INTERIOR", tipo: "material" },
+    { cod: "102060J", desc: "(BANDEJA CON SPLITTER PARA CAJA FOSC) FOSC-TRAY-SPLT-116-1-ES07", tipo: "material" },
+    { cod: "102061J", desc: "CAJA MB2 FUNCIONALIDAD \"OPERADOR+CLIENTE\" MARCADO ORANGE", tipo: "material" },
+    { cod: "102062J", desc: "CAJA MB2 FUNCIONALIDAD \"OPERADOR\"MARCADO ORANGE", tipo: "material" },
+    { cod: "102067J", desc: "KIT DE SELLADO DE GEL PARA 4 CABLES DE HASTA 7MM", tipo: "cable" },
+    { cod: "102068J", desc: "KIT DE SELLADO DE GEL PARA 1 CABLE DE HASTA 20MM", tipo: "cable" },
+    { cod: "102069J", desc: "CAJA TERMINAL OTE16 O SIMILAR IP65C(SUSTITUYE A 102023J UCA16)", tipo: "material" },
+    { cod: "102073J", desc: "SUMINISTRO DE 4 ADAPTADORES SC/APC Y 1 SPLITTER 2X1X4", tipo: "material" },
+    { cod: "102075J", desc: "CAJA DE DERIVACION ESTANCA TIPO TBE-I4 O SIMILAR", tipo: "material" },
+    { cod: "102076J", desc: "Kit de extensión FIST de BC a BD", tipo: "material" },
+    { cod: "102077J", desc: "KIT DE EXTENSION FIST DE BD A BE", tipo: "material" },
+    { cod: "102084J", desc: "Bandeja de FO 19 ETSI F200", tipo: "material" },
+    { cod: "102085J", desc: "CTO mini Interior módulo de operador", tipo: "material" },
+    { cod: "102086J", desc: "CTO mini Interior módulo de edificio", tipo: "material" },
+    { cod: "102087J", desc: "RETENEDOR PARA ACOMETIDA DIRECTA EN MINI CTO MULTI", tipo: "material" },
+    { cod: "102089J", desc: "Caja terminal MiniCTO16 FastConnect con 16 puertos de salida", tipo: "material" },
+    { cod: "102091J", desc: "Caja Terminal miniOTE2-8 con 1 splitter 1:16 y 8 puertos de salida conectorizados Optitap  CTO MINI", tipo: "material" },
+    { cod: "102092J", desc: "SUMINISTRO DE CAJA TERMINAL OTE8 O SIMILAR IP65C", tipo: "material" },
+    { cod: "102093J", desc: "Caja de empalme BPEO-1,5 hasta 128 fusiones, con marcado Orange", tipo: "material" },
+    { cod: "102096J", desc: "Suministro de Kit de sellado de Gel para 2 cables Ø8-12 mm (para uso en FOSC350C Tyco)", tipo: "cable" },
+    { cod: "102113J", desc: "SPLITTER 1X4 PLC EN PUNTA", tipo: "material" },
+    { cod: "102114J", desc: "Armario Intemperie CTO 48 NO DV", tipo: "material" },
+    { cod: "102115J", desc: "Armario Intemperie CTO 48 1DV16", tipo: "material" },
+    { cod: "102117J", desc: "SPLITTER 1X4 PLC PRECONECTADO", tipo: "material" },
+    { cod: "102118J", desc: "Band.F.O.19/ETSI F200 (Spli 1:4) (COLEGIOS)", tipo: "material" },
+    { cod: "102119J", desc: "Suministro de caja de empalme TENIO B6 64 fusiones", tipo: "material" },
+    { cod: "102120J", desc: "Suministro de caja de empalme TENIO C6 128 fusiones", tipo: "material" },
+    { cod: "102122J", desc: "Bandeja de F.O 19\"/ETSI F200 (Splitter 1:16)", tipo: "material" },
+    { cod: "102124J", desc: "Kit Sellado salida cable para TENIO-SKG2-13/16mm CTE-16P000", tipo: "cable" },
+    { cod: "102141J", desc: "Bandeja de 32 F.O 19' equipado con 2 Splitter 1:16", tipo: "material" },
+    { cod: "206001J", desc: "MMELCTE-16P000 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE SIN SPLITTER", tipo: "material" },
+    { cod: "206002J", desc: "MMHUCTE-16P000 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE SIN SPLITTER", tipo: "material" },
+    { cod: "206003J", desc: "MMELCTE-16P108 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE EQUIPADA CON SPLITTER 1:8", tipo: "material" },
+    { cod: "206004J", desc: "MMHUCTE-16P108 - CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE EQUIPADA CON SPLITTER 1:8", tipo: "material" },
+    { cod: "206005J", desc: "MMHUCTE-SAT000 - MINI CTO DE EXTERIOR IP65/IP67 16 PUERTOS CON CONECTOR DE INTEMPERIE SIN SPLITTER", tipo: "material" },
+    { cod: "206006J", desc: "MMHUCTA-08P108 - CTO DE EXTERIOR IP68 FASTCONECT SSC2801-TM 8 ports with splitter 1:8", tipo: "material" },
+    { cod: "206007J", desc: "MMELCTA-16P000 - CTO DE EXTERIOR IP68 FASTCONECT 16 PUERTOS IP68 SIN SPLITTER (con doble carcasa para Splitter Cassete)", tipo: "material" },
+    { cod: "206008J", desc: "MMELCTA-16P108 - CTO DE EXTERIOR IP68 FASTCONECT 16 PUERTOS IP68 CON SPLITTER 1:8 (con doble carcasa para Splitter Cassete)", tipo: "material" },
+    { cod: "206009J", desc: "MMELSPL-SPP104 - DIVISOR PLC SPLITTER PLC 1:4 (G657A2)", tipo: "material" },
+    { cod: "206010J", desc: "MMHUSPL-SPP104 - DIVISOR PLC SPLITTER PLC 1:4 (G657A2)", tipo: "material" },
+    { cod: "206011J", desc: "MMELSPL-SPP108 - DIVISOR PLC SPLITTER PLC 1:8 (G657A2)", tipo: "material" },
+    { cod: "206012J", desc: "MMHUSPL-SPP108 - DIVISOR PLC SPLITTER PLC 1:8 (G657A2)", tipo: "material" },
+    { cod: "206013J", desc: "MMELCTI-SPC108 - SPLITTER 1:8 CASSETTE PARA CTO y adaptadores SC/APC", tipo: "material" },
+    { cod: "206014J", desc: "MMHUCTI-SPC108 - SPLITTER 1:8 CASSETTE PARA CTO y adaptadores SC/APC", tipo: "material" },
+    { cod: "206015J", desc: "MMELCTI-SPR104 - SPLITTER PRECONECTORIZADO 1:4 PLC 900 micras", tipo: "material" },
+    { cod: "206016J", desc: "MMHUCTI-SPR104 - SPLITTER PRECONECTORIZADO 1:4 PLC 900 micras", tipo: "material" },
+    { cod: "206017J", desc: "MMELCTI-SPR108 - SPLITTER PRECONECTORIZADO  1:8 PLC 900 micras", tipo: "material" },
+    { cod: "206018J", desc: "MMHUCTI-SPR108 - SPLITTER PRECONECTORIZADO  1:8 PLC 900 micras", tipo: "material" },
+    { cod: "206019J", desc: "MMELCTI-SPR116 - SPLITTER PRECONECTORIZADO  1:16 PLC 900 micras", tipo: "material" },
+    { cod: "206020J", desc: "MMHUCTI-SPR116 - SPLITTER PRECONECTORIZADO  1:16 PLC 900 micras", tipo: "material" },
+    { cod: "D15160010025", desc: "CABEZA PARA BRIDA/CINTILLO REUTILIZABLE(SOLO CABEZA, BOLSA DE 75 UNIDADES)", tipo: "material" },
+    { cod: "D15020020012", desc: "CUERDA NEGRA (1300 METROS POR ROLLO)", tipo: "material" },
+    { cod: "D19040050014", desc: "ETIQUETAS ORANGE 3M(JUEGO DE 100 CON 200 BRIDAS)", tipo: "material" },
+    { cod: "D15060170015", desc: "TORNILLO EXPANSION M10 CON TACO", tipo: "material" }
 ];
 
 const CABLE_OPTIONS_HTML = DICCIONARIO_CODIGOS.filter(c => c.tipo === 'cable').map(c => `<option value="${c.desc}">${c.desc}</option>`).join('');
@@ -500,10 +545,10 @@ async function generarExcelYRegistrar(e) {
         const qtyInput = row.querySelector('.gen-qty');
         if (!qtyInput) return;
         const qty = parseFloat(qtyInput.value) || 0;
-        const desc = row.querySelector('.gen-desc').value.toUpperCase();
+        const desc = row.querySelector('.gen-desc').value;
         const cod = row.querySelector('.gen-cod').value || "S/N";
         
-        const key = cod + '|' + desc;
+        const key = cod + '|' + desc.toLowerCase();
         if(lineasForm.has(key)) {
             lineasForm.get(key).cantidad += qty;
         } else {
@@ -514,10 +559,12 @@ async function generarExcelYRegistrar(e) {
     const lineasExcel = [];
     const lineasFirebase = [];
 
-    // 1. Recorremos el catálogo completo para mantener el orden exacto y meter todo en el Excel
+    // Recorremos el catálogo completo para mantener el ORDEN 1 a 1 de las filas
     DICCIONARIO_CODIGOS.forEach(dictItem => {
-        const key = dictItem.cod + '|' + dictItem.desc.toUpperCase();
+        const key = dictItem.cod + '|' + dictItem.desc.toLowerCase();
         let qty = 0;
+        let finalDesc = dictItem.desc; // Respetamos las mayusculas/minusculas del original
+        
         if(lineasForm.has(key)) {
             qty = lineasForm.get(key).cantidad;
             lineasForm.delete(key);
@@ -525,33 +572,25 @@ async function generarExcelYRegistrar(e) {
         
         const linea = {
             codigo: dictItem.cod,
-            descripcion: dictItem.desc.toUpperCase(),
+            descripcion: finalDesc,
             cantidad: qty,
             tipo_interno: dictItem.tipo,
-            ocultar: qty <= 0 // Si no tiene cantidad, la marcamos para ocultar en Excel
+            ocultar: qty <= 0 
         };
         lineasExcel.push(linea);
-        
-        if (qty > 0) lineasFirebase.push(linea);
+        if (qty > 0) lineasFirebase.push({...linea, descripcion: linea.descripcion.toUpperCase()});
     });
 
-    // 2. Añadimos las entradas manuales (fuera de catálogo) que el usuario haya escrito
+    // Entradas manuales extra que no cuadren
     lineasForm.forEach(lin => {
         if (lin.cantidad > 0) {
             let tipo = "general";
             const d = lin.descripcion.toLowerCase();
             if(d.includes("cable") && !d.includes("acero")) tipo = "cable";
-            else if(d.includes("subconducto") || d.includes("monotubo") || (d.includes("tubo") && !d.includes("fusiones") && !d.includes("plastico") && !d.includes("aceroflex"))) tipo = "subconducto";
+            else if(d.includes("subconducto") || d.includes("monotubo") || (d.includes("tubo") && !d.includes("fusiones"))) tipo = "subconducto";
             
-            const linea = {
-                codigo: lin.codigo,
-                descripcion: lin.descripcion,
-                cantidad: lin.cantidad,
-                tipo_interno: tipo,
-                ocultar: false
-            };
-            lineasExcel.push(linea);
-            lineasFirebase.push(linea);
+            const linea = { codigo: lin.codigo, descripcion: lin.descripcion.toUpperCase(), cantidad: lin.cantidad, tipo_interno: tipo, ocultar: false };
+            lineasExcel.push(linea); lineasFirebase.push(linea);
         }
     });
 
@@ -592,55 +631,57 @@ async function generarExcelYRegistrar(e) {
             }
         } catch (imgError) {}
 
-        sheet.getRow(3).height = 36.75;
+        // TITULO Y CABECERA BAJAN DE NUEVO A LA FILA 5 COMO EN EL ORIGINAL
+        sheet.getRow(4).height = 13.5;
+        sheet.getRow(5).height = 36.75;
         
-        sheet.mergeCells('A3:D3');
-        const titleCell = sheet.getCell('A3'); titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA'; titleCell.font = fontTitle; titleCell.alignment = alignCenter; titleCell.border = borderOuter;
-        sheet.getCell('E2').value = idEmpresa; sheet.getCell('E2').font = { name: 'Arial', size: 10, bold: true }; sheet.getCell('E2').alignment = alignCenter; sheet.getCell('E2').border = borderOuter;
-        sheet.getCell('E3').value = 'V16'; sheet.getCell('E3').font = { name: 'Times New Roman', size: 14, bold: true, underline: 'single' }; sheet.getCell('E3').alignment = alignCenter; sheet.getCell('E3').border = borderOuter;
+        sheet.mergeCells('A5:D5');
+        const titleCell = sheet.getCell('A5'); titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA'; titleCell.font = fontTitle; titleCell.alignment = alignCenter; titleCell.border = borderOuter;
+        sheet.getCell('E4').value = idEmpresa; sheet.getCell('E4').font = { name: 'Arial', size: 10, bold: true }; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderOuter;
+        sheet.getCell('E5').value = 'V16'; sheet.getCell('E5').font = { name: 'Times New Roman', size: 14, bold: true, underline: 'single' }; sheet.getCell('E5').alignment = alignCenter; sheet.getCell('E5').border = borderOuter;
         
-        sheet.getRow(4).height = 21.75; sheet.getRow(5).height = 20.25; sheet.getRow(6).height = 20.25; sheet.getRow(7).height = 20.45;
-
-        sheet.mergeCells('D4:E4'); sheet.mergeCells('D5:E5'); sheet.mergeCells('D6:E6'); sheet.mergeCells('D7:E7');
+        sheet.getRow(6).height = 21.75; sheet.getRow(7).height = 20.25; sheet.getRow(8).height = 20.25; sheet.getRow(9).height = 20.45;
+        sheet.mergeCells('D6:E6'); sheet.mergeCells('D7:E7'); sheet.mergeCells('D8:E8'); sheet.mergeCells('D9:E9');
 
         const cabecerasInfo = [
-            ['A4', 'ID OBRA', 'B4', idObra, 'C4', 'CR Y LATERAL:', 'D4', crLateral],
-            ['A5', 'POBLACION', 'B5', poblacion, 'C5', 'FECHA:', 'D5', fechaExcel],
-            ['A6', 'ENCARGADO', 'B6', encargado, 'C6', 'N ALBARAN', 'D6', nAlbaran],
-            ['A7', 'CONTRATA', 'B7', contrata, 'C7', 'CUENTA DE CARGO', 'D7', cuentaCargo]
+            ['A6', 'ID OBRA', 'B6', idObra, 'C6', 'CR Y LATERAL:', 'D6', crLateral],
+            ['A7', 'POBLACION', 'B7', poblacion, 'C7', 'FECHA:', 'D7', fechaExcel],
+            ['A8', 'ENCARGADO', 'B8', encargado, 'C8', 'N ALBARAN', 'D8', nAlbaran],
+            ['A9', 'CONTRATA', 'B9', contrata, 'C9', 'CUENTA DE CARGO', 'D9', cuentaCargo]
         ];
 
         cabecerasInfo.forEach(row => {
             let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderOuter;
-            let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = row[0] === 'A4' ? fontHeaderB6 : fontHeader; c2.alignment = alignLeft; c2.border = borderOuter;
+            let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = row[0] === 'A6' ? fontHeaderB6 : fontHeader; c2.alignment = alignLeft; c2.border = borderOuter;
             let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderOuter;
             let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontHeader; c4.alignment = alignCenter; c4.border = borderOuter;
         });
 
-        sheet.getRow(9).height = 15.75;
-        sheet.getCell('A9').value = 'CODIGO'; sheet.getCell('A9').font = fontTableHeader; sheet.getCell('A9').alignment = alignLeft; sheet.getCell('A9').fill = fillGris; sheet.getCell('A9').border = borderAll;
-        sheet.mergeCells('B9:D9'); 
-        sheet.getCell('B9').value = 'DESCRIPCION'; sheet.getCell('B9').font = fontTableHeader; sheet.getCell('B9').alignment = alignLeft; sheet.getCell('B9').fill = fillGris; sheet.getCell('B9').border = borderAll;
-        sheet.getCell('E9').value = 'Uds/mts'; sheet.getCell('E9').font = fontTableHeader; sheet.getCell('E9').alignment = alignCenter; sheet.getCell('E9').fill = fillGris; sheet.getCell('E9').border = borderAll;
+        // ESPACIO EN BLANCO EN LA FILA 10 (Igual al Excel original)
+        sheet.getRow(10).height = 10;
 
-        let currentRow = 10;
+        // LA TABLA EMPIEZA EN LA 11 Y LOS DATOS EN LA 12 EXACTAMENTE
+        sheet.getRow(11).height = 15.75;
+        sheet.getCell('A11').value = 'CODIGO'; sheet.getCell('A11').font = fontTableHeader; sheet.getCell('A11').alignment = alignLeft; sheet.getCell('A11').fill = fillGris; sheet.getCell('A11').border = borderAll;
+        sheet.mergeCells('B11:D11'); 
+        sheet.getCell('B11').value = 'DESCRIPCION'; sheet.getCell('B11').font = fontTableHeader; sheet.getCell('B11').alignment = alignLeft; sheet.getCell('B11').fill = fillGris; sheet.getCell('B11').border = borderAll;
+        sheet.getCell('E11').value = 'Uds/mts'; sheet.getCell('E11').font = fontTableHeader; sheet.getCell('E11').alignment = alignCenter; sheet.getCell('E11').fill = fillGris; sheet.getCell('E11').border = borderAll;
+
+        let currentRow = 12; // AHORA SÍ EMPIEZAN EN LA MISMA FILA
         let tablaHtmlStr = '<table class="table-preview" style="width:100%; border-collapse:collapse; font-size:12px;"><tr><th style="background:#B0B0B0; border:1px solid #ccc; text-align:left; color:black;">CODIGO</th><th style="background:#B0B0B0; border:1px solid #ccc; text-align:left; color:black;">DESCRIPCION</th><th style="background:#B0B0B0; border:1px solid #ccc; text-align:center; color:black;">Uds/mts</th></tr>';
 
         lineasExcel.forEach(lin => {
             const row = sheet.getRow(currentRow);
             row.height = 20.1;
             
-            // Si la cantidad es 0, ocultamos la fila entera de Excel
             if (lin.ocultar) row.hidden = true;
 
             sheet.getCell(`A${currentRow}`).value = lin.codigo; sheet.getCell(`A${currentRow}`).font = fontData; sheet.getCell(`A${currentRow}`).alignment = alignLeft; sheet.getCell(`A${currentRow}`).border = borderAll;
             sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).value = lin.descripcion; sheet.getCell(`B${currentRow}`).font = fontData; sheet.getCell(`B${currentRow}`).alignment = alignLeft; sheet.getCell(`B${currentRow}`).border = borderAll;
             
-            // Si la fila está oculta, dejamos el campo Uds vacío para que esté en blanco si lo desocultan
             sheet.getCell(`E${currentRow}`).value = lin.ocultar ? '' : lin.cantidad; 
             sheet.getCell(`E${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll;
             
-            // El resumen HTML que se ve en la app SÍ lo filtramos para mostrar solo lo gastado
             if (!lin.ocultar) {
                 tablaHtmlStr += `<tr><td style="padding:4px; border:1px solid #ccc;">${lin.codigo}</td><td style="padding:4px; border:1px solid #ccc;">${lin.descripcion}</td><td style="padding:4px; border:1px solid #ccc; text-align:center; font-weight:bold;">${lin.cantidad}</td></tr>`;
             }
@@ -649,7 +690,6 @@ async function generarExcelYRegistrar(e) {
         tablaHtmlStr += '</table>';
 
         currentRow += 1; 
-
         sheet.getRow(currentRow).height = 24.0;
         sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI'; sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`A${currentRow}`).border = borderOuter; sheet.getCell(`A${currentRow}`).alignment = alignLeft;
         sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).border = borderOuter;
@@ -695,6 +735,134 @@ async function generarExcelYRegistrar(e) {
     }
 }
 window.generarExcelYRegistrar = generarExcelYRegistrar;
+
+async function reGenerarExcelAlbaran(id) {
+    const alb = albaranes.find(a => a.id === id);
+    if(!alb) return;
+    
+    mostrarToast('⏳ Descargando Excel...');
+    
+    const lineasBd = new Map();
+    const mats = materialesGenerales.filter(m => m.idAlbaranAsociado === id);
+    const cabs = cables.filter(c => c.idAlbaranAsociado === id);
+    const subs = subconductos.filter(s => s.idAlbaranAsociado === id);
+    
+    [...mats, ...cabs, ...subs].forEach(m => {
+        let desc = m.descripcion || m.tipoCable || m.tipoSubconducto;
+        let cant = m.cantidad || m.metros;
+        let match = DICCIONARIO_CODIGOS.find(d => d.desc.toLowerCase() === desc.toLowerCase());
+        let cod = match ? match.cod : 'S/N';
+        
+        const key = cod + '|' + desc.toLowerCase();
+        if(lineasBd.has(key)) lineasBd.get(key).cantidad += cant;
+        else lineasBd.set(key, { codigo: cod, descripcion: desc, cantidad: cant });
+    });
+    
+    const lineasExcel = [];
+    
+    DICCIONARIO_CODIGOS.forEach(dictItem => {
+        const key = dictItem.cod + '|' + dictItem.desc.toLowerCase();
+        let qty = 0;
+        if(lineasBd.has(key)) {
+            qty = lineasBd.get(key).cantidad;
+            lineasBd.delete(key);
+        }
+        
+        lineasExcel.push({
+            codigo: dictItem.cod,
+            descripcion: dictItem.desc, // Respetamos original
+            cantidad: qty,
+            ocultar: qty <= 0
+        });
+    });
+
+    lineasBd.forEach(lin => {
+        if(lin.cantidad > 0) lineasExcel.push({ codigo: lin.codigo, descripcion: lin.descripcion.toUpperCase(), cantidad: lin.cantidad, ocultar: false });
+    });
+
+    if(lineasExcel.filter(l => !l.ocultar).length === 0) return mostrarToast('❌ No hay materiales en la base de datos para re-generar el Excel.');
+    
+    try {
+        const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet('ALBARAN');
+        
+        sheet.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1, blackAndWhite: true, horizontalCentered: true, verticalCentered: true, margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } };
+        sheet.columns = [{ width: 19.14 }, { width: 24.71 }, { width: 25.00 }, { width: 66.43 }, { width: 10.14 }];
+        
+        const borderAll = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; 
+        const borderOuter = { top: {style:'medium'}, left: {style:'medium'}, bottom: {style:'medium'}, right: {style:'medium'} };
+        const fontTitle = { name: 'Arial', size: 20, bold: true, underline: 'single' }; 
+        const fontHeader = { name: 'Times New Roman', size: 10, bold: true }; 
+        const fontHeaderB6 = { name: 'Times New Roman', size: 12, bold: true };
+        const fontData = { name: 'Arial', size: 10 }; 
+        const fontTableHeader = { name: 'Times New Roman', size: 12, bold: true };
+        const alignCenter = { vertical: 'center', horizontal: 'center' }; 
+        const alignLeft = { vertical: 'center', horizontal: 'left' }; 
+        const fillGris = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA6A6A6' } };
+
+        sheet.getRow(1).height = 45; 
+        try {
+            if (alb.empresa === 'Elecnor') { const b64_O = await urlToBase64('O+.jpg'); const b64_Elec = await urlToBase64('ELECNOR.jpg'); if (b64_O) { const imgId1 = workbook.addImage({ base64: b64_O, extension: 'jpeg' }); sheet.addImage(imgId1, { tl: { col: 1.2, row: 0.1 }, ext: { width: 150, height: 40 } }); } if (b64_Elec) { const imgId2 = workbook.addImage({ base64: b64_Elec, extension: 'jpeg' }); sheet.addImage(imgId2, { tl: { col: 2.5, row: 0 }, ext: { width: 220, height: 60 } }); } }
+            else if (alb.empresa === 'Zener') { const b64_Zen = await urlToBase64('ZENER.jpg'); if (b64_Zen) { const imgId = workbook.addImage({ base64: b64_Zen, extension: 'jpeg' }); sheet.addImage(imgId, { tl: { col: 2, row: 0 }, ext: { width: 250, height: 50 } }); } }
+        } catch (e) {}
+
+        // TITULO Y CABECERA RESTAURADOS A LA FILA 5
+        sheet.getRow(4).height = 13.5;
+        sheet.getRow(5).height = 36.75;
+        
+        sheet.mergeCells('A5:D5'); const titleCell = sheet.getCell('A5'); titleCell.value = 'CONTROL SALIDAS MATERIAL MASORANGE 509 PLANTA'; titleCell.font = fontTitle; titleCell.alignment = alignCenter; titleCell.border = borderOuter;
+        sheet.getCell('E4').value = '134º'; sheet.getCell('E4').font = { name: 'Arial', size: 10, bold: true }; sheet.getCell('E4').alignment = alignCenter; sheet.getCell('E4').border = borderOuter;
+        sheet.getCell('E5').value = 'V16'; sheet.getCell('E5').font = { name: 'Times New Roman', size: 14, bold: true, underline: 'single' }; sheet.getCell('E5').alignment = alignCenter; sheet.getCell('E5').border = borderOuter;
+        
+        sheet.getRow(6).height = 21.75; sheet.getRow(7).height = 20.25; sheet.getRow(8).height = 20.25; sheet.getRow(9).height = 20.45;
+        sheet.mergeCells('D6:E6'); sheet.mergeCells('D7:E7'); sheet.mergeCells('D8:E8'); sheet.mergeCells('D9:E9');
+
+        let fechaExcel = alb.fecha; if(alb.fecha.includes('-')) { const p = alb.fecha.split('-'); fechaExcel = `${p[2]}/${p[1]}/${p[0]}`; }
+        
+        const cabecerasInfo = [['A6', 'ID OBRA', 'B6', alb.idObra, 'C6', 'CR Y LATERAL:', 'D6', ''], ['A7', 'POBLACION', 'B7', '', 'C7', 'FECHA:', 'D7', fechaExcel], ['A8', 'ENCARGADO', 'B8', alb.jefeObra, 'C8', 'N ALBARAN', 'D8', ''], ['A9', 'CONTRATA', 'B9', 'REDES CARRERAS S.L.', 'C9', 'CUENTA DE CARGO', 'D9', alb.cuentaCargo]];
+        cabecerasInfo.forEach(row => { let c1 = sheet.getCell(row[0]); c1.value = row[1]; c1.font = fontHeader; c1.alignment = alignCenter; c1.border = borderOuter; let c2 = sheet.getCell(row[2]); c2.value = row[3]; c2.font = row[0] === 'A6' ? fontHeaderB6 : fontHeader; c2.alignment = alignLeft; c2.border = borderOuter; let c3 = sheet.getCell(row[4]); c3.value = row[5]; c3.font = fontHeader; c3.alignment = alignCenter; c3.border = borderOuter; let c4 = sheet.getCell(row[6]); c4.value = row[7]; c4.font = fontHeader; c4.alignment = alignCenter; c4.border = borderOuter; });
+
+        sheet.getRow(10).height = 10;
+
+        sheet.getRow(11).height = 15.75;
+        sheet.getCell('A11').value = 'CODIGO'; sheet.getCell('A11').font = fontTableHeader; sheet.getCell('A11').alignment = alignLeft; sheet.getCell('A11').fill = fillGris; sheet.getCell('A11').border = borderAll;
+        sheet.mergeCells('B11:D11'); sheet.getCell('B11').value = 'DESCRIPCION'; sheet.getCell('B11').font = fontTableHeader; sheet.getCell('B11').alignment = alignLeft; sheet.getCell('B11').fill = fillGris; sheet.getCell('B11').border = borderAll;
+        sheet.getCell('E11').value = 'Uds/mts'; sheet.getCell('E11').font = fontTableHeader; sheet.getCell('E11').alignment = alignCenter; sheet.getCell('E11').fill = fillGris; sheet.getCell('E11').border = borderAll;
+
+        let currentRow = 12; // TABLA EMPIEZA EN 12 EXACTA
+        lineasExcel.forEach(lin => { 
+            const row = sheet.getRow(currentRow);
+            row.height = 20.1;
+            
+            if (lin.ocultar) row.hidden = true;
+
+            sheet.getCell(`A${currentRow}`).value = lin.codigo; sheet.getCell(`A${currentRow}`).font = fontData; sheet.getCell(`A${currentRow}`).alignment = alignLeft; sheet.getCell(`A${currentRow}`).border = borderAll; 
+            sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).value = lin.descripcion; sheet.getCell(`B${currentRow}`).font = fontData; sheet.getCell(`B${currentRow}`).alignment = alignLeft; sheet.getCell(`B${currentRow}`).border = borderAll; 
+            sheet.getCell(`E${currentRow}`).value = lin.ocultar ? '' : lin.cantidad; sheet.getCell(`E${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; 
+            
+            currentRow++; 
+        });
+
+        currentRow += 1; 
+        sheet.getRow(currentRow).height = 24.0;
+        sheet.getCell(`A${currentRow}`).value = 'NOMBRE/FIRMA/DNI'; sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`A${currentRow}`).border = borderOuter; sheet.getCell(`A${currentRow}`).alignment = alignLeft;
+        sheet.mergeCells(`B${currentRow}:D${currentRow}`); sheet.getCell(`B${currentRow}`).border = borderOuter;
+        sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; currentRow++;
+        
+        sheet.getRow(currentRow).height = 16.9;
+        sheet.mergeCells(`A${currentRow}:B${currentRow}`); sheet.getCell(`A${currentRow}`).value = 'FIRMA AUTORIZADO POR ENCARGADO'; sheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`A${currentRow}`).alignment = alignCenter; sheet.getCell(`A${currentRow}`).border = borderOuter;
+        sheet.getCell(`C${currentRow}`).value = 'FIRMA ALMACEN Y FECHA'; sheet.getCell(`C${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`C${currentRow}`).alignment = alignCenter; sheet.getCell(`C${currentRow}`).border = borderOuter;
+        sheet.getCell(`D${currentRow}`).value = 'FIRMA Y NOMBRE RECEPTOR'; sheet.getCell(`D${currentRow}`).font = { name: 'Arial', size: 10, bold: true }; sheet.getCell(`D${currentRow}`).alignment = alignCenter; sheet.getCell(`D${currentRow}`).border = borderOuter;
+        sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll; currentRow++;
+        
+        sheet.getRow(currentRow).height = 57.75;
+        sheet.mergeCells(`A${currentRow}:B${currentRow}`); sheet.getCell(`A${currentRow}`).border = borderOuter; sheet.getCell(`C${currentRow}`).border = borderOuter; sheet.getCell(`D${currentRow}`).border = borderOuter;
+        sheet.getCell(`E${currentRow}`).value = '.'; sheet.getCell(`E${currentRow}`).alignment = alignCenter; sheet.getCell(`E${currentRow}`).border = borderAll;
+
+        const buffer = await workbook.xlsx.writeBuffer(); const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); saveAs(blob, `ALBARAN_SALIDAS_${alb.empresa}_${alb.idObra}_REDESCARGADO.xlsx`);
+        mostrarToast('✅ Excel re-descargado exitosamente');
+    } catch(e) { mostrarToast('❌ Error re-generando Excel.'); }
+}
+window.reGenerarExcelAlbaran = reGenerarExcelAlbaran;
 
 async function reGenerarExcelAlbaran(id) {
     const alb = albaranes.find(a => a.id === id);
